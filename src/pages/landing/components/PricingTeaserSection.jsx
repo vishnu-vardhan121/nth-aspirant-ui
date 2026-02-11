@@ -3,32 +3,32 @@ import { Link } from 'react-router-dom';
 import SectionContainer from '../../../components/SectionContainer';
 
 const TIERS = [
-  { name: 'Free', tagline: 'Get started with curated jobs.' },
-  { name: 'Pro', tagline: 'More jobs and direct support.' },
-  { name: 'Pro+', tagline: 'Full access and priority placement.' },
+  { name: 'Free', tagline: 'For freshers starting out.', price: '₹0' },
+  { name: 'Pro', tagline: 'For serious job seekers.', price: '₹499', popular: true },
+  { name: 'Pro+', tagline: 'For career acceleration.', price: '₹1,499' },
 ];
 
 export default function PricingTeaserSection() {
   return (
-    <section className="relative bg-white py-12 sm:py-16 md:py-20 lg:py-24">
-      <SectionContainer useGrid>
+    <section className="relative bg-white py-20 sm:py-28">
+      <SectionContainer>
         <motion.div
-          className="col-span-full text-center mb-8 sm:mb-12"
+          className="text-center mb-16"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
         >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-3 sm:mb-4">
-            Choose your plan
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-4">
+            Transparent Pricing
           </h2>
-          <p className="text-base sm:text-lg text-slate-600 max-w-xl mx-auto px-2">
-            Free, Pro, or Pro+—find the right fit for your career.
+          <p className="text-lg text-[rgb(var(--nth-text-secondary-light))] max-w-xl mx-auto">
+            Invest in your career with plans designed for every stage of your journey.
           </p>
         </motion.div>
 
         <motion.div
-          className="col-span-full grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 max-w-4xl mx-auto mb-8 sm:mb-10"
+          className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16"
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -37,28 +37,36 @@ export default function PricingTeaserSection() {
           {TIERS.map((tier) => (
             <div
               key={tier.name}
-              className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 text-center"
+              className={`p-8 rounded-3xl border transition-all duration-300 ${
+                tier.popular
+                  ? 'border-[rgb(var(--nth-primary))] bg-[rgb(var(--nth-bg-soft))] shadow-lg scale-105 z-10'
+                  : 'border-slate-200 bg-white hover:border-slate-300'
+              }`}
             >
-              <h3 className="text-lg font-semibold text-slate-900 mb-1">
+              <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-secondary-light))] mb-2">
                 {tier.name}
               </h3>
-              <p className="text-sm text-slate-600">{tier.tagline}</p>
+              <div className="text-3xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-1">
+                {tier.price}
+                <span className="text-base font-normal text-slate-400">/mo</span>
+              </div>
+              <p className="text-sm text-slate-500">{tier.tagline}</p>
             </div>
           ))}
         </motion.div>
 
         <motion.div
-          className="col-span-full text-center"
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          className="text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <Link
             to="/pricing"
-            className="nth-btn-primary inline-flex items-center justify-center gap-2 text-base sm:text-lg"
+            className="nth-btn-primary inline-flex items-center justify-center gap-2 text-lg px-8 py-3 hover:text-white"
           >
-            View all plans
+            Compare Plans
             <svg
               className="w-5 h-5 ml-2"
               fill="none"
@@ -69,7 +77,7 @@ export default function PricingTeaserSection() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
               />
             </svg>
           </Link>

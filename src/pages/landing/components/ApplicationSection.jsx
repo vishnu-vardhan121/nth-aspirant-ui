@@ -7,25 +7,22 @@ const FEATURES = [
     title: 'Verified Opportunities',
     description: 'Every job is vetted by real HR and recruiters. No spam, no fake listings—only genuine roles.',
     icon: SiShieldsdotio,
-    color: 'from-indigo-500 to-indigo-400',
-    bg: 'bg-indigo-50',
-    shadow: 'shadow-indigo-500/20',
+    color: 'from-blue-500 to-cyan-400',
+    shadow: 'shadow-blue-500/20',
   },
   {
     title: 'Fresher to Senior',
     description: 'Roles for every stage—from your first internship to leadership positions. One platform for your entire career.',
     icon: SiGraphql,
-    color: 'from-indigo-400 to-violet-400',
-    bg: 'bg-violet-50',
-    shadow: 'shadow-violet-500/20',
+    color: 'from-indigo-500 to-purple-500',
+    shadow: 'shadow-indigo-500/20',
   },
   {
     title: 'Direct Recruiter Access',
     description: 'Connect directly with hiring teams. Get feedback, build your network, and accelerate your growth.',
     icon: SiTarget,
-    color: 'from-cyan-400 to-indigo-500',
-    bg: 'bg-cyan-50',
-    shadow: 'shadow-cyan-500/20',
+    color: 'from-purple-500 to-pink-500',
+    shadow: 'shadow-purple-500/20',
   },
 ];
 
@@ -34,8 +31,7 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
+      staggerChildren: 0.2,
     },
   },
 };
@@ -45,108 +41,92 @@ const itemVariants = {
   visible: {
     y: 0,
     opacity: 1,
-    transition: { type: 'spring', stiffness: 50, damping: 20 },
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
 export default function ApplicationSection() {
   return (
-    <motion.section
+    <section
       id="app"
-      className="relative bg-white py-12 sm:py-16 md:py-20 lg:py-24 overflow-hidden"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      className="relative bg-[rgb(var(--nth-bg-soft))] py-20 sm:py-28 overflow-hidden"
     >
-      <SectionContainer useGrid>
-        <motion.div
-          className="col-span-full text-center max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-              <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-4 sm:mb-6 text-slate-900">
-            Built for your{' '}
-            <span
-              className="text-transparent bg-clip-text"
-              style={{
-                backgroundImage: `linear-gradient(to right, rgb(var(--nth-primary)), rgb(var(--nth-primary-light)), rgb(var(--nth-accent)))`,
-                WebkitBackgroundClip: 'text',
-              }}
-            >
-              career journey
-            </span>
-          </h2>
-          <p className="text-lg md:text-xl text-slate-600 leading-relaxed">
-            NTH brings verified jobs and real recruiters into one seamless ecosystem—so you can
-            focus on growth, not guesswork.
-          </p>
-        </motion.div>
-
-            <motion.div
-              className="col-span-full grid sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16 md:mb-20"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-        >
-          {FEATURES.map((feature) => {
-            const Icon = feature.icon;
-            return (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className="group relative p-5 sm:p-6 md:p-8 rounded-2xl sm:rounded-3xl bg-white border border-slate-100 transition-all duration-300 hover:border-slate-200"
-                style={{
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.02)',
-                }}
-                whileHover={{
-                  y: -8,
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.08)',
-                }}
-              >
-                <div
-                  className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-6 text-white text-2xl shadow-lg transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3 bg-gradient-to-br ${feature.color} ${feature.shadow}`}
-                >
-                  <Icon className="w-7 h-7" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{feature.description}</p>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-        <motion.div
-          className="col-span-full text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-        >
-          <a
-            href="/pricing"
-            className="nth-btn-primary inline-flex items-center justify-center gap-2 text-base sm:text-lg"
+      <SectionContainer>
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center mb-20 lg:mb-0">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            View Plans & Get Started
-            <svg
-              className="w-5 h-5 ml-2 -mr-1 transition-transform group-hover:translate-x-1"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-8 text-[rgb(var(--nth-text-primary-light))] leading-[1.2]">
+              Built for your{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--nth-primary))] to-[rgb(var(--nth-accent))]">
+                career journey
+              </span>
+            </h2>
+            <p className="text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed mb-10">
+              NTH brings verified jobs and real recruiters into one seamless ecosystem—so you can
+              focus on growth, not guesswork.
+            </p>
+            
+            <motion.a
+              href="/pricing"
+              className="nth-btn-primary inline-flex items-center justify-center gap-3 text-lg group hover:text-white"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </a>
-        </motion.div>
+              View Plans & Get Started
+              <svg
+                className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2.5}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
+              </svg>
+            </motion.a>
+          </motion.div>
+
+          <motion.div
+            className="grid gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <motion.div
+                  key={feature.title}
+                  variants={itemVariants}
+                  className="flex items-start gap-6 p-6 rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                >
+                  <div
+                    className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br ${feature.color} ${feature.shadow} shadow-lg`}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
+                      {feature.description}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
       </SectionContainer>
-    </motion.section>
+    </section>
   );
 }

@@ -2,47 +2,51 @@
 
 /* NTH design system */
 :root {
-  /* Primary & accent */
-  --nth-primary: 99 102 241;
-  --nth-primary-light: 129 140 248;
-  --nth-accent: 34 211 238;
-  --nth-violet: 167 139 250;
+  /* Primary & accent - Vibrant & Professional */
+  --nth-primary: 79 70 229; /* Indigo 600 */
+  --nth-primary-light: 129 140 248; /* Indigo 400 */
+  --nth-accent: 14 165 233; /* Sky 500 */
+  --nth-violet: 168 85 247; /* Purple 500 */
 
-  /* Surfaces - dark */
-  --nth-bg-hero-start: 3 7 18;
-  --nth-bg-hero-mid: 12 18 34;
-  --nth-bg-hero-end: 15 23 42;
+  /* Surfaces - dark (Rich Night Blue) */
+  --nth-bg-hero-start: 2 6 23; /* Slate 950 */
+  --nth-bg-hero-mid: 15 23 42; /* Slate 900 */
+  --nth-bg-hero-end: 30 41 59; /* Slate 800 */
   --nth-bg-dark: 15 23 42;
-  --nth-bg-dark-deep: 10 15 26;
-  --nth-bg-dark-deeper: 13 19 33;
+  --nth-bg-dark-deep: 2 6 23;
+  --nth-bg-dark-deeper: 10 15 30;
   --nth-border-dark: 51 65 85;
 
   /* Surfaces - light */
   --nth-bg-light: 255 255 255;
-  --nth-border-light: 241 245 249;
-  --nth-border-light-hover: 226 232 240;
+  --nth-bg-soft: 248 250 252; /* Slate 50 */
+  --nth-border-light: 226 232 240; /* Slate 200 */
+  --nth-border-light-hover: 203 213 225; /* Slate 300 */
+  
+  /* Utilities */
+  --nth-glow-primary: 0 0 20px rgba(79, 70, 229, 0.3);
 
   /* Text */
-  --nth-text-primary-dark: 241 245 249;
+  --nth-text-primary-dark: 248 250 252;
   --nth-text-secondary-dark: 148 163 184;
-  --nth-text-muted-dark: 148 163 184;
+  --nth-text-muted-dark: 100 116 139;
   --nth-text-primary-light: 15 23 42;
-  --nth-text-secondary-light: 71 85 105;
+  --nth-text-secondary-light: 51 65 85;
   --nth-text-muted-light: 100 116 139;
 
   /* Layout - shared section container & grid */
-  --nth-section-max-width: 72rem;
+  --nth-section-max-width: 80rem; /* Wider for modern feel */
   --nth-section-padding-x: 1.5rem;
-  --nth-section-padding-x-md: 2rem;
+  --nth-section-padding-x-md: 3rem;
   --nth-grid-columns: 12;
-  --nth-landing-grid-gap: clamp(1.5rem, 4vw, 3rem);
+  --nth-landing-grid-gap: clamp(2rem, 5vw, 4rem);
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: dark;
-  color: rgba(255, 255, 255, 0.87);
+  color-scheme: dark light;
+  color: rgba(255, 255, 255, 0.9);
   background-color: rgb(var(--nth-bg-dark));
 
   font-synthesis: none;
@@ -55,6 +59,7 @@ a {
   font-weight: 500;
   color: rgb(var(--nth-primary-light));
   text-decoration: inherit;
+  transition: color 0.2s ease;
 }
 a:hover {
   color: rgb(var(--nth-primary));
@@ -126,6 +131,7 @@ button:focus-visible {
 .nth-btn-primary:hover {
   box-shadow: 0 14px 36px -10px rgb(var(--nth-primary) / 0.5);
   transform: translateY(-2px);
+  color: white; /* Prevent global a:hover from overriding text color */
 }
 
 /* Brand gradient for logos (navbar + footer) */
@@ -161,14 +167,4 @@ button:focus-visible {
 }
 
 /* App uses its own dark theme - avoid forcing white background */
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-  }
-  a:hover {
-    color: #6366f1;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
+

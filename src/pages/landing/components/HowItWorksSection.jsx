@@ -4,22 +4,25 @@ import SectionContainer from '../../../components/SectionContainer';
 
 const STEPS = [
   {
-    title: 'Recruiters',
-    description: 'Share verified job openings with the network.',
+    title: 'Recruiters Post',
+    description: 'Verified HR professionals and recruiters post genuine openings directly to the platform.',
     icon: HiBriefcase,
-    color: 'from-indigo-500 to-indigo-400',
+    color: 'from-blue-500 to-indigo-600',
+    shadow: 'shadow-blue-500/30',
   },
   {
-    title: 'Client / Influencer',
-    description: 'Curates and connects opportunities for followers.',
+    title: 'Influencers Curate',
+    description: 'Trusted industry voices and hiring influencers vet and highlight the best opportunities.',
     icon: HiUserGroup,
-    color: 'from-indigo-400 to-violet-400',
+    color: 'from-indigo-500 to-purple-600',
+    shadow: 'shadow-indigo-500/30',
   },
   {
-    title: 'Followers',
-    description: 'Get opportunities on Instagram and in the app.',
+    title: 'You Get Hired',
+    description: 'Apply to verified roles with confidence and track your application status in real-time.',
     icon: HiSparkles,
-    color: 'from-cyan-400 to-indigo-500',
+    color: 'from-purple-500 to-pink-600',
+    shadow: 'shadow-purple-500/30',
   },
 ];
 
@@ -27,66 +30,80 @@ const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+    transition: { staggerChildren: 0.3 },
   },
 };
 
 const itemVariants = {
-  hidden: { y: 24, opacity: 0 },
+  hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
     opacity: 1,
-    transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
   },
 };
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="relative bg-white py-12 sm:py-16 md:py-20 lg:py-24 overflow-hidden">
-      <SectionContainer useGrid>
+    <section id="how-it-works" className="relative bg-[rgb(var(--nth-bg-soft))] py-20 sm:py-28 overflow-hidden">
+      <SectionContainer>
         <motion.div
-          className="col-span-full text-center mb-8 sm:mb-12 md:mb-16"
-          initial={{ opacity: 0, y: 20 }}
+          className="text-center max-w-3xl mx-auto mb-16 sm:mb-24"
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.7 }}
         >
-          <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 tracking-tight mb-3 sm:mb-4">
-            How it works
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-6">
+            Simplified Hiring Flow
           </h2>
-          <p className="text-base sm:text-lg text-slate-600 max-w-2xl mx-auto px-2">
-            From recruiters to you—verified jobs, one trusted path.
+          <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
+            We've removed the noise. Here's how certified jobs travel from the source directly to you.
           </p>
         </motion.div>
 
-        <motion.div
-          className="col-span-full grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:gap-12"
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          {STEPS.map((step) => {
-            const Icon = step.icon;
-            return (
-              <motion.div
-                key={step.title}
-                variants={itemVariants}
-                className="text-center"
-              >
-                <div
-                  className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl text-white mb-5 bg-gradient-to-br ${step.color} shadow-lg`}
+        <div className="relative">
+          {/* Connecting Line (Desktop) */}
+          <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent dashed-line" />
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
+            {STEPS.map((step, index) => {
+              const Icon = step.icon;
+              return (
+                <motion.div
+                  key={step.title}
+                  variants={itemVariants}
+                  className="relative flex flex-col items-center text-center group"
                 >
-                  <Icon className="w-7 h-7" />
-                </div>
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-slate-600 leading-relaxed">{step.description}</p>
-              </motion.div>
-            );
-          })}
-        </motion.div>
+                  <div className="relative z-10 mb-8">
+                    <div
+                      className={`w-24 h-24 rounded-3xl flex items-center justify-center text-white bg-gradient-to-br ${step.color} ${step.shadow} shadow-xl transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
+                    >
+                      <Icon className="w-10 h-10" />
+                    </div>
+                    {/* Step Number Badge */}
+                    <div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center font-bold text-slate-400 shadow-sm text-sm">
+                      {index + 1}
+                    </div>
+                  </div>
+
+                  <h3 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-4">
+                    {step.title}
+                  </h3>
+                  <p className="text-base text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-xs mx-auto">
+                    {step.description}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
+        </div>
       </SectionContainer>
     </section>
   );
