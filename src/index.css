@@ -1,0 +1,174 @@
+@import "tailwindcss";
+
+/* NTH design system */
+:root {
+  /* Primary & accent */
+  --nth-primary: 99 102 241;
+  --nth-primary-light: 129 140 248;
+  --nth-accent: 34 211 238;
+  --nth-violet: 167 139 250;
+
+  /* Surfaces - dark */
+  --nth-bg-hero-start: 3 7 18;
+  --nth-bg-hero-mid: 12 18 34;
+  --nth-bg-hero-end: 15 23 42;
+  --nth-bg-dark: 15 23 42;
+  --nth-bg-dark-deep: 10 15 26;
+  --nth-bg-dark-deeper: 13 19 33;
+  --nth-border-dark: 51 65 85;
+
+  /* Surfaces - light */
+  --nth-bg-light: 255 255 255;
+  --nth-border-light: 241 245 249;
+  --nth-border-light-hover: 226 232 240;
+
+  /* Text */
+  --nth-text-primary-dark: 241 245 249;
+  --nth-text-secondary-dark: 148 163 184;
+  --nth-text-muted-dark: 148 163 184;
+  --nth-text-primary-light: 15 23 42;
+  --nth-text-secondary-light: 71 85 105;
+  --nth-text-muted-light: 100 116 139;
+
+  /* Layout - shared section container & grid */
+  --nth-section-max-width: 72rem;
+  --nth-section-padding-x: 1.5rem;
+  --nth-section-padding-x-md: 2rem;
+  --nth-grid-columns: 12;
+  --nth-landing-grid-gap: clamp(1.5rem, 4vw, 3rem);
+
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: rgb(var(--nth-bg-dark));
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  font-weight: 500;
+  color: rgb(var(--nth-primary-light));
+  text-decoration: inherit;
+}
+a:hover {
+  color: rgb(var(--nth-primary));
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: rgb(var(--nth-bg-dark));
+}
+
+h1 {
+  font-size: 3.2em;
+  line-height: 1.1;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover {
+  border-color: #6366f1;
+}
+button:focus,
+button:focus-visible {
+  outline: 4px auto -webkit-focus-ring-color;
+}
+
+/* Hero bottom wave - seamless loop: linear so end/start sync */
+@keyframes nth-wave-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.nth-wave-move {
+  animation: nth-wave-drift 10s linear infinite;
+}
+
+/* Navbar logo: gradient only on the text shape, not the box */
+.nth-logo-gradient {
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Primary CTA – same gradient and shadow everywhere (buttons, links) */
+.nth-btn-primary {
+  background: linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%);
+  box-shadow: 0 10px 30px -10px rgb(var(--nth-primary) / 0.4);
+  color: white;
+  font-weight: 600;
+  border-radius: 1rem;
+  padding: 0.875rem 1.75rem;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.nth-btn-primary:hover {
+  box-shadow: 0 14px 36px -10px rgb(var(--nth-primary) / 0.5);
+  transform: translateY(-2px);
+}
+
+/* Brand gradient for logos (navbar + footer) */
+.nth-brand-gradient {
+  background: linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 50%, rgb(var(--nth-accent)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+.nth-brand-gradient-light {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, rgb(var(--nth-primary)) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* Landing page grid: all sections except first use this for alignment */
+.nth-landing-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  width: 100%;
+}
+
+.nth-section-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--nth-grid-columns), minmax(0, 1fr));
+  gap: var(--nth-landing-grid-gap);
+  width: 100%;
+  align-items: start;
+}
+
+/* App uses its own dark theme - avoid forcing white background */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+  }
+  a:hover {
+    color: #6366f1;
+  }
+  button {
+    background-color: #f9f9f9;
+  }
+}
