@@ -23,7 +23,7 @@ const itemVariants = {
   },
 };
 
-function JobCard({ job, hoveredId, setHoveredId, isAuthenticated }) {
+function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
   const isFree = job.isFree;
   const isHovered = hoveredId === job.id;
   // Logic: Show details if it's free OR if user is authenticated (assuming auth = premium access for this demo)
@@ -162,12 +162,13 @@ export default function JobOpeningsSection() {
           viewport={{ once: true, margin: "-50px" }}
         >
           {landingJobs.map((job) => (
-            <JobCard 
-                key={job.id} 
-                job={job} 
-                hoveredId={hoveredId} 
-                setHoveredId={setHoveredId}
-                isAuthenticated={isAuthenticated}
+            <JobCard
+              key={job.id}
+              job={job}
+              hoveredId={hoveredId}
+              setHoveredId={setHoveredId}
+              isAuthenticated={isAuthenticated}
+              pricingTo={pricingTo}
             />
           ))}
         </motion.div>
