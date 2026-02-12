@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import SectionContainer from './SectionContainer';
 
 const FOOTER_LINKS = [
@@ -9,6 +9,9 @@ const FOOTER_LINKS = [
 ];
 
 export default function Footer() {
+  const location = useLocation();
+  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
+
   return (
     <footer
       className="relative py-10 sm:py-12 md:py-16"
@@ -20,8 +23,9 @@ export default function Footer() {
             NTH
           </Link>
           <nav className="flex flex-wrap items-center gap-4 sm:gap-6">
-            {FOOTER_LINKS.map((link) =>
-              link.to.startsWith('mailto:') ? (
+            {FOOTER_LINKS.map((link) => {
+              const to = link.to === '/pricing' ? pricingTo : link.to;
+              return link.to.startsWith('mailto:') ? (
                 <a
                   key={link.label}
                   href={link.to}
@@ -32,13 +36,13 @@ export default function Footer() {
               ) : (
                 <Link
                   key={link.label}
-                  to={link.to}
+                  to={to}
                   className="text-sm font-medium text-slate-400 hover:text-white transition-colors"
                 >
                   {link.label}
                 </Link>
-              )
-            )}
+              );
+            })}
           </nav>
         </div>
         <div className="col-span-full mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-white/10">

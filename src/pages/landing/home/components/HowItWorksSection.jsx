@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { HiBriefcase, HiUserGroup, HiSparkles } from 'react-icons/hi2';
-import SectionContainer from '../../../components/SectionContainer';
+import SectionContainer from '../../../../components/SectionContainer';
 
 const STEPS = [
   {
@@ -63,7 +63,6 @@ export default function HowItWorksSection() {
         </motion.div>
 
         <div className="relative">
-          {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent dashed-line" />
 
           <motion.div
@@ -87,7 +86,6 @@ export default function HowItWorksSection() {
                     >
                       <Icon className="w-10 h-10" />
                     </div>
-                    {/* Step Number Badge */}
                     <div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center font-bold text-slate-400 shadow-sm text-sm">
                       {index + 1}
                     </div>

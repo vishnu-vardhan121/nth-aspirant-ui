@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import { SiShieldsdotio, SiGraphql, SiTarget } from 'react-icons/si';
-import SectionContainer from '../../../components/SectionContainer';
+import SectionContainer from '../../../../components/SectionContainer';
 
 const FEATURES = [
   {
@@ -46,6 +47,8 @@ const itemVariants = {
 };
 
 export default function ApplicationSection() {
+  const location = useLocation();
+  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
   return (
     <section
       id="app"
@@ -70,27 +73,31 @@ export default function ApplicationSection() {
               focus on growth, not guesswork.
             </p>
             
-            <motion.a
-              href="/pricing"
+            <Link
+              to={pricingTo}
               className="nth-btn-primary inline-flex items-center justify-center gap-3 text-lg group hover:text-white"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
             >
-              View Plans & Get Started
-              <svg
-                className="w-5 h-5 transition-transform group-hover:translate-x-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <motion.span
+                className="inline-flex items-center justify-center gap-3"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </svg>
-            </motion.a>
+                View Plans & Get Started
+                <svg
+                  className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </motion.span>
+            </Link>
           </motion.div>
 
           <motion.div

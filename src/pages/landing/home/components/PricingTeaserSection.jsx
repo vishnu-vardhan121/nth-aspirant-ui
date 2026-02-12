@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import SectionContainer from '../../../components/SectionContainer';
+import { Link, useLocation } from 'react-router-dom';
+import SectionContainer from '../../../../components/SectionContainer';
 
 const TIERS = [
   { name: 'Free', tagline: 'For freshers starting out.', price: '₹0' },
@@ -9,6 +9,9 @@ const TIERS = [
 ];
 
 export default function PricingTeaserSection() {
+  const location = useLocation();
+  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
+
   return (
     <section className="relative bg-white py-20 sm:py-28">
       <SectionContainer>
@@ -63,7 +66,7 @@ export default function PricingTeaserSection() {
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <Link
-            to="/pricing"
+            to={pricingTo}
             className="nth-btn-primary inline-flex items-center justify-center gap-2 text-lg px-8 py-3 hover:text-white"
           >
             Compare Plans

@@ -5,7 +5,7 @@ import {
   HiSparkles,
   HiUserGroup,
 } from 'react-icons/hi2';
-import SectionContainer from '../../../components/SectionContainer';
+import SectionContainer from '../../../../components/SectionContainer';
 
 const TRUST_CARDS = [
   {

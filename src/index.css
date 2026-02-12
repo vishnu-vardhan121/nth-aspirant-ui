@@ -7,7 +7,33 @@
   --nth-primary-light: 129 140 248; /* Indigo 400 */
   --nth-accent: 14 165 233; /* Sky 500 */
   --nth-violet: 168 85 247; /* Purple 500 */
+  --nth-violet: 168 85 247; /* Purple 500 */
+  
+  /* Semantic Status Colors */
+  --nth-success: 16 185 129; /* Emerald 500 */
+  --nth-error: 239 68 68; /* Red 500 */
+  --nth-warning: 245 158 11; /* Amber 500 */
+  --nth-info: 59 130 246; /* Blue 500 */
+  
+  /* Semantic Backgrounds (Soft) */
+  --nth-bg-success: 236 253 245; /* Emerald 50 */
+  --nth-bg-error: 254 242 242; /* Red 50 */
+  --nth-bg-warning: 255 251 235; /* Amber 50 */
+  --nth-bg-info: 239 246 255; /* Blue 50 */
 
+  /* Neutral Variables (Light Mode) */
+  --nth-bg-light: 255 255 255; /* White */
+  --nth-bg-soft: 248 250 252; /* Slate 50 */
+  --nth-text-primary-light: 15 23 42; /* Slate 900 */
+  --nth-text-secondary-light: 71 85 105; /* Slate 600 */
+  --nth-text-muted-light: 148 163 184; /* Slate 400 */
+  --nth-border-light: 226 232 240; /* Slate 200 */
+
+  /* Neutral Variables (Dark Mode) */
+  --nth-bg-dark: 15 23 42; /* Slate 900 */
+  --nth-text-primary-dark: 255 255 255; /* White */
+  --nth-text-secondary-dark: 203 213 225; /* Slate 300 */
+  --nth-text-muted-dark: 148 163 184; /* Slate 400 */
   /* Surfaces - dark (Rich Night Blue) */
   --nth-bg-hero-start: 2 6 23; /* Slate 950 */
   --nth-bg-hero-mid: 15 23 42; /* Slate 900 */

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
 import {
   SiReact,
@@ -233,15 +234,18 @@ export default function HeroSection() {
           </motion.p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-            <motion.a
-              href="/pricing"
-              className="nth-btn-primary min-w-[220px] text-lg hover:scale-105 active:scale-95 hover:text-white transition-all shadow-[0_0_40px_rgba(79,70,229,0.3)] hover:shadow-[0_0_60px_rgba(79,70,229,0.6)]"
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 1, duration: 0.5 }}
             >
-              Get Started Now
-            </motion.a>
+              <Link
+                to={`/pricing?from=${encodeURIComponent('/')}`}
+                className="nth-btn-primary min-w-[220px] text-lg hover:scale-105 active:scale-95 hover:text-white transition-all shadow-[0_0_40px_rgba(79,70,229,0.3)] hover:shadow-[0_0_60px_rgba(79,70,229,0.6)] inline-flex items-center justify-center py-4"
+              >
+                Get Started Now
+              </Link>
+            </motion.div>
 
             <motion.a
               href="/login"
