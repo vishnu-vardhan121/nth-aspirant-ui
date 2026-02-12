@@ -10,17 +10,24 @@ export default function AuthListener() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      dispatch(setAuth({ session, user: session?.user ?? null }));
-    });
+    let subscription;
+    try {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        dispatch(setAuth({ session, user: session?.user ?? null }));
+      }).catch((err) => {
+        console.warn('Auth getSession failed:', err);
+        dispatch(setAuth({ session: null, user: null }));
+      });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      dispatch(setAuth({ session, user: session?.user ?? null }));
-    });
-
-    return () => subscription.unsubscribe();
+      const result = supabase.auth.onAuthStateChange((_event, session) => {
+        dispatch(setAuth({ session, user: session?.user ?? null }));
+      });
+      subscription = result?.data?.subscription;
+    } catch (err) {
+      console.warn('Auth listener init failed:', err);
+      dispatch(setAuth({ session: null, user: null }));
+    }
+    return () => subscription?.unsubscribe?.();
   }, [dispatch]);
 
   return null;
