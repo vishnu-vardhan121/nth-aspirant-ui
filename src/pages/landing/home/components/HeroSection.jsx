@@ -1,3 +1,5 @@
+/*
+// Original Animated Hero Section Code - Commented Out
 import { useRef, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate } from 'framer-motion';
@@ -104,7 +106,6 @@ function TechIcon({ Icon, color, delay, duration, x, y, mouseX, mouseY }) {
         className="w-10 h-10 md:w-14 md:h-14 transition-all duration-300 opacity-30 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-hover:drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]" 
         style={{ color: 'inherit' }}
       />
-      {/* Tooltip on hover */}
       <span 
         className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-xs font-mono text-white bg-slate-900/80 px-2 py-1 rounded whitespace-nowrap pointer-events-none"
         style={{ color }}
@@ -129,7 +130,6 @@ export default function HeroSection() {
       className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden bg-[rgb(var(--nth-bg-hero-start))]"
       onMouseMove={handleMouseMove}
     >
-      {/* Dynamic Breathing Background */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div 
           className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[rgb(var(--nth-primary)/0.15)] rounded-full blur-[120px]"
@@ -149,7 +149,6 @@ export default function HeroSection() {
         />
       </div>
 
-      {/* Floating Particles */}
       <div className="absolute inset-0 pointer-events-none">
         {PARTICLES.map((p) => (
           <motion.div
@@ -175,14 +174,12 @@ export default function HeroSection() {
         ))}
       </div>
 
-      {/* Tech Icons Layer - Interactive */}
       <div className="absolute inset-0 z-0">
         {TECH_ICONS.map((icon, idx) => (
           <TechIcon key={idx} {...icon} mouseX={mouseX} mouseY={mouseY} />
         ))}
       </div>
 
-      {/* Content */}
       <div className="relative z-10 px-4 sm:px-6 text-center max-w-5xl mx-auto pointer-events-none">
         <motion.div
            className="pointer-events-auto"
@@ -263,6 +260,84 @@ export default function HeroSection() {
       </div>
 
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[rgb(var(--nth-bg-light))] via-[rgb(var(--nth-bg-light))/0.5] to-transparent z-20 pointer-events-none" />
+    </section>
+  );
+}
+*/
+
+import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+
+export default function HeroSection() {
+  return (
+    <section 
+      className="relative min-h-[100dvh] flex items-center justify-center overflow-hidden"
+    >
+      {/* Background Image with Overlay */}
+      <div 
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: "url('/hero-section/hero-image.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-slate-900/60" /> {/* Dark overlay for readability */}
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 px-4 sm:px-6 text-center max-w-5xl mx-auto">
+        <motion.div
+           initial={{ opacity: 0, y: 30 }}
+           animate={{ opacity: 1, y: 0 }}
+           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <motion.h1 
+            className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-white drop-shadow-2xl"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+          >
+            Direct <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 animate-gradient-x">Interviews</span> with <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400 animate-gradient-x">Companies</span>
+          </motion.h1>
+
+          <motion.p 
+            className="text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-light drop-shadow-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 1 }}
+          >
+            No need to apply on job portals. Connect directly with hiring managers.
+          </motion.p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-5 relative">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.5 }}
+            >
+              <Link
+                to={`/pricing?from=${encodeURIComponent('/')}`}
+                className="relative bg-white text-slate-900 hover:bg-slate-50 min-w-[280px] text-lg font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-all inline-flex items-center justify-center py-4 px-8 rounded-full"
+              >
+                Start Your Interviews
+              </Link>
+            </motion.div>
+
+            {/* Floating Badge - Sleek, Dark & Professional */}
+            <motion.div
+               className="hidden md:flex absolute right-[-160px] top-[-20px] bg-slate-900/90 backdrop-blur-md text-white px-5 py-3 rounded-2xl shadow-2xl rotate-3 border border-white/10 flex-col items-center transform hover:rotate-0 transition-all duration-300 origin-bottom-left"
+               initial={{ opacity: 0, x: 20, rotate: 6 }}
+               animate={{ opacity: 1, x: 0, rotate: 3 }}
+               transition={{ delay: 0.8, duration: 0.5, type: "spring" }}
+            >
+               <span className="text-[10px] font-bold tracking-[0.2em] text-indigo-400 uppercase mb-0.5">STATUS</span>
+               <span className="text-sm font-bold tracking-wide">INTERVIEWING</span>
+            </motion.div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Optional: 'Interview in Progress' Badge from reference if desired, 
+          removed for now to keep it clean as per 'dummy' request, 
+          but added a subtle bottom fade for section transition */}
+      <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[rgb(var(--nth-bg-light))] to-transparent z-20 pointer-events-none" />
     </section>
   );
 }

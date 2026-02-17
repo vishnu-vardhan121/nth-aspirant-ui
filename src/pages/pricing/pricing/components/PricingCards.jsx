@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import { HiCheck } from 'react-icons/hi2';
 
-function PlanCard({ plan, index }) {
+function PlanCard({ plan, index, onSelectPlan }) {
   const isPopular = plan.popular;
+
+  const handleClick = () => {
+    if (plan.ctaDisabled) return;
+    onSelectPlan?.(plan);
+  };
 
   return (
     <motion.div
@@ -37,6 +42,7 @@ function PlanCard({ plan, index }) {
       <button
         type="button"
         disabled={plan.ctaDisabled}
+        onClick={handleClick}
         className={`mt-auto w-full py-3 rounded-xl font-semibold text-sm transition-all ${
           plan.ctaDisabled
             ? 'bg-white/10 text-slate-500 cursor-not-allowed'
@@ -59,7 +65,7 @@ function PlanCard({ plan, index }) {
   );
 }
 
-export default function PricingCards({ plans }) {
+export default function PricingCards({ plans, track, onSelectPlan }) {
   return (
     <div className="flex flex-col flex-1 px-4 sm:px-6 pt-14 sm:pt-16 overflow-auto min-h-0">
       <div className="flex items-center justify-center mb-6">
@@ -74,7 +80,7 @@ export default function PricingCards({ plans }) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         {plans.map((plan, index) => (
-          <PlanCard key={plan.id} plan={plan} index={index} />
+          <PlanCard key={plan.id} plan={plan} index={index} onSelectPlan={onSelectPlan} />
         ))}
       </div>
     </div>

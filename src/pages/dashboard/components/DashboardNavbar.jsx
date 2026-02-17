@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { HiBell, HiChevronDown, HiBars3 } from 'react-icons/hi2';
 
-const PLAN_LABELS = { free: 'Free', pro: 'Pro', 'pro+': 'Pro+' };
+const PLAN_LABELS = { base: 'Base', silver: 'Silver', gold: 'Gold' };
 const TRACK_LABELS = { fresher: 'Fresher', experienced: 'Experienced' };
 
 function getInitial(email) {
@@ -22,7 +22,7 @@ export default function DashboardNavbar({ onMenuClick }) {
     ? user.user_metadata.full_name.trim().charAt(0).toUpperCase()
     : getInitial(user?.email);
 
-  const planLabel = PLAN_LABELS[plan] ?? 'Free';
+  const planLabel = PLAN_LABELS[plan] ?? 'Base';
   const trackLabel = TRACK_LABELS[track] ?? 'Fresher';
 
   return (

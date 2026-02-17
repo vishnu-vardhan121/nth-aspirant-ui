@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store';
 import ErrorBoundary from './components/ErrorBoundary';
+import { PageLoader } from './components/ui/Loader';
 import './index.css';
 import App from './App.jsx';
 
@@ -11,7 +12,7 @@ import App from './App.jsx';
 function RehydrateFallback() {
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-white">
-      <div className="text-slate-500 text-sm font-medium">Loading…</div>
+      <PageLoader size="lg" label="Loading…" />
     </div>
   );
 }

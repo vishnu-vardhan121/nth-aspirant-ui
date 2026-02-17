@@ -5,7 +5,10 @@ export default function RecentApplicationsList({ applications }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       <ul className="divide-y divide-slate-100">
-        {applications.map((app) => (
+        {applications.length === 0 ? (
+          <li className="px-5 py-6 text-center text-slate-500 text-sm">No applications yet</li>
+        ) : (
+        applications.map((app) => (
           <li key={app.id}>
             <Link
               to="/dashboard/applications"
@@ -21,7 +24,8 @@ export default function RecentApplicationsList({ applications }) {
               <p className="text-xs text-slate-400 mt-1">Applied {app.appliedAt}</p>
             </Link>
           </li>
-        ))}
+        ))
+        )}
       </ul>
     </div>
   );

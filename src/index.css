@@ -102,23 +102,21 @@ h1 {
   line-height: 1.1;
 }
 
+/* Buttons: no global dark style – each button uses Tailwind or .nth-btn-primary for consistent theme */
 button {
-  border-radius: 8px;
+  border-radius: 0.5rem;
   border: 1px solid transparent;
-  padding: 0.6em 1.2em;
+  padding: 0.5em 1em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
   cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #6366f1;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid rgb(var(--nth-primary));
+  outline-offset: 2px;
 }
 
 /* Hero bottom wave - seamless loop: linear so end/start sync */
@@ -192,4 +190,72 @@ button:focus-visible {
 }
 
 /* App uses its own dark theme - avoid forcing white background */
+
+/* Admin sidebar: force dark text so links are readable (override global a color) */
+.admin-sidebar nav a,
+.admin-sidebar .admin-sidebar-link {
+  color: #0f172a; /* slate-900 */
+}
+.admin-sidebar nav a:hover,
+.admin-sidebar .admin-sidebar-link:hover {
+  color: #0f172a;
+}
+.admin-sidebar .admin-sidebar-link.bg-indigo-100 {
+  color: #312e81; /* indigo-900 when active */
+}
+.admin-sidebar .admin-sidebar-link.bg-indigo-100:hover {
+  color: #312e81;
+}
+.admin-sidebar .shrink-0 p,
+.admin-sidebar .shrink-0 button {
+  color: #0f172a;
+}
+.admin-sidebar .shrink-0 p.text-slate-600 {
+  color: #475569; /* slate-600, still readable */
+}
+
+/* Loader theme: use app primary for all spinners (one segment transparent for spin effect) */
+.nth-loader {
+  border-color: rgb(var(--nth-primary));
+  border-top-color: transparent;
+}
+
+/* Dots loader: bouncing animation */
+@keyframes nth-dots-bounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-0.4em); }
+}
+.nth-loader-dot {
+  background-color: rgb(var(--nth-primary));
+  animation: nth-dots-bounce 1.4s ease-in-out infinite both;
+}
+.nth-loader-dot:nth-child(1) { animation-delay: 0s; }
+.nth-loader-dot:nth-child(2) { animation-delay: 0.16s; }
+.nth-loader-dot:nth-child(3) { animation-delay: 0.32s; }
+
+/* Pulse loader: scale + opacity */
+@keyframes nth-pulse {
+  0%, 100% { transform: scale(0.95); opacity: 0.7; }
+  50% { transform: scale(1); opacity: 1; }
+}
+.nth-loader-pulse {
+  background-color: rgb(var(--nth-primary));
+  animation: nth-pulse 1.2s ease-in-out infinite;
+}
+
+/* Skeleton shimmer */
+@keyframes nth-skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.nth-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgb(var(--nth-border-light)) 25%,
+    rgb(var(--nth-bg-soft)) 50%,
+    rgb(var(--nth-border-light)) 75%
+  );
+  background-size: 200% 100%;
+  animation: nth-skeleton-shimmer 1.5s ease-in-out infinite;
+}
 

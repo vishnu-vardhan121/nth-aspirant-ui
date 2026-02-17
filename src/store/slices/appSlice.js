@@ -4,7 +4,7 @@ const initialState = {
   theme: 'system',
   sidebarCollapsed: false,
   onboardingComplete: false,
-  plan: 'free', // 'free' | 'pro' | 'pro+'
+  plan: 'base', // 'base' | 'silver' | 'gold' (same for both tracks)
   track: 'fresher', // 'fresher' | 'experienced'
 };
 

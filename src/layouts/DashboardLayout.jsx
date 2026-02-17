@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
 import DashboardNavbar from '../pages/dashboard/components/DashboardNavbar';
+import MessageNotification from '../components/MessageNotification';
+import { supabase } from '../lib/supabase';
+import { playMessageSound } from '../lib/messageSound';
 import { HiXMark } from 'react-icons/hi2';
 
 const SIDEBAR_LINKS = [
   { label: 'Overview', to: '/dashboard' },
+  { label: 'Profile', to: '/dashboard/profile' },
   { label: 'Jobs', to: '/dashboard/jobs' },
   { label: 'My Applications', to: '/dashboard/applications' },
+  { label: 'Mock Interviews', to: '/dashboard/mocks' },
+  { label: 'Messages', to: '/dashboard/messages' },
 ];
 
 function SidebarContent({ user, onSignOut, onNavClick, showHeaderLink = true }) {
@@ -66,11 +72,94 @@ function SidebarContent({ user, onSignOut, onNavClick, showHeaderLink = true }) 
   );
 }
 
+const MESSAGES_PATH = '/dashboard/messages';
+
+function bodyPreview(body, maxLen = 60) {
+  if (!body) return '';
+  const t = body.replace(/\n/g, ' ').trim();
+  return t.length <= maxLen ? t : t.slice(0, maxLen) + '…';
+}
+
 export default function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [messageNotification, setMessageNotification] = useState({
+    show: false,
+    title: '',
+    bodyPreview: '',
+    link: MESSAGES_PATH,
+  });
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+
+  const dismissNotification = useCallback(() => {
+    setMessageNotification((prev) => ({ ...prev, show: false }));
+  }, []);
+
+  const channelRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof supabase.channel !== 'function') return;
+
+    let cancelled = false;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      const uid = session?.user?.id ?? user?.id;
+      if (!uid) return;
+
+      const uidStr = String(uid);
+      const ch = supabase
+        .channel(`dashboard-messages-${uidStr}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages' },
+          (payload) => {
+            const row = payload?.new;
+            if (!row) return;
+            const rowTo = row.to_aspirant_id != null ? String(row.to_aspirant_id) : null;
+            const rowFrom = row.from_aspirant_id != null ? String(row.from_aspirant_id) : null;
+            const toMe = rowTo === uidStr;
+            const isBroadcast = row.to_aspirant_id == null && row.from_admin_id != null;
+            const isFromMe = rowFrom === uidStr;
+            if (!toMe && !isBroadcast) return;
+            if (isFromMe) return;
+            setMessageNotification((prev) => {
+              const onMessagesPage = window.location.pathname === MESSAGES_PATH;
+              if (onMessagesPage) return prev;
+              return {
+                show: true,
+                title: isBroadcast ? 'New message from NTH Team' : 'New message',
+                bodyPreview: bodyPreview(row.body),
+                link: MESSAGES_PATH,
+              };
+            });
+            if (window.location.pathname !== MESSAGES_PATH) playMessageSound();
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR') {
+            console.warn('[Realtime] messages channel error – ensure Database → Replication has table "messages" in supabase_realtime.');
+          }
+        });
+
+      if (cancelled) {
+        supabase.removeChannel(ch);
+        return;
+      }
+      channelRef.current = ch;
+    })();
+
+    return () => {
+      cancelled = true;
+      const ch = channelRef.current;
+      if (ch) {
+        supabase.removeChannel(ch);
+        channelRef.current = null;
+      }
+    };
+  }, [user?.id]);
 
   const handleSignOut = () => {
     dispatch(signOut());
@@ -132,6 +221,8 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </main>
+
+      <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
     </div>
   );
 }

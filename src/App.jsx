@@ -1,13 +1,31 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthListener from './components/auth/AuthListener';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import RequireAspirantProfile from './components/auth/RequireAspirantProfile';
+import RequireAdminProfile from './components/auth/RequireAdminProfile';
 import DashboardLayout from './layouts/DashboardLayout';
+import AdminLayout from './layouts/AdminLayout';
 import LandingPage from './pages/landing/home/LandingPage';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
+import OnboardingPage from './pages/auth/OnboardingPage';
 import OverviewPage from './pages/dashboard/overview/OverviewPage';
 import JobsPage from './pages/dashboard/jobs/JobsPage';
 import ApplicationsPage from './pages/dashboard/applications/ApplicationsPage';
+import MocksPage from './pages/dashboard/mocks/MocksPage';
+import MessagesPage from './pages/dashboard/messages/MessagesPage';
+import ProfilePage from './pages/dashboard/profile/ProfilePage';
+import AdminOverviewPage from './pages/admin/AdminOverviewPage';
+import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminAdminsPage from './pages/admin/AdminAdminsPage';
+import CreateAdminPage from './pages/admin/CreateAdminPage';
+import AdminJobsPage from './pages/admin/AdminJobsPage';
+import AdminJobApplicantsPage from './pages/admin/AdminJobApplicantsPage';
+import AdminMocksPage from './pages/admin/AdminMocksPage';
+import AdminMessagesPage from './pages/admin/AdminMessagesPage';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import CreateJobPage from './pages/admin/CreateJobPage';
+import EditJobPage from './pages/admin/EditJobPage';
 
 function App() {
   return (
@@ -17,18 +35,53 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <RequireAdminProfile>
+                <AdminLayout />
+              </RequireAdminProfile>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminOverviewPage />} />
+          <Route path="users" element={<AdminUsersPage />} />
+          <Route path="admins" element={<AdminAdminsPage />} />
+          <Route path="admins/create" element={<CreateAdminPage />} />
+          <Route path="jobs" element={<AdminJobsPage />} />
+          <Route path="jobs/create" element={<CreateJobPage />} />
+          <Route path="jobs/:id/edit" element={<EditJobPage />} />
+          <Route path="jobs/:id/applicants" element={<AdminJobApplicantsPage />} />
+          <Route path="mocks" element={<AdminMocksPage />} />
+          <Route path="settings" element={<AdminSettingsPage />} />
+          <Route path="messages" element={<AdminMessagesPage />} />
+        </Route>
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <DashboardLayout />
+              <RequireAspirantProfile>
+                <DashboardLayout />
+              </RequireAspirantProfile>
             </ProtectedRoute>
           }
         >
           <Route index element={<OverviewPage />} />
+          <Route path="profile" element={<ProfilePage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
+          <Route path="mocks" element={<MocksPage />} />
+          <Route path="messages" element={<MessagesPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

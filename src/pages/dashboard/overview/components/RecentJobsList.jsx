@@ -4,7 +4,10 @@ export default function RecentJobsList({ jobs }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
       <ul className="divide-y divide-slate-100">
-        {jobs.map((job) => (
+        {jobs.length === 0 ? (
+          <li className="px-5 py-6 text-center text-slate-500 text-sm">No recent jobs</li>
+        ) : (
+        jobs.map((job) => (
           <li key={job.id}>
             <Link
               to="/dashboard/jobs"
@@ -21,7 +24,8 @@ export default function RecentJobsList({ jobs }) {
               <p className="text-sm text-slate-600 mt-0.5 line-clamp-1">{job.snippet}</p>
             </Link>
           </li>
-        ))}
+        ))
+        )}
       </ul>
     </div>
   );

@@ -16,13 +16,15 @@ function NavLink({ label, to, isScrolled, isApp }) {
   // - If isApp (not landing page): always dark text
   // - If isScrolled (scrolled down on landing): dark text
   // - Default (at top of landing): white text
+  const isHeroState = !isApp && !isScrolled;
+
   const textColorClass = (isApp || isScrolled) 
     ? 'text-slate-600 hover:text-[rgb(var(--nth-primary))]' 
     : 'text-white/90 hover:text-white';
 
   const underlineColor = (isApp || isScrolled)
     ? 'rgb(var(--nth-primary) / 0.8)'
-    : 'rgb(var(--nth-accent) / 0.8)';
+    : 'white';
 
   const content = (
     <span className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${textColorClass}`}>
@@ -91,12 +93,12 @@ export default function Navbar() {
   const navbarStyles = {
     background: showLightStyle || isMobileMenuOpen
       ? (showLightStyle ? 'rgba(255, 255, 255, 0.95)' : 'rgba(15, 23, 42, 0.95)')
-      : 'rgba(15, 23, 42, 0.4)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+      : '#0B1120', // Solid dark navy for hero section (matches reference)
+    backdropFilter: 'none',
+    WebkitBackdropFilter: 'none',
     border: showLightStyle 
       ? '1px solid rgba(30, 58, 138, 0.08)' 
-      : '1px solid rgba(255, 255, 255, 0.06)',
+      : 'none',
     boxShadow: showLightStyle ? '0 4px 24px rgba(0, 0, 0, 0.06)' : 'none',
     transition: 'all 0.3s ease'
   };
@@ -112,22 +114,17 @@ export default function Navbar() {
         className="max-w-6xl mx-auto flex items-center justify-between rounded-xl sm:rounded-2xl px-4 sm:px-6 py-2.5 sm:py-3 transition-all duration-300 relative"
         style={navbarStyles}
       >
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 select-none">
-          <motion.span
-            className="inline-block"
-            whileHover={{ scale: 1.02 }}
-            transition={{ type: 'spring', stiffness: 400 }}
-          >
-            <span
-              className={`inline-block text-xl sm:text-2xl font-extrabold tracking-tight ${
-                showLightStyle ? 'nth-brand-gradient' : 'nth-brand-gradient-light'
-              }`}
+            <Link 
+              to="/" 
+              className="flex items-center gap-2 group"
+              onClick={(e) => handleLinkClick(e, '/')}
             >
-              NTH
-            </span>
-          </motion.span>
-        </Link>
+              <img 
+                src={showLightStyle ? "/lologo.png" : "/lilogo.png"}
+                alt="Naveen Talent Hub"
+                className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105"
+              />
+            </Link>
 
         {/* Desktop Links */}
         <ul className="hidden md:flex items-center gap-1">

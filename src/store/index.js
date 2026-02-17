@@ -3,6 +3,8 @@ import { persistStore, persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage'; // localStorage
 import appReducer from './slices/appSlice';
 import authReducer from './slices/authSlice';
+import aspirantReducer from './slices/aspirantSlice';
+import adminReducer from './slices/adminSlice';
 
 const persistConfig = {
   key: 'nth-root',
@@ -14,6 +16,8 @@ const persistConfig = {
 const rootReducer = combineReducers({
   app: appReducer,
   auth: authReducer,
+  aspirant: aspirantReducer,
+  admin: adminReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
