@@ -9,22 +9,14 @@ const STATIC_LINKS = [
   { label: 'Pricing', to: '/pricing' },
 ];
 
-function NavLink({ label, to, isScrolled, isApp }) {
+function NavLink({ label, to, showLightNav }) {
   const isExternal = to.startsWith('#');
-  
-  // Text color logic:
-  // - If isApp (not landing page): always dark text
-  // - If isScrolled (scrolled down on landing): dark text
-  // - Default (at top of landing): white text
-  const isHeroState = !isApp && !isScrolled;
-
-  const textColorClass = (isApp || isScrolled) 
-    ? 'text-slate-600 hover:text-[rgb(var(--nth-primary))]' 
+  // When navbar is light (white bg), use dark text for visibility. Otherwise white text.
+  const textColorClass = showLightNav
+    ? 'text-slate-800 hover:text-[rgb(var(--nth-primary))]'
     : 'text-white/90 hover:text-white';
 
-  const underlineColor = (isApp || isScrolled)
-    ? 'rgb(var(--nth-primary) / 0.8)'
-    : 'white';
+  const underlineColor = showLightNav ? 'rgb(var(--nth-primary) / 0.8)' : 'white';
 
   const content = (
     <span className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${textColorClass}`}>
@@ -86,9 +78,8 @@ export default function Navbar() {
     }
   });
 
-  // Force 'app' style (light bg, dark text) if not on landing page
-  // OR if on landing page but scrolled down
-  const showLightStyle = !isLanding || isScrolled;
+  // On landing page: always white navbar (no dark/white shifting). Else: light style when scrolled or on other pages.
+  const showLightStyle = isLanding ? true : isScrolled;
 
   const navbarStyles = {
     background: showLightStyle || isMobileMenuOpen
@@ -117,7 +108,7 @@ export default function Navbar() {
             <Link 
               to="/" 
               className="flex items-center gap-2 group"
-              onClick={(e) => handleLinkClick(e, '/')}
+              onClick={() => setIsMobileMenuOpen(false)}
             >
               <img 
                 src={showLightStyle ? "/lologo.png" : "/lilogo.png"}
@@ -138,8 +129,8 @@ export default function Navbar() {
                     setIsMobileMenuOpen(false);
                   }}
                   className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${
-                    !isLanding || isScrolled
-                      ? 'text-slate-600 hover:text-[rgb(var(--nth-primary))]'
+                    showLightStyle
+                      ? 'text-slate-800 hover:text-[rgb(var(--nth-primary))]'
                       : 'text-white/90 hover:text-white'
                   }`}
                 >
@@ -149,8 +140,7 @@ export default function Navbar() {
                 <NavLink
                   label={link.label}
                   to={link.to}
-                  isScrolled={isScrolled}
-                  isApp={!isLanding}
+                  showLightNav={showLightStyle}
                 />
               )}
             </li>
@@ -164,7 +154,7 @@ export default function Navbar() {
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           animate={isMobileMenuOpen ? "open" : "closed"}
           style={{ 
-            color: showLightStyle ? '#475569' : 'white',
+            color: showLightStyle ? '#1e293b' : 'white',
             background: 'transparent',
             border: 'none',
             outline: 'none'
@@ -214,7 +204,7 @@ export default function Navbar() {
                       type="button"
                       className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-colors ${
                         showLightStyle
-                          ? 'text-slate-600 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
+                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
                           : 'text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                       onClick={() => {
@@ -229,7 +219,7 @@ export default function Navbar() {
                       to={link.to}
                       className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
                         showLightStyle
-                          ? 'text-slate-600 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
+                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
                           : 'text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}

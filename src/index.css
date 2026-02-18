@@ -97,6 +97,22 @@ body {
   background-color: rgb(var(--nth-bg-light));
 }
 
+/* Landing page: no horizontal scroll and hide vertical scrollbar (page still scrolls) */
+.nth-landing-root {
+  overflow-x: hidden;
+}
+
+html.nth-landing-page,
+body.nth-landing-page {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html.nth-landing-page::-webkit-scrollbar,
+body.nth-landing-page::-webkit-scrollbar {
+  display: none;
+}
+
 h1 {
   font-size: 3.2em;
   line-height: 1.1;

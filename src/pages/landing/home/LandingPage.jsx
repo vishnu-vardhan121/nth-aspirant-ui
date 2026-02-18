@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import HeroSection from './components/HeroSection';
@@ -9,25 +9,21 @@ import ApplicationSection from './components/ApplicationSection';
 import PricingTeaserSection from './components/PricingTeaserSection';
 import CTAStrip from './components/CTAStrip';
 
-export default function LandingPage() {
-  const [navVariant, setNavVariant] = useState('hero');
+const LANDING_CLASS = 'nth-landing-page';
 
+export default function LandingPage() {
   useEffect(() => {
-    const handleScroll = () => {
-      const hero = document.getElementById('hero');
-      if (!hero) return;
-      const rect = hero.getBoundingClientRect();
-      const isPastHero = rect.bottom < window.innerHeight * 0.5;
-      setNavVariant(isPastHero ? 'app' : 'hero');
+    document.documentElement.classList.add(LANDING_CLASS);
+    document.body.classList.add(LANDING_CLASS);
+    return () => {
+      document.documentElement.classList.remove(LANDING_CLASS);
+      document.body.classList.remove(LANDING_CLASS);
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar variant={navVariant} />
+    <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
+      <Navbar />
       <HeroSection />
       <div className="nth-landing-grid">
         <JobOpeningsSection />
