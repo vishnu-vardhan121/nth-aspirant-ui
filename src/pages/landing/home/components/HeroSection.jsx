@@ -17,7 +17,7 @@ export default function HeroSection() {
       {/* Content – no motion */}
       <div className="relative z-10 px-4 sm:px-6 text-center max-w-5xl mx-auto">
         <div>
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6 text-white drop-shadow-2xl">
+          <h1 className="text-2xl min-[375px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold tracking-tight leading-[1.15] mb-4 sm:mb-6 text-white drop-shadow-2xl max-w-3xl mx-auto">
             Direct{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-indigo-400">
               Interviews
@@ -28,7 +28,7 @@ export default function HeroSection() {
             </span>
           </h1>
 
-          <p className="text-xl sm:text-2xl text-slate-300 max-w-2xl mx-auto mb-10 leading-relaxed font-light drop-shadow-md">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-300 max-w-2xl mx-auto mb-8 sm:mb-10 leading-relaxed font-light drop-shadow-md px-1">
             No need to apply on job portals. Connect directly with hiring managers.
           </p>
 

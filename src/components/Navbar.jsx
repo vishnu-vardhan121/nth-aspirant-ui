@@ -197,7 +197,7 @@ export default function Navbar() {
             }`}
           >
             <ul className="flex flex-col gap-2">
-              {navLinks.filter((l) => l.to === '/pricing' || l.to === '/login' || l.to === '/dashboard' || l.isSignOut).map((link) => (
+              {navLinks.filter((l) => (l.to && (l.to.startsWith('/pricing') || l.to === '/login' || l.to === '/dashboard')) || l.isSignOut).map((link) => (
                 <li key={link.label}>
                   {link.isSignOut ? (
                     <button
