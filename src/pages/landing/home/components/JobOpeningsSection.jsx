@@ -17,7 +17,6 @@
  * }
  */
 
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { HiMapPin, HiSparkles, HiArrowRight, HiLockClosed, HiBriefcase } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
@@ -25,42 +24,6 @@ import { PageLoader } from '../../../../components/ui/Loader';
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../../store/hooks';
 import { supabase } from '../../../../lib/supabase';
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { 
-      staggerChildren: 0.08,
-      delayChildren: 0.15
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { 
-    y: 30, 
-    opacity: 0,
-    scale: 0.95
-  },
-  visible: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    transition: { 
-      duration: 0.6,
-      ease: [0.22, 1, 0.36, 1]
-    },
-  },
-  exit: {
-    y: -20,
-    opacity: 0,
-    scale: 0.95,
-    transition: {
-      duration: 0.3
-    }
-  }
-};
 
 function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
   const isFree = job.isFree;
@@ -85,38 +48,23 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
   };
 
   return (
-    <motion.article
-      variants={itemVariants}
-      layout
-      className={`relative group rounded-2xl overflow-hidden transition-all duration-500 flex flex-col h-full ${
-        isHovered 
-          ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]' 
+    <article
+      className={`relative group rounded-2xl overflow-hidden transition-shadow duration-300 flex flex-col h-full ${
+        isHovered
+          ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]'
           : 'shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_15px_45px_-12px_rgba(0,0,0,0.12)]'
       }`}
       onMouseEnter={() => setHoveredId(job.id)}
       onMouseLeave={() => setHoveredId(null)}
-      whileHover={{ y: -4 }}
     >
-      {/* Animated Gradient Background */}
-      <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-500 ${
-        isFree 
-          ? 'from-emerald-50 via-white to-teal-50/30' 
+      {/* Static gradient background */}
+      <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-300 ${
+        isFree
+          ? 'from-emerald-50 via-white to-teal-50/30'
           : 'from-violet-50 via-white to-indigo-50/30'
       } ${isHovered ? 'opacity-100' : 'opacity-70'}`} />
-      
-      {/* Shimmer Effect on Hover */}
-      <motion.div 
-        className={`absolute inset-0 bg-gradient-to-r ${
-          isFree 
-            ? 'from-transparent via-emerald-100/40 to-transparent' 
-            : 'from-transparent via-violet-100/40 to-transparent'
-        }`}
-        initial={{ x: '-100%' }}
-        animate={{ x: isHovered ? '100%' : '-100%' }}
-        transition={{ duration: 0.8, ease: "easeInOut" }}
-      />
 
-      {/* Border Glow */}
+      {/* Border */}
       <div className={`absolute inset-0 rounded-2xl transition-opacity duration-500 ${
         isFree
           ? 'ring-1 ring-emerald-200/60'
@@ -128,25 +76,17 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
         <div className="flex items-start justify-between gap-3 mb-4 sm:mb-5">
           <div className="flex flex-wrap gap-2">
             {isFree ? (
-              <motion.span 
-                className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-200/50"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <HiSparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> 
+              <span className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-emerald-200/50">
+                <HiSparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span className="hidden xs:inline">Free</span>
                 <span className="inline xs:hidden">F</span>
-              </motion.span>
+              </span>
             ) : (
-              <motion.span 
-                className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-violet-200/50"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <HiBriefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> 
+              <span className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-violet-200/50">
+                <HiBriefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span className="hidden xs:inline">Premium</span>
                 <span className="inline xs:hidden">Pro</span>
-              </motion.span>
+              </span>
             )}
           </div>
           
@@ -197,21 +137,13 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
 
         {/* Skills Tags */}
         <div className="flex flex-wrap gap-2 mt-auto">
-          {job.requirements.slice(0, 3).map((req, idx) => (
-            <motion.span
+          {job.requirements.slice(0, 3).map((req) => (
+            <span
               key={req}
-              className="inline-block px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm text-slate-700 text-xs font-medium border border-slate-200/60 shadow-sm"
-              whileHover={{ 
-                scale: 1.05, 
-                backgroundColor: 'rgb(248 250 252)',
-                borderColor: isFree ? 'rgb(16 185 129 / 0.3)' : 'rgb(139 92 246 / 0.3)'
-              }}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: idx * 0.05 }}
+              className="inline-block px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm text-slate-700 text-xs font-medium border border-slate-200/60 shadow-sm hover:bg-slate-50 transition-colors"
             >
               {req}
-            </motion.span>
+            </span>
           ))}
           {job.requirements.length > 3 && (
             <span className="inline-flex items-center justify-center px-2.5 py-1.5 text-slate-500 text-xs font-semibold bg-slate-100/60 rounded-lg border border-slate-200/60">
@@ -227,11 +159,7 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
               Application closed
             </div>
           ) : canView ? (
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
+            <div>
               <button
                 type="button"
                 onClick={handleApply}
@@ -244,18 +172,12 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
               >
                 <span className="flex items-center justify-center gap-2.5">
                   <span>{applying ? 'Applying…' : 'Apply Now'}</span>
-                  <motion.span initial={{ x: 0 }} whileHover={{ x: 4 }} transition={{ duration: 0.3, ease: "easeOut" }}>
-                    <HiArrowRight className="w-4 h-4" />
-                  </motion.span>
+                  <HiArrowRight className="w-4 h-4" />
                 </span>
               </button>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
+            <div>
               <Link
                 to={pricingTo}
                 className="block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide border-2 border-slate-300 text-slate-700 bg-white/90 backdrop-blur-sm hover:border-violet-500 hover:text-violet-700 hover:bg-gradient-to-r hover:from-violet-50 hover:to-indigo-50 transition-all duration-300 shadow-sm hover:shadow-lg"
@@ -265,11 +187,11 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
                   <span>Unlock Position</span>
                 </span>
               </Link>
-            </motion.div>
+            </div>
           )}
         </div>
       </div>
-    </motion.article>
+    </article>
   );
 }
 
@@ -351,67 +273,28 @@ export default function JobOpeningsSection() {
         }} />
       </div>
 
-      {/* Animated Ambient Gradients */}
+      {/* Static ambient gradients (no animation for performance) */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <motion.div 
-          className="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] rounded-full bg-gradient-to-br from-violet-300/20 via-indigo-200/15 to-transparent blur-3xl"
-          animate={{ 
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-            rotate: [0, 90, 0]
-          }}
-          transition={{ 
-            duration: 20, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-        />
-        <motion.div 
-          className="absolute -bottom-[20%] -left-[10%] w-[700px] h-[700px] rounded-full bg-gradient-to-tr from-emerald-300/20 via-teal-200/15 to-transparent blur-3xl"
-          animate={{ 
-            scale: [1, 1.15, 1],
-            opacity: [0.25, 0.45, 0.25],
-            rotate: [0, -90, 0]
-          }}
-          transition={{ 
-            duration: 18, 
-            repeat: Infinity, 
-            ease: "easeInOut",
-            delay: 2
-          }}
-        />
+        <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-violet-300/15 via-indigo-200/10 to-transparent blur-2xl" />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-emerald-300/15 via-teal-200/10 to-transparent blur-2xl" />
       </div>
 
       <SectionContainer useGrid>
         {/* Header Section */}
-        <motion.div
-          className="col-span-full text-center mb-16 px-4"
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        >
+        <div className="col-span-full text-center mb-16 px-4">
           {/* Status Badge */}
-          <motion.div 
-            className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/60 text-slate-700 text-xs sm:text-sm font-bold mb-6 sm:mb-8 shadow-lg shadow-slate-200/50"
-            initial={{ scale: 0.9, opacity: 0 }}
-            whileInView={{ scale: 1, opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            whileHover={{ scale: 1.05 }}
-          >
+          <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/60 text-slate-700 text-xs sm:text-sm font-bold mb-6 sm:mb-8 shadow-lg shadow-slate-200/50">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
             Currently Hiring
-          </motion.div>
+          </div>
 
           {/* Main Heading */}
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-4 sm:mb-6 leading-[1.1] px-4">
             <span className="text-slate-900">Find your next</span>
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600 animate-gradient">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600">
               career opportunity
             </span>
           </h2>
@@ -422,46 +305,32 @@ export default function JobOpeningsSection() {
             <br className="hidden sm:block" />
             <span className="block sm:inline"> Your perfect role is waiting.</span>
           </p>
-        </motion.div>
+        </div>
 
-        {/* Enhanced Tab Toggle */}
-        <motion.div 
-          className="col-span-full flex justify-center mb-14 px-4"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-        >
+        {/* Tab Toggle */}
+        <div className="col-span-full flex justify-center mb-14 px-4">
           <div className="relative inline-flex p-1.5 sm:p-2 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 w-full max-w-md sm:w-auto">
             <div className="absolute inset-0 bg-gradient-to-r from-violet-50/50 via-transparent to-emerald-50/50 rounded-2xl opacity-60" />
-            
             {['free', 'premium'].map((tab) => (
-              <motion.button
+              <button
                 key={tab}
+                type="button"
                 onClick={() => setActiveTab(tab)}
-                className={`relative z-10 flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-300 capitalize sm:min-w-[140px] ${
-                  activeTab === tab 
+                className={`relative z-10 flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-colors duration-200 capitalize sm:min-w-[140px] ${
+                  activeTab === tab
                     ? tab === 'free'
                       ? 'text-emerald-700'
                       : 'text-violet-700'
                     : 'text-slate-500 hover:text-slate-700'
                 }`}
-                whileHover={{ scale: activeTab !== tab ? 1.02 : 1 }}
-                whileTap={{ scale: 0.98 }}
               >
                 {activeTab === tab && (
-                  <motion.div
-                    layoutId="activeTab"
+                  <div
                     className={`absolute inset-0 rounded-xl shadow-md ${
                       tab === 'free'
                         ? 'bg-gradient-to-br from-emerald-100 to-teal-100 border border-emerald-200/60'
                         : 'bg-gradient-to-br from-violet-100 to-indigo-100 border border-violet-200/60'
                     }`}
-                    transition={{ 
-                      type: "spring", 
-                      stiffness: 350, 
-                      damping: 30 
-                    }}
                   />
                 )}
                 <span className="relative z-10 flex items-center justify-center gap-2">
@@ -472,10 +341,10 @@ export default function JobOpeningsSection() {
                   )}
                   <span className="whitespace-nowrap">{tab} Jobs</span>
                 </span>
-              </motion.button>
+              </button>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* Jobs Grid */}
         <div className="col-span-full px-4 sm:px-0">
@@ -484,84 +353,51 @@ export default function JobOpeningsSection() {
               <PageLoader size="lg" label="Loading jobs…" variant="dots" />
             </div>
           ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              exit="hidden"
-            >
-              {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    hoveredId={hoveredId}
-                    setHoveredId={setHoveredId}
-                    isAuthenticated={isAuthenticated}
-                    pricingTo={pricingTo}
-                  />
-                ))
-              ) : (
-                <motion.div 
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  exit={{ opacity: 0, y: -20 }}
-                  className="col-span-full text-center py-16 sm:py-24 px-4"
-                >
-                  <div className="inline-flex flex-col items-center gap-4 p-6 sm:p-8 rounded-2xl bg-white/60 backdrop-blur-sm border border-slate-200/60 max-w-md mx-auto">
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-100 flex items-center justify-center">
-                      <HiBriefcase className="w-7 h-7 sm:w-8 sm:h-8 text-slate-400" />
-                    </div>
-                    <p className="text-slate-600 text-base sm:text-lg font-medium">
-                      No {activeTab} positions available right now
-                    </p>
-                    <p className="text-slate-500 text-sm">
-                      Check back soon for new opportunities
-                    </p>
+          <div
+            key={activeTab}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 lg:gap-8"
+          >
+            {filteredJobs.length > 0 ? (
+              filteredJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  hoveredId={hoveredId}
+                  setHoveredId={setHoveredId}
+                  isAuthenticated={isAuthenticated}
+                  pricingTo={pricingTo}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-16 sm:py-24 px-4">
+                <div className="inline-flex flex-col items-center gap-4 p-6 sm:p-8 rounded-2xl bg-white/60 backdrop-blur-sm border border-slate-200/60 max-w-md mx-auto">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                    <HiBriefcase className="w-7 h-7 sm:w-8 sm:h-8 text-slate-400" />
                   </div>
-</motion.div>
-          )}
-            </motion.div>
-          </AnimatePresence>
+                  <p className="text-slate-600 text-base sm:text-lg font-medium">
+                    No {activeTab} positions available right now
+                  </p>
+                  <p className="text-slate-500 text-sm">
+                    Check back soon for new opportunities
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
           )}
         </div>
 
         {/* View All Link */}
-        <motion.div 
-          className="col-span-full text-center mt-12 sm:mt-16 px-4"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.5 }}
-        >
-          <Link 
-            to="/dashboard/jobs" 
-            className="inline-flex items-center gap-2.5 text-slate-600 hover:text-violet-600 font-semibold text-sm sm:text-base transition-all duration-300 group px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-violet-50/50"
+        <div className="col-span-full text-center mt-12 sm:mt-16 px-4">
+          <Link
+            to="/dashboard/jobs"
+            className="inline-flex items-center gap-2.5 text-slate-600 hover:text-violet-600 font-semibold text-sm sm:text-base transition-colors duration-200 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-violet-50/50"
           >
             <span>Explore all positions</span>
-            <motion.span
-              animate={{ x: [0, 4, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <HiArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
-            </motion.span>
+            <HiArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
           </Link>
-        </motion.div>
+        </div>
       </SectionContainer>
-
-      <style jsx>{`
-        @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient {
-          background-size: 200% auto;
-          animation: gradient 3s ease infinite;
-        }
-      `}</style>
     </section>
   );
 }
