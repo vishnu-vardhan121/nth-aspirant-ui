@@ -19,8 +19,8 @@ export default function Footer() {
     >
       <SectionContainer useGrid>
         <div className="col-span-full flex flex-col gap-6 sm:gap-8 md:flex-row md:items-center md:justify-between">
-          <Link to="/" className="nth-brand-gradient-light text-lg sm:text-xl font-extrabold tracking-tight">
-            NTH
+          <Link to="/" className="flex items-center">
+            <img src="/lilogo.png" alt="NTH" className="h-8 sm:h-9 w-auto object-contain" />
           </Link>
           <nav className="flex flex-wrap items-center gap-4 sm:gap-6">
             {FOOTER_LINKS.map((link) => {

@@ -6,7 +6,7 @@ import { signOut } from '../store/slices/authSlice';
 
 const STATIC_LINKS = [
   { label: 'How It Works', to: '#how-it-works' },
-  { label: 'Pricing', to: '/pricing' },
+  { label: 'Request for mock', shortLabel: 'Request mock', to: '/pricing', isCta: true },
 ];
 
 function NavLink({ label, to, showLightNav }) {
@@ -118,7 +118,7 @@ export default function Navbar() {
             </Link>
 
         {/* Desktop Links */}
-        <ul className="hidden md:flex items-center gap-1">
+        <ul className="hidden md:flex items-center gap-2">
           {navLinks.map((link) => (
             <li key={link.label}>
               {link.isSignOut ? (
@@ -136,6 +136,13 @@ export default function Navbar() {
                 >
                   {link.label}
                 </button>
+              ) : link.isCta ? (
+                <Link
+                  to={link.to}
+                  className="nth-nav-cta inline-flex items-center justify-center px-4 py-2 rounded-full text-sm font-semibold transition-all hover:scale-[1.02]"
+                >
+                  {link.label}
+                </Link>
               ) : (
                 <NavLink
                   label={link.label}
@@ -214,6 +221,22 @@ export default function Navbar() {
                     >
                       {link.label}
                     </button>
+                  ) : link.isCta ? (
+                    <Link
+                      to={link.to}
+                      className="nth-nav-cta flex items-center justify-center w-full px-4 py-3.5 rounded-xl font-semibold transition-all"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.shortLabel || link.label}
+                    </Link>
+                  ) : link.to === '/login' ? (
+                    <Link
+                      to={link.to}
+                      className="nth-nav-login-btn flex items-center justify-center w-full px-4 py-3.5 rounded-xl font-semibold transition-all border-2 text-base"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      {link.label}
+                    </Link>
                   ) : (
                     <Link
                       to={link.to}

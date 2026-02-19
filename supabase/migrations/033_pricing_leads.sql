@@ -5,6 +5,8 @@ create table if not exists public.pricing_leads (
   id uuid primary key default gen_random_uuid(),
   plan_id text not null,
   track text not null check (track in ('fresher', 'experienced')),
+  name text,
+  looking_for_role text,
   email text not null,
   contact_number text not null,
   graduation_pass text,
@@ -16,6 +18,8 @@ create table if not exists public.pricing_leads (
 );
 
 comment on table public.pricing_leads is 'Leads from pricing page when user selects a plan (no auth).';
+comment on column public.pricing_leads.name is 'Lead name.';
+comment on column public.pricing_leads.looking_for_role is 'Role or job title they are looking for.';
 comment on column public.pricing_leads.message is 'Optional message from the user.';
 
 alter table public.pricing_leads enable row level security;
@@ -28,6 +32,8 @@ create policy "pricing_leads_admin_select"
 create or replace function public.submit_pricing_lead(
   p_plan_id text,
   p_track text,
+  p_name text default null,
+  p_looking_for_role text default null,
   p_email text,
   p_contact_number text,
   p_graduation_pass text default null,
@@ -50,10 +56,11 @@ begin
   end if;
 
   insert into public.pricing_leads (
-    plan_id, track, email, contact_number, graduation_pass,
+    plan_id, track, name, looking_for_role, email, contact_number, graduation_pass,
     current_company, experience_years, current_ctc, message
   ) values (
-    trim(p_plan_id), p_track, trim(p_email), trim(p_contact_number), nullif(trim(p_graduation_pass), ''),
+    trim(p_plan_id), p_track, nullif(trim(p_name), ''), nullif(trim(p_looking_for_role), ''),
+    trim(p_email), trim(p_contact_number), nullif(trim(p_graduation_pass), ''),
     nullif(trim(p_current_company), ''), nullif(trim(p_experience_years), ''), nullif(trim(p_current_ctc), ''),
     nullif(trim(p_message), '')
   );
@@ -79,6 +86,8 @@ begin
       'id', id,
       'plan_id', plan_id,
       'track', track,
+      'name', name,
+      'looking_for_role', looking_for_role,
       'email', email,
       'contact_number', contact_number,
       'graduation_pass', graduation_pass,
