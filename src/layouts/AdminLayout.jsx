@@ -3,7 +3,8 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
-import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText } from 'react-icons/hi2';
+import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
+import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList } from 'react-icons/hi2';
 
 const navLinkClass = (isActive) =>
   `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors admin-sidebar-link ${
@@ -25,6 +26,7 @@ export default function AdminLayout() {
     dispatch(signOut());
     dispatch(clearAspirantProfile());
     dispatch(clearAdminProfile());
+    dispatch(clearInterviewerProfile());
     navigate('/');
   };
 
@@ -76,6 +78,13 @@ export default function AdminLayout() {
           >
             <HiChatBubbleBottomCenterText className="w-5 h-5 shrink-0" />
             Messages
+          </Link>
+          <Link
+            to="/admin/leads"
+            className={navLinkClass(isActive('/admin/leads'))}
+          >
+            <HiClipboardDocumentList className="w-5 h-5 shrink-0" />
+            Leads
           </Link>
           <Link
             to="/admin/settings"

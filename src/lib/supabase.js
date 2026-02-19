@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-/** Stub when env is missing so the app still mounts (e.g. on Vercel without env vars). */
 const noopSupabase = {
   auth: {
     getSession: () => Promise.resolve({ data: { session: null }, error: null }),
@@ -12,6 +11,9 @@ const noopSupabase = {
     signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
     signOut: () => Promise.resolve(),
   },
+  from: () => ({ select: () => ({ eq: () => ({ then: (f) => f({ data: [], error: null }) }), update: () => ({ eq: () => ({ then: (f) => f({ error: { message: 'Supabase not configured' } }) }) }), insert: () => ({ then: (f) => f({ error: { message: 'Supabase not configured' } }) }) }) }),
+  rpc: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+  functions: { invoke: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }) },
 };
 
 let supabase;
@@ -19,13 +21,9 @@ try {
   if (supabaseUrl && supabaseAnonKey) {
     supabase = createClient(supabaseUrl, supabaseAnonKey);
   } else {
-    console.warn(
-      'Supabase env missing. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in Vercel project settings.'
-    );
     supabase = noopSupabase;
   }
 } catch (e) {
-  console.warn('Supabase init failed:', e);
   supabase = noopSupabase;
 }
 

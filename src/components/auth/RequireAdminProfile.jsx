@@ -21,6 +21,7 @@ export default function RequireAdminProfile({ children }) {
   }
 
   if (!adminProfile) return <Navigate to="/dashboard" replace />;
+  if (adminProfile.role === 'interviewer') return <Navigate to="/interviewer" replace />;
 
   return children;
 }

@@ -35,7 +35,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-5 relative">
             <Link
               to={`/pricing?from=${encodeURIComponent('/')}`}
-              className="relative bg-white text-slate-900 hover:bg-slate-50 min-w-[280px] text-lg font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-colors inline-flex items-center justify-center py-4 px-8 rounded-full"
+              className="relative bg-white text-slate-900 hover:bg-slate-50 min-w-[280px] text-lg font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.5)] hover:-translate-y-0.5 active:translate-y-0 transition-colors inline-flex items-center justify-center py-4 px-8 rounded-full animate-hero-cta-blink"
             >
               Start Your Interviews
             </Link>

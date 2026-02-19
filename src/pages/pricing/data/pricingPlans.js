@@ -6,8 +6,8 @@ const PLANS_BASE_SILVER_GOLD = [
   {
     id: 'base',
     name: 'Base',
-    price: '₹399',
-    priceNote: '/ 3 months',
+    price: 'xxx',
+    priceNote: '',
     description: 'Essential mock interviews and feedback',
     ctaText: 'Choose Base',
     ctaDisabled: false,
@@ -22,8 +22,8 @@ const PLANS_BASE_SILVER_GOLD = [
   {
     id: 'silver',
     name: 'Silver',
-    price: '₹1,200',
-    priceNote: '/ 3 months',
+    price: 'xxx',
+    priceNote: '',
     description: 'Added direct interview opportunities',
     ctaText: 'Choose Silver',
     ctaDisabled: false,
@@ -38,8 +38,8 @@ const PLANS_BASE_SILVER_GOLD = [
   {
     id: 'gold',
     name: 'Gold',
-    price: '₹3,000',
-    priceNote: '/ 5 months',
+    price: 'xxxx',
+    priceNote: '',
     description: 'Comprehensive support and mentorship',
     ctaText: 'Choose Gold',
     ctaDisabled: false,

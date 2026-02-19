@@ -3,7 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import { PageLoader } from '../ui/Loader';
 
 /**
- * After login: if aspirant data exists → dashboard. If no aspirant but admin data → /admin. Else → /onboarding.
+ * After login: aspirant → dashboard. Admin → /admin. Interviewer → /interviewer. Else → /onboarding.
  * Use around dashboard routes. Assumes user is already authenticated (use inside ProtectedRoute).
  */
 export default function RequireAspirantProfile({ children }) {
@@ -12,6 +12,8 @@ export default function RequireAspirantProfile({ children }) {
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
+  const interviewerProfile = useAppSelector((state) => state.interviewer.profile);
+  const interviewerLoading = useAppSelector((state) => state.interviewer.loading);
 
   if (!user) return null;
 
@@ -25,9 +27,10 @@ export default function RequireAspirantProfile({ children }) {
 
   if (aspirantProfile) return children;
 
+  if (interviewerProfile) return <Navigate to="/interviewer" replace />;
   if (adminProfile) return <Navigate to="/admin" replace />;
 
-  if (adminLoading) {
+  if (adminLoading || interviewerLoading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <PageLoader size="md" label="Loading…" />

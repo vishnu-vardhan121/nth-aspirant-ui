@@ -1,35 +1,58 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageLoader } from '../../components/ui/Loader';
-import { HiUserPlus } from 'react-icons/hi2';
+
+const ROLES = [
+  { value: 'super admin', label: 'Super Admin' },
+  { value: 'admin', label: 'Admin' },
+  { value: 'assistant admin', label: 'Assistant Admin' },
+  { value: 'interviewer', label: 'Interviewer' },
+];
+
+function RoleSelect({ admin, onUpdate }) {
+  const [updating, setUpdating] = useState(false);
+  const handleChange = async (e) => {
+    const newRole = e.target.value;
+    if (newRole === (admin.role || '')) return;
+    setUpdating(true);
+    const { error } = await supabase.from('admins').update({ role: newRole }).eq('id', admin.id);
+    setUpdating(false);
+    if (!error) onUpdate();
+  };
+  return (
+    <select
+      value={admin.role || 'admin'}
+      onChange={handleChange}
+      disabled={updating}
+      className="text-sm border border-slate-300 rounded px-2 py-1 bg-white min-w-[120px]"
+    >
+      {ROLES.map((r) => (
+        <option key={r.value} value={r.value}>{r.label}</option>
+      ))}
+    </select>
+  );
+}
 
 export default function AdminAdminsPage() {
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchAdmins = async () => {
-      const { data, error } = await supabase.from('admins').select('*').order('created_at', { ascending: false });
-      if (!error) setAdmins(data ?? []);
-      setLoading(false);
-    };
-    fetchAdmins();
+  const loadAdmins = useCallback(async () => {
+    const { data, error } = await supabase.from('admins').select('*').order('created_at', { ascending: false });
+    if (!error) setAdmins(data ?? []);
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    loadAdmins();
+  }, [loadAdmins]);
 
   if (loading) return <PageLoader size="md" label="Loading admins…" className="py-12" />;
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900">Admins</h1>
-        <Link
-          to="/admin/admins/create"
-          className="nth-btn-primary inline-flex items-center gap-2 px-4 py-2 text-sm font-medium"
-        >
-          <HiUserPlus className="w-5 h-5" />
-          Add admin
-        </Link>
       </div>
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <table className="w-full text-left text-sm">
@@ -37,7 +60,8 @@ export default function AdminAdminsPage() {
             <tr>
               <th className="px-4 py-3 font-semibold text-slate-700">Name</th>
               <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
-              <th className="px-4 py-3 font-semibold text-slate-700">Role / Type</th>
+              <th className="px-4 py-3 font-semibold text-slate-700">Role</th>
+              <th className="px-4 py-3 font-semibold text-slate-700">Type</th>
               <th className="px-4 py-3 font-semibold text-slate-700">Created by</th>
             </tr>
           </thead>
@@ -46,7 +70,10 @@ export default function AdminAdminsPage() {
               <tr key={a.id} className="border-b border-slate-100">
                 <td className="px-4 py-3 text-slate-900">{a.name}</td>
                 <td className="px-4 py-3 text-slate-600">{a.email}</td>
-                <td className="px-4 py-3 text-slate-600">{a.role} {a.type ? ` / ${a.type}` : ''}</td>
+                <td className="px-4 py-3">
+                  <RoleSelect admin={a} onUpdate={loadAdmins} />
+                </td>
+                <td className="px-4 py-3 text-slate-600">{a.type || '—'}</td>
                 <td className="px-4 py-3 text-slate-500 text-xs">{a.created_by ? String(a.created_by).slice(0, 8) + '…' : '—'}</td>
               </tr>
             ))}

@@ -6,6 +6,7 @@ import { setAuth } from '../../store/slices/authSlice';
 import { setTrack, setPlan } from '../../store/slices/appSlice';
 import { fetchAspirantProfile, clearAspirantProfile } from '../../store/slices/aspirantSlice';
 import { fetchAdminProfile, clearAdminProfile } from '../../store/slices/adminSlice';
+import { fetchInterviewerProfile, clearInterviewerProfile } from '../../store/slices/interviewerSlice';
 
 /**
  * Auth: login via Supabase. Then fetch aspirant; if no aspirant, fetch admin.
@@ -27,12 +28,14 @@ export default function AuthListener() {
         } else {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
+          dispatch(clearInterviewerProfile());
         }
       }).catch((err) => {
         console.warn('Auth getSession failed:', err);
         dispatch(setAuth({ session: null, user: null }));
         dispatch(clearAspirantProfile());
         dispatch(clearAdminProfile());
+        dispatch(clearInterviewerProfile());
       });
 
       const result = supabase.auth.onAuthStateChange((_event, session) => {
@@ -42,6 +45,7 @@ export default function AuthListener() {
         } else {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
+          dispatch(clearInterviewerProfile());
         }
       });
       subscription = result?.data?.subscription;
@@ -54,10 +58,11 @@ export default function AuthListener() {
     return () => subscription?.unsubscribe?.();
   }, [dispatch]);
 
-  // When aspirant is done and null, fetch admin (so admin users get their profile)
+  // When aspirant is done and null, fetch admin and interviewer (so admin/interviewer users get their profile)
   useEffect(() => {
     if (!user?.id || aspirantLoading || aspirantProfile) return;
     dispatch(fetchAdminProfile(user.id));
+    dispatch(fetchInterviewerProfile(user.id));
   }, [user?.id, aspirantLoading, aspirantProfile, dispatch]);
 
   // Sync aspirant track/plan from profile to app slice (for jobs visibility)

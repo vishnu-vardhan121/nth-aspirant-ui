@@ -27,6 +27,9 @@ export default function AdminMocksPage() {
   const [scheduleSaving, setScheduleSaving] = useState(false);
   const [scheduleForm, setScheduleForm] = useState({ scheduledAt: '', meetLink: '', adminNotes: '', notify: true });
   const [flash, setFlash] = useState({ type: '', text: '' });
+  const [interviewers, setInterviewers] = useState([]);
+  const [createSlotsForm, setCreateSlotsForm] = useState({ interviewerId: '', date: '', startTime: '14:00', endTime: '16:00', duration: 25, meetLink: '' });
+  const [createSlotsSaving, setCreateSlotsSaving] = useState(false);
 
   const setFlashMsg = (type, text) => {
     setFlash({ type, text });
@@ -59,6 +62,39 @@ export default function AdminMocksPage() {
   useEffect(() => {
     fetchCompletedReport();
   }, [reportFrom, reportTo]);
+
+  useEffect(() => {
+    supabase.rpc('get_interviewers_list').then(({ data }) => setInterviewers(Array.isArray(data) ? data : []));
+  }, []);
+
+  const handleCreateSlots = async (e) => {
+    e.preventDefault();
+    if (!createSlotsForm.interviewerId || !createSlotsForm.date || !createSlotsForm.startTime || !createSlotsForm.endTime) {
+      setFlashMsg('error', 'Select interviewer, date, start and end time.');
+      return;
+    }
+    const startAt = new Date(`${createSlotsForm.date}T${createSlotsForm.startTime}:00`);
+    const endAt = new Date(`${createSlotsForm.date}T${createSlotsForm.endTime}:00`);
+    if (endAt <= startAt) {
+      setFlashMsg('error', 'End time must be after start time.');
+      return;
+    }
+    setCreateSlotsSaving(true);
+    const { data } = await supabase.rpc('create_mock_slots', {
+      p_interviewer_id: createSlotsForm.interviewerId,
+      p_start_at: startAt.toISOString(),
+      p_end_at: endAt.toISOString(),
+      p_slot_duration_mins: createSlotsForm.duration,
+      p_meet_link: createSlotsForm.meetLink?.trim() || null,
+    });
+    setCreateSlotsSaving(false);
+    if (data?.ok) {
+      setFlashMsg('success', 'Slots created. Aspirants can book them from the Mocks page.');
+      setCreateSlotsForm((f) => ({ ...f, interviewerId: '', date: '', meetLink: '' }));
+    } else {
+      setFlashMsg('error', data?.error ?? 'Failed to create slots.');
+    }
+  };
 
   const handleMarkCompleted = async (r, notify = true) => {
     setCompletingId(r.id);
@@ -178,6 +214,89 @@ export default function AdminMocksPage() {
         </div>
       )}
 
+      {/* Create slots (interviewer availability) */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Create mock slots</h2>
+        <p className="text-sm text-slate-600 mb-4">
+          Pick an interviewer and a time window. Slots (e.g. 25 min each) will be created for aspirants to book.
+        </p>
+        <form onSubmit={handleCreateSlots} className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Interviewer</label>
+            <select
+              value={createSlotsForm.interviewerId}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, interviewerId: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm min-w-[180px]"
+              required
+            >
+              <option value="">Select</option>
+              {interviewers.map((i) => (
+                <option key={i.id} value={i.id}>{i.name} ({i.email})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <input
+              type="date"
+              value={createSlotsForm.date}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, date: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Start time</label>
+            <input
+              type="time"
+              value={createSlotsForm.startTime}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, startTime: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">End time</label>
+            <input
+              type="time"
+              value={createSlotsForm.endTime}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, endTime: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Slot duration (min)</label>
+            <select
+              value={createSlotsForm.duration}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, duration: Number(e.target.value) }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value={25}>25</option>
+              <option value={30}>30</option>
+            </select>
+          </div>
+          <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Meet link (optional)</label>
+            <input
+              type="url"
+              value={createSlotsForm.meetLink}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, meetLink: e.target.value }))}
+              placeholder="https://meet.google.com/..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={createSlotsSaving || interviewers.length === 0}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {createSlotsSaving ? 'Creating…' : 'Create slots'}
+          </button>
+        </form>
+        {interviewers.length === 0 && (
+          <p className="mt-2 text-sm text-amber-700">Mark at least one admin as Interviewer on the Admins page to create slots.</p>
+        )}
+      </div>
+
       {/* Pending requests – easy to spot */}
       {registrations.filter((r) => r.status === 'requested').length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-6">
@@ -201,8 +320,10 @@ export default function AdminMocksPage() {
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Email</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Availability</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Registered</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Interviewer</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Scheduled at</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Meet link</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Scores</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Completed at</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Status</th>
                 <th className="px-4 py-3 text-sm font-semibold text-slate-700">Conducted</th>
@@ -212,7 +333,7 @@ export default function AdminMocksPage() {
             <tbody className="divide-y divide-slate-100">
               {registrations.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-slate-500 text-sm">
+                  <td colSpan={12} className="px-4 py-8 text-center text-slate-500 text-sm">
                     No mock registrations yet.
                   </td>
                 </tr>
@@ -228,6 +349,7 @@ export default function AdminMocksPage() {
                     <td className="px-4 py-3 text-sm text-slate-600">{r.aspirant_email ?? '—'}</td>
                     <td className="px-4 py-3 text-sm text-slate-600 max-w-[180px] truncate" title={r.availability_notes ?? ''}>{r.availability_notes ?? '—'}</td>
                     <td className="px-4 py-3 text-sm text-slate-600">{formatDate(r.created_at)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{r.interviewer_name ?? '—'}</td>
                     <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
                     <td className="px-4 py-3 text-sm">
                       {r.meet_link ? (
@@ -237,6 +359,11 @@ export default function AdminMocksPage() {
                       ) : (
                         '—'
                       )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {r.status === 'completed' && [r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
+                        ? `T:${r.technical_score} C:${r.communication_score} P:${r.problem_solving_score} O:${r.overall_score}`
+                        : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
                     <td className="px-4 py-3">
@@ -432,23 +559,31 @@ export default function AdminMocksPage() {
               <tr>
                 <th className="px-3 py-2 font-semibold text-slate-700">Completed date</th>
                 <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Interviewer</th>
                 <th className="px-3 py-2 font-semibold text-slate-700">Scheduled at</th>
                 <th className="px-3 py-2 font-semibold text-slate-700">Completed at</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Scores (T/C/P/O)</th>
                 <th className="px-3 py-2 font-semibold text-slate-700">Meet link</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {completedReport.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-3 py-6 text-center text-slate-500">No completed mocks in this range.</td>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">No completed mocks in this range.</td>
                 </tr>
               ) : (
                 completedReport.map((r) => (
                   <tr key={r.id}>
                     <td className="px-3 py-2 text-slate-700 whitespace-nowrap">{formatDate(r.completed_at ?? r.scheduled_at ?? r.created_at)}</td>
                     <td className="px-3 py-2 text-slate-900">{r.aspirant_name ?? r.aspirant_email ?? '—'}</td>
+                    <td className="px-3 py-2 text-slate-600">{r.interviewer_name ?? '—'}</td>
                     <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
                     <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
+                    <td className="px-3 py-2 text-slate-600">
+                      {[r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
+                        ? `T:${r.technical_score} C:${r.communication_score} P:${r.problem_solving_score} O:${r.overall_score}`
+                        : '—'}
+                    </td>
                     <td className="px-3 py-2">
                       {r.meet_link ? (
                         <a href={r.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Join</a>

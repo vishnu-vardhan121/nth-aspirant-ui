@@ -1,6 +1,7 @@
 // Supabase Edge Function: create auth user + insert into admins (use service_role).
 // Deploy: supabase functions deploy create-admin --no-verify-jwt
-// Call from admin panel with body: { email, password, name, role?, type?, contact?, created_by }
+// Call from admin panel with body: { email, password, name, role?, type?, contact?, created_by? }
+// role can be: super admin, admin, assistant admin, interviewer
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
