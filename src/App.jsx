@@ -3,8 +3,10 @@ import AuthListener from './components/auth/AuthListener';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RequireAspirantProfile from './components/auth/RequireAspirantProfile';
 import RequireAdminProfile from './components/auth/RequireAdminProfile';
+import RequireInterviewerProfile from './components/auth/RequireInterviewerProfile';
 import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
+import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
@@ -18,14 +20,17 @@ import ProfilePage from './pages/dashboard/profile/ProfilePage';
 import AdminOverviewPage from './pages/admin/AdminOverviewPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
-import CreateAdminPage from './pages/admin/CreateAdminPage';
 import AdminJobsPage from './pages/admin/AdminJobsPage';
 import AdminJobApplicantsPage from './pages/admin/AdminJobApplicantsPage';
 import AdminMocksPage from './pages/admin/AdminMocksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminLeadsPage from './pages/admin/AdminLeadsPage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
+import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
+import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
+import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
 
 function App() {
   return (
@@ -57,7 +62,6 @@ function App() {
           <Route index element={<AdminOverviewPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="admins" element={<AdminAdminsPage />} />
-          <Route path="admins/create" element={<CreateAdminPage />} />
           <Route path="jobs" element={<AdminJobsPage />} />
           <Route path="jobs/create" element={<CreateJobPage />} />
           <Route path="jobs/:id/edit" element={<EditJobPage />} />
@@ -65,6 +69,21 @@ function App() {
           <Route path="mocks" element={<AdminMocksPage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
+          <Route path="leads" element={<AdminLeadsPage />} />
+        </Route>
+        <Route
+          path="/interviewer"
+          element={
+            <ProtectedRoute>
+              <RequireInterviewerProfile>
+                <InterviewerLayout />
+              </RequireInterviewerProfile>
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<InterviewerOverviewPage />} />
+          <Route path="slots" element={<InterviewerSlotsPage />} />
+          <Route path="mocks" element={<InterviewerMocksPage />} />
         </Route>
         <Route
           path="/dashboard"

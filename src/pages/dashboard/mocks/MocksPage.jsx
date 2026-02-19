@@ -15,16 +15,32 @@ function formatDateTime(createdAt) {
   return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
+function formatSlotTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function MocksPage() {
   const [usage, setUsage] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState([]);
   const [mockNotices, setMockNotices] = useState([]);
-  const [availability, setAvailability] = useState('');
-  const [registering, setRegistering] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [slotsFrom, setSlotsFrom] = useState(() => {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  });
+  const [slotsTo, setSlotsTo] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 14);
+    return d.toISOString().slice(0, 10);
+  });
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [bookingSlotId, setBookingSlotId] = useState(null);
+  const [slotMessage, setSlotMessage] = useState({ type: '', text: '' });
 
-  const canRegister = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
+  const canBook = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
 
   const fetchUsage = () => {
     supabase.rpc('get_mock_usage').then(({ data }) => {
@@ -35,13 +51,23 @@ export default function MocksPage() {
   const fetchMyRegistrations = () => {
     supabase
       .from('mock_registrations')
-      .select('id, created_at, status, availability_notes, scheduled_at, meet_link, completed_at')
+      .select('id, created_at, status, availability_notes, scheduled_at, meet_link, completed_at, technical_score, communication_score, problem_solving_score, overall_score, feedback_notes')
       .order('created_at', { ascending: false })
       .then(({ data }) => setMyRegistrations(data ?? []));
   };
 
   const fetchMockNotices = () => {
     supabase.rpc('get_my_mock_notices').then(({ data }) => setMockNotices(Array.isArray(data) ? data : []));
+  };
+
+  const fetchAvailableSlots = async () => {
+    setSlotsLoading(true);
+    const { data } = await supabase.rpc('get_available_mock_slots', {
+      p_from_date: slotsFrom || null,
+      p_to_date: slotsTo || null,
+    });
+    setAvailableSlots(Array.isArray(data) ? data : []);
+    setSlotsLoading(false);
   };
 
   useEffect(() => {
@@ -51,25 +77,27 @@ export default function MocksPage() {
     setLoading(false);
   }, []);
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
-    setMessage({ type: '', text: '' });
-    if (!canRegister || registering) return;
-    setRegistering(true);
-    const { data } = await supabase.rpc('register_mock', {
-      p_availability_notes: availability.trim() || null,
-    });
-    setRegistering(false);
+  useEffect(() => {
+    if (!slotsFrom || !slotsTo) return;
+    fetchAvailableSlots();
+  }, [slotsFrom, slotsTo]);
+
+  const handleBookSlot = async (slotId) => {
+    setSlotMessage({ type: '', text: '' });
+    setBookingSlotId(slotId);
+    const { data } = await supabase.rpc('book_mock_slot', { p_slot_id: slotId });
+    setBookingSlotId(null);
     if (data?.ok) {
-      setMessage({ type: 'success', text: 'Request sent. We’ll set a time and send you the Meet link here and in Messages. Check this page or Messages so you don’t miss it.' });
-      setAvailability('');
+      setSlotMessage({ type: 'success', text: 'Slot booked. See "My mock registrations" below for the Meet link and time.' });
       fetchUsage();
       fetchMyRegistrations();
       fetchMockNotices();
+      fetchAvailableSlots();
     } else {
-      setMessage({ type: 'error', text: data?.error ?? 'Could not register.' });
+      setSlotMessage({ type: 'error', text: data?.error ?? 'Could not book slot.' });
     }
   };
+
 
   if (loading) {
     return <PageLoader size="md" label="Loading…" className="py-8" />;
@@ -88,20 +116,20 @@ export default function MocksPage() {
         <ol className="space-y-3 text-[rgb(var(--nth-text-secondary-light))] text-sm">
           <li className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">1</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Apply for a mock</strong> — Register using your plan slot. You can register for mocks within your plan limit.</span>
+            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Book a slot</strong> — Choose an available date and time below. You can book mocks within your plan limit.</span>
           </li>
           <li className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">2</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Share your availability</strong> — Tell us when you’re free. We’ll schedule and send you the date, time, and Meet link here and in Messages.</span>
+            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Join at your time</strong> — Use the Meet link in My mock registrations to join the interview. You’ll get the link as soon as you book.</span>
           </li>
           <li className="flex gap-3">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">3</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Join and complete</strong> — Check this page or Messages for the Meet link. If you miss the slot, we may mark it no-show and you can request again.</span>
+            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Get feedback</strong> — After the mock, your interviewer will submit scores and notes. View them here once the mock is marked completed.</span>
           </li>
         </ol>
       </section>
 
-      {/* Mock notices (same as in Messages – schedule/completed updates) */}
+      {/* Mock notices (reschedule/cancel messages from admin or interviewer) */}
       {mockNotices.length > 0 && (
         <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
@@ -109,7 +137,7 @@ export default function MocksPage() {
             Mock updates & notices
           </h2>
           <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-            When your mock is scheduled, the date and Meet link appear here and in Messages. Open the dashboard or Messages to get the link before your slot.
+            Reschedule or cancellation notices appear here and in Messages. Check before your slot.
           </p>
           <ul className="space-y-3">
             {mockNotices.map((n) => (
@@ -133,35 +161,66 @@ export default function MocksPage() {
         </p>
       )}
 
-      {/* Register form */}
+      {/* Book a slot */}
       {usage?.active && (
         <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3">Register for a mock</h2>
-          <form onSubmit={handleRegister} className="space-y-4 max-w-lg">
+          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3">Book a slot</h2>
+          <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
+            Pick an available slot (date, time, interviewer). After booking, the Meet link and time appear in My mock registrations below.
+          </p>
+          <div className="flex flex-wrap items-end gap-3 mb-4">
             <div>
-              <label htmlFor="availability" className="block text-sm font-medium text-[rgb(var(--nth-text-secondary-light))] mb-1">
-                Your availability (e.g. Mon–Fri 2–5 PM, weekends 10 AM–1 PM)
-              </label>
-              <textarea
-                id="availability"
-                value={availability}
-                onChange={(e) => setAvailability(e.target.value)}
-                rows={3}
-                placeholder="When are you available for the mock interview?"
-                className="w-full px-3 py-2 border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))]"
+              <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">From date</label>
+              <input
+                type="date"
+                value={slotsFrom}
+                onChange={(e) => setSlotsFrom(e.target.value)}
+                className="rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
               />
             </div>
-            {message.text && (
-              <p className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{message.text}</p>
-            )}
-            <button
-              type="submit"
-              disabled={!canRegister || registering}
-              className="nth-btn-primary px-4 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-            >
-              {registering ? 'Registering…' : canRegister ? 'Register for a mock' : 'Mock limit reached'}
-            </button>
-          </form>
+            <div>
+              <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">To date</label>
+              <input
+                type="date"
+                value={slotsTo}
+                onChange={(e) => setSlotsTo(e.target.value)}
+                className="rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+              />
+            </div>
+          </div>
+          {slotMessage.text && (
+            <p className={`text-sm mb-3 ${slotMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{slotMessage.text}</p>
+          )}
+          {slotsLoading ? (
+            <p className="text-sm text-[rgb(var(--nth-text-muted-light))]">Loading slots…</p>
+          ) : availableSlots.length === 0 ? (
+            <p className="text-sm text-[rgb(var(--nth-text-muted-light))]">No available slots in this range. Try another date range or check back later.</p>
+          ) : (
+            <ul className="space-y-2 max-h-[320px] overflow-y-auto">
+              {availableSlots.map((slot) => (
+                <li
+                  key={slot.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[rgb(var(--nth-border-light))] px-4 py-3 bg-slate-50/50"
+                >
+                  <div className="text-sm text-[rgb(var(--nth-text-primary-light))]">
+                    <span className="font-medium">{formatDate(slot.start_at)}</span>
+                    <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
+                    <span>{formatSlotTime(slot.start_at)}</span>
+                    <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
+                    <span>{slot.interviewer_name ?? 'Interviewer'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={!canBook || bookingSlotId !== null}
+                    onClick={() => handleBookSlot(slot.id)}
+                    className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {bookingSlotId === slot.id ? 'Booking…' : canBook ? 'Book' : 'Limit reached'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       )}
 
@@ -175,7 +234,7 @@ export default function MocksPage() {
           <ul className="divide-y divide-[rgb(var(--nth-border-light))]">
             {myRegistrations.length === 0 ? (
               <li className="px-5 py-8 text-center text-[rgb(var(--nth-text-muted-light))] text-sm">
-                No mock registrations yet. Register above to get started.
+                No mock bookings yet. Book a slot above to get started.
               </li>
             ) : (
               myRegistrations.map((r) => (
@@ -195,7 +254,9 @@ export default function MocksPage() {
                                 ? 'bg-blue-100 text-blue-700'
                                 : r.status === 'no_show'
                                   ? 'bg-red-100 text-red-700'
-                                  : 'bg-slate-100 text-slate-600'
+                                  : r.status === 'cancelled'
+                                    ? 'bg-slate-200 text-slate-600'
+                                    : 'bg-slate-100 text-slate-600'
                         }`}
                       >
                         {r.status === 'completed' && <HiCheckCircle className="w-3.5 h-3.5" />}
@@ -203,19 +264,17 @@ export default function MocksPage() {
                         {r.status === 'requested' ? 'Requested' : r.status}
                       </span>
                     </div>
-                    {r.status === 'requested' && (
-                      <p className="mt-1 text-sm text-[rgb(var(--nth-text-muted-light))]">
-                        Check Mock updates above and Messages for your schedule and Meet link when we set it.
-                      </p>
-                    )}
                     {r.scheduled_at && (
                       <p className="mt-1 text-sm text-[rgb(var(--nth-text-secondary-light))]">
                         Scheduled: {formatDateTime(r.scheduled_at)}
                       </p>
                     )}
-                    {r.availability_notes && (
-                      <p className="mt-0.5 text-sm text-[rgb(var(--nth-text-muted-light))]">
-                        Availability: {r.availability_notes}
+                    {r.status === 'completed' && [r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null) && (
+                      <p className="mt-1 text-sm text-[rgb(var(--nth-text-secondary-light))]">
+                        Scores: T: {r.technical_score} · C: {r.communication_score} · P: {r.problem_solving_score} · O: {r.overall_score}
+                        {r.feedback_notes && (
+                          <span className="block mt-0.5 text-[rgb(var(--nth-text-muted-light))]">{r.feedback_notes}</span>
+                        )}
                       </p>
                     )}
                   </div>

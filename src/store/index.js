@@ -5,6 +5,7 @@ import appReducer from './slices/appSlice';
 import authReducer from './slices/authSlice';
 import aspirantReducer from './slices/aspirantSlice';
 import adminReducer from './slices/adminSlice';
+import interviewerReducer from './slices/interviewerSlice';
 
 const persistConfig = {
   key: 'nth-root',
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   auth: authReducer,
   aspirant: aspirantReducer,
   admin: adminReducer,
+  interviewer: interviewerReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
