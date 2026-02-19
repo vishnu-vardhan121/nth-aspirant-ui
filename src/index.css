@@ -189,6 +189,28 @@ button:focus-visible {
   color: white; /* Prevent global a:hover from overriding text color */
 }
 
+/* Nav CTA button – Request mock: uses primary brand color, consistent shadow */
+.nth-nav-cta {
+  background: linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%) !important;
+  box-shadow: 0 4px 14px rgb(var(--nth-primary) / 0.35);
+  color: white !important;
+}
+.nth-nav-cta:hover {
+  opacity: 0.92;
+  box-shadow: 0 6px 18px rgb(var(--nth-primary) / 0.4);
+}
+
+/* Mobile nav: Login as a clear button (outline style) on the white menu */
+.nth-nav-login-btn {
+  border-color: rgb(var(--nth-primary));
+  color: rgb(var(--nth-primary));
+  background: transparent;
+}
+.nth-nav-login-btn:hover {
+  background: rgb(var(--nth-primary) / 0.08);
+  color: rgb(var(--nth-primary));
+}
+
 /* Brand gradient for logos (navbar + footer) */
 .nth-brand-gradient {
   background: linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 50%, rgb(var(--nth-accent)) 100%);

@@ -6,7 +6,6 @@ import JobOpeningsSection from './components/JobOpeningsSection';
 import HowItWorksSection from './components/HowItWorksSection';
 import TrustSection from './components/TrustSection';
 import ApplicationSection from './components/ApplicationSection';
-import PricingTeaserSection from './components/PricingTeaserSection';
 import CTAStrip from './components/CTAStrip';
 
 const LANDING_CLASS = 'nth-landing-page';
@@ -30,7 +29,6 @@ export default function LandingPage() {
         <HowItWorksSection />
         <TrustSection />
         <ApplicationSection />
-        <PricingTeaserSection />
         <CTAStrip />
         <Footer />
       </div>

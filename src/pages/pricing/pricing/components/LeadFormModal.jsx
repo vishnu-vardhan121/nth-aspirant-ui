@@ -5,6 +5,8 @@ import { supabase } from '../../../../lib/supabase';
 
 export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
   const [form, setForm] = useState({
+    name: '',
+    looking_for_role: '',
     email: '',
     contact_number: '',
     graduation_pass: '',
@@ -29,6 +31,8 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
     const { data } = await supabase.rpc('submit_pricing_lead', {
       p_plan_id: plan?.id ?? '',
       p_track: track ?? 'fresher',
+      p_name: form.name.trim() || null,
+      p_looking_for_role: form.looking_for_role.trim() || null,
       p_email: form.email.trim(),
       p_contact_number: form.contact_number.trim(),
       p_graduation_pass: form.graduation_pass.trim() || null,
@@ -86,6 +90,26 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
           {/* Scrollable form body */}
           <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 pb-2">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Name</label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0"
+                placeholder="Your name"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1">Looking for which role?</label>
+              <input
+                type="text"
+                value={form.looking_for_role}
+                onChange={(e) => setForm((f) => ({ ...f, looking_for_role: e.target.value }))}
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0"
+                placeholder="e.g. Frontend Developer, Data Analyst"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
               <input

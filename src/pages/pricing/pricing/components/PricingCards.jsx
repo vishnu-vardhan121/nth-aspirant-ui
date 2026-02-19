@@ -46,12 +46,10 @@ function PlanCard({ plan, index, onSelectPlan }) {
         className={`mt-auto w-full py-3 rounded-xl font-semibold text-sm transition-all ${
           plan.ctaDisabled
             ? 'bg-white/10 text-slate-500 cursor-not-allowed'
-            : isPopular
-              ? 'text-white'
-              : 'bg-white/10 text-white hover:bg-white/15 border border-white/20'
+            : 'text-white hover:opacity-90'
         }`}
         style={
-          !plan.ctaDisabled && isPopular
+          !plan.ctaDisabled
             ? {
                 background: 'linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)',
                 boxShadow: '0 4px 20px rgb(var(--nth-primary) / 0.4)',

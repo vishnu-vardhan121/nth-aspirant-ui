@@ -37,6 +37,8 @@ export default function AdminLeadsPage() {
                 <th className="px-4 py-3 font-semibold text-slate-700">Date</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Plan</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Track</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Name</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Role</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Contact</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Graduation</th>
@@ -49,7 +51,7 @@ export default function AdminLeadsPage() {
             <tbody className="divide-y divide-slate-100">
               {leads.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={12} className="px-4 py-8 text-center text-slate-500">
                     No leads yet.
                   </td>
                 </tr>
@@ -59,6 +61,8 @@ export default function AdminLeadsPage() {
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(row.created_at)}</td>
                     <td className="px-4 py-3 text-slate-900 font-medium">{row.plan_id}</td>
                     <td className="px-4 py-3 text-slate-600">{row.track}</td>
+                    <td className="px-4 py-3 text-slate-600">{row.name ?? '—'}</td>
+                    <td className="px-4 py-3 text-slate-600 max-w-[140px] truncate" title={row.looking_for_role ?? ''}>{row.looking_for_role ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-900">{row.email}</td>
                     <td className="px-4 py-3 text-slate-600">{row.contact_number}</td>
                     <td className="px-4 py-3 text-slate-600">{row.graduation_pass ?? '—'}</td>
