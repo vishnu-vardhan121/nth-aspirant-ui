@@ -8,22 +8,22 @@ const FEATURES = [
     title: 'Verified Opportunities',
     description: 'Every job is vetted by real HR and recruiters. No spam, no fake listings—only genuine roles.',
     icon: SiShieldsdotio,
-    color: 'from-blue-500 to-cyan-400',
-    shadow: 'shadow-blue-500/20',
+    color: 'from-indigo-500 to-sky-500',
+    shadow: 'shadow-indigo-500/20',
   },
   {
     title: 'Fresher to Senior',
     description: 'Roles for every stage—from your first internship to leadership positions. One platform for your entire career.',
     icon: SiGraphql,
-    color: 'from-indigo-500 to-purple-500',
+    color: 'from-indigo-500 to-violet-500',
     shadow: 'shadow-indigo-500/20',
   },
   {
     title: 'Direct Recruiter Access',
     description: 'Connect directly with hiring teams. Get feedback, build your network, and accelerate your growth.',
     icon: SiTarget,
-    color: 'from-purple-500 to-pink-500',
-    shadow: 'shadow-purple-500/20',
+    color: 'from-violet-500 to-indigo-500',
+    shadow: 'shadow-violet-500/20',
   },
 ];
 
@@ -52,23 +52,34 @@ export default function ApplicationSection() {
   return (
     <section
       id="app"
-      className="relative bg-[rgb(var(--nth-bg-soft))] py-20 sm:py-28 overflow-hidden"
+      className="relative py-12 sm:py-14 md:py-16 overflow-hidden"
     >
-      <SectionContainer>
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center mb-20 lg:mb-0">
+      {/* Full-width professional briefcase background */}
+      <div
+        className="absolute inset-0 w-full bg-cover bg-center bg-no-repeat pointer-events-none"
+        style={{
+          backgroundImage: 'url(/hero-section/close-up-briefcase.jpg)',
+        }}
+      />
+      <div
+        className="absolute inset-0 w-full bg-white/40 pointer-events-none"
+        aria-hidden
+      />
+      <SectionContainer className="relative z-10">
+        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
           >
-            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-8 text-[rgb(var(--nth-text-primary-light))] leading-[1.2]">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-5 text-[rgb(var(--nth-text-primary-light))] leading-[1.2]">
               Built for your{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--nth-primary))] to-[rgb(var(--nth-accent))]">
                 career journey
               </span>
             </h2>
-            <p className="text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed mb-10">
+            <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed mb-6">
               NTH brings verified jobs and real recruiters into one seamless ecosystem—so you can
               focus on growth, not guesswork.
             </p>
@@ -101,7 +112,7 @@ export default function ApplicationSection() {
           </motion.div>
 
           <motion.div
-            className="grid gap-6"
+            className="grid gap-4"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -113,15 +124,15 @@ export default function ApplicationSection() {
                 <motion.div
                   key={feature.title}
                   variants={itemVariants}
-                  className="flex items-start gap-6 p-6 rounded-2xl bg-white shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                  className="flex items-start gap-4 p-5 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
                 >
                   <div
-                    className={`shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br ${feature.color} ${feature.shadow} shadow-lg`}
+                    className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white bg-gradient-to-br ${feature.color} ${feature.shadow} shadow-lg`}
                   >
-                    <Icon className="w-6 h-6" />
+                    <Icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-2">
+                    <h3 className="text-lg font-bold text-[rgb(var(--nth-text-primary-light))] mb-1.5">
                       {feature.title}
                     </h3>
                     <p className="text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">

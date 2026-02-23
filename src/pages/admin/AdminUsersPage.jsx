@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { HiPlus } from 'react-icons/hi2';
 import { supabase } from '../../lib/supabase';
 import { Loader, LoaderPulse, PageLoader, TableSkeleton } from '../../components/ui/Loader';
+import CreateAspirantModal from './CreateAspirantModal';
 import {
   HiXMark,
   HiUser,
@@ -179,6 +181,88 @@ function UserProfileModal({ aspirantId, onClose }) {
   );
 }
 
+const PLANS = [
+  { value: 'base', label: 'Base' },
+  { value: 'silver', label: 'Silver' },
+  { value: 'gold', label: 'Gold' },
+];
+
+function EditPlanModal({ user, onClose, onSuccess }) {
+  const [plan, setPlan] = useState(user?.plan || 'base');
+  const [planStartedAt, setPlanStartedAt] = useState('');
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage({ type: '', text: '' });
+    setSubmitting(true);
+    const startedAt = planStartedAt.trim() ? new Date(planStartedAt).toISOString() : null;
+    const { data, error } = await supabase.rpc('admin_set_aspirant_plan', {
+      p_aspirant_id: user.id,
+      p_plan: plan,
+      p_plan_started_at: startedAt,
+    });
+    setSubmitting(false);
+    const result = typeof data === 'string' ? JSON.parse(data) : data;
+    if (error || !result?.ok) {
+      setMessage({ type: 'error', text: result?.error || error?.message || 'Failed to update plan.' });
+      return;
+    }
+    onSuccess?.();
+    onClose?.();
+  };
+
+  if (!user) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
+      <div className="w-full max-w-sm rounded-xl bg-white border border-slate-200 shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-slate-900">Edit plan — {user.full_name ?? user.email}</h2>
+          <button type="button" onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close">
+            <HiXMark className="w-5 h-5" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {message.text && (
+            <p className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>{message.text}</p>
+          )}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Plan</label>
+            <select
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+            >
+              {PLANS.map((p) => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Plan start date (optional)</label>
+            <input
+              type="date"
+              value={planStartedAt}
+              onChange={(e) => setPlanStartedAt(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+            />
+            <p className="text-xs text-slate-500 mt-1">Leave empty to keep current start date.</p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
+              Cancel
+            </button>
+            <button type="submit" disabled={submitting} className="flex-1 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+              {submitting ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminUsersPage() {
   const [summary, setSummary] = useState(null);
   const [users, setUsers] = useState([]);
@@ -187,27 +271,29 @@ export default function AdminUsersPage() {
   const [trackFilter, setTrackFilter] = useState('');
   const [page, setPage] = useState(0);
   const [profileUserId, setProfileUserId] = useState(null);
+  const [showCreateAspirant, setShowCreateAspirant] = useState(false);
+  const [editPlanUser, setEditPlanUser] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase.rpc('get_admin_users_summary');
-      if (!error && data) setSummary(data);
-    })();
+  const loadSummary = useCallback(async () => {
+    const { data, error } = await supabase.rpc('get_admin_users_summary');
+    if (!error && data) setSummary(data);
   }, []);
 
-  useEffect(() => {
+  const loadUsers = useCallback(async () => {
     setLoading(true);
-    (async () => {
-      const { data, error } = await supabase.rpc('get_admin_users_list', {
-        p_plan: planFilter || null,
-        p_track: trackFilter || null,
-        p_limit: PAGE_SIZE,
-        p_offset: page * PAGE_SIZE,
-      });
-      if (!error && data) setUsers(Array.isArray(data) ? data : []);
-      setLoading(false);
-    })();
+    const { data, error } = await supabase.rpc('get_admin_users_list', {
+      p_plan: planFilter || null,
+      p_track: trackFilter || null,
+      p_limit: PAGE_SIZE,
+      p_offset: page * PAGE_SIZE,
+    });
+    if (!error && data) setUsers(Array.isArray(data) ? data : []);
+    setLoading(false);
   }, [planFilter, trackFilter, page]);
+
+  useEffect(() => { loadSummary(); }, [loadSummary]);
+
+  useEffect(() => { loadUsers(); }, [loadUsers]);
 
   const byPlan = summary?.by_plan || {};
   const byTrack = summary?.by_track || {};
@@ -270,8 +356,19 @@ export default function AdminUsersPage() {
 
       {/* Filters and table */}
       <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="p-4 border-b border-slate-200 flex flex-wrap items-center gap-4">
-          <h2 className="text-sm font-semibold text-slate-700">User list</h2>
+        <div className="p-4 border-b border-slate-200 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <h2 className="text-sm font-semibold text-slate-700">User list</h2>
+            <button
+              type="button"
+              onClick={() => setShowCreateAspirant(true)}
+              className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700"
+            >
+              <HiPlus className="w-4 h-4" />
+              Create Aspirant
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
           <select
             value={planFilter}
             onChange={(e) => { setPlanFilter(e.target.value); setPage(0); }}
@@ -291,6 +388,7 @@ export default function AdminUsersPage() {
             <option value="fresher">Fresher</option>
             <option value="experienced">Experienced</option>
           </select>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
@@ -343,13 +441,20 @@ export default function AdminUsersPage() {
                         {u.is_active ? 'Active' : 'Expired'}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() => setProfileUserId(u.id)}
                         className="text-indigo-600 hover:underline text-xs font-medium"
                       >
                         View profile
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditPlanUser({ id: u.id, full_name: u.full_name, email: u.email, plan: u.plan || 'base' })}
+                        className="text-slate-600 hover:underline text-xs font-medium"
+                      >
+                        Edit plan
                       </button>
                     </td>
                   </tr>
@@ -383,6 +488,21 @@ export default function AdminUsersPage() {
 
       {profileUserId && (
         <UserProfileModal aspirantId={profileUserId} onClose={() => setProfileUserId(null)} />
+      )}
+
+      {showCreateAspirant && (
+        <CreateAspirantModal
+          onClose={() => setShowCreateAspirant(false)}
+          onSuccess={() => { loadSummary(); loadUsers(); }}
+        />
+      )}
+
+      {editPlanUser && (
+        <EditPlanModal
+          user={editPlanUser}
+          onClose={() => setEditPlanUser(null)}
+          onSuccess={() => { setEditPlanUser(null); loadSummary(); loadUsers(); }}
+        />
       )}
     </div>
   );
