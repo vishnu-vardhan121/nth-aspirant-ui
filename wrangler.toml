@@ -1,3 +1,0 @@
-# Cloudflare Pages (not Workers)
-name = "nth-aspirant-ui"
-pages_build_output_dir = "dist"
