@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/write-env.js && vite build",
+    "build:no-env": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy:create-admin": "supabase functions deploy create-admin",
