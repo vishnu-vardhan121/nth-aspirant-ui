@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
 
+console.log('[Supabase] adminSlice.js loaded');
+
 const initialState = {
   profile: null,
   loading: true,
@@ -9,14 +11,21 @@ const initialState = {
 export const fetchAdminProfile = createAsyncThunk(
   'admin/fetchProfile',
   async (userId, { rejectWithValue }) => {
+    console.log('[Supabase] adminSlice fetchAdminProfile', { userId });
     if (!userId) return null;
-    const { data, error } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) return rejectWithValue(error);
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      console.log('[Supabase] adminSlice admins select result', { hasData: !!data, error: error?.message });
+      if (error) return rejectWithValue(error);
+      return data;
+    } catch (err) {
+      console.error('[Supabase] adminSlice fetchAdminProfile throw', err);
+      throw err;
+    }
   }
 );
 

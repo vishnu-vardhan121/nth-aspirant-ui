@@ -100,16 +100,19 @@ export default function DashboardLayout() {
   const channelRef = useRef(null);
 
   useEffect(() => {
+    console.log('[Supabase] DashboardLayout useEffect realtime', { hasChannel: typeof supabase.channel === 'function' });
     if (typeof supabase.channel !== 'function') return;
 
     let cancelled = false;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[Supabase] DashboardLayout getSession for channel', { hasSession: !!session, userId: session?.user?.id ?? user?.id });
       if (cancelled) return;
       const uid = session?.user?.id ?? user?.id;
       if (!uid) return;
 
       const uidStr = String(uid);
+      console.log('[Supabase] DashboardLayout subscribing channel', { uidStr });
       const ch = supabase
         .channel(`dashboard-messages-${uidStr}`)
         .on(
@@ -139,8 +142,9 @@ export default function DashboardLayout() {
           }
         )
         .subscribe((status) => {
+          console.log('[Supabase] DashboardLayout channel subscribe status', { status });
           if (status === 'CHANNEL_ERROR') {
-            console.warn('[Realtime] messages channel error – ensure Database → Replication has table "messages" in supabase_realtime.');
+            console.warn('[Supabase] Realtime messages channel error – ensure Database → Replication has table "messages" in supabase_realtime.');
           }
         });
 
