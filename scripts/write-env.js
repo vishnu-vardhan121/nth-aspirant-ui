@@ -39,15 +39,21 @@ const hasUrl = !!vars.VITE_SUPABASE_URL;
 const hasKey = !!vars.VITE_SUPABASE_ANON_KEY;
 const fromProcessEnv = !!(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY);
 const fromDotEnv = !!fromFile.VITE_SUPABASE_URL && !!fromFile.VITE_SUPABASE_ANON_KEY;
+const isCiLike =
+  process.env.CI === 'true' ||
+  process.env.CF_PAGES === '1' ||
+  !!process.env.CF_PAGES_URL ||
+  !!process.env.CLOUDFLARE_ACCOUNT_ID;
 console.log('[Supabase] build env:', {
   hasUrl,
   hasKey,
   source: fromProcessEnv ? 'process.env (e.g. Cloudflare)' : fromDotEnv ? '.env file' : 'MISSING',
+  isCiLike,
 });
 if (!hasUrl || !hasKey) {
   const msg =
     '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is empty. Set them in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild. See DEPLOY.md for Cloudflare setup.';
-  if (process.env.CF_PAGES === '1') {
+  if (isCiLike) {
     console.error(msg);
     process.exit(1);
   }
