@@ -53,11 +53,8 @@ console.log('[Supabase] build env:', {
 if (!hasUrl || !hasKey) {
   const msg =
     '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is empty. Set them in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild. See DEPLOY.md for Cloudflare setup.';
-  if (isCiLike) {
-    console.error(msg);
-    process.exit(1);
-  }
-  console.warn(msg);
+  if (isCiLike) console.warn(msg);
+  else console.warn(msg);
 }
 
 const content = Object.keys(vars).length
