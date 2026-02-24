@@ -34,6 +34,22 @@ for (const key of Object.keys(process.env)) {
   if (key.startsWith('VITE_')) vars[key] = process.env[key];
 }
 
+// Diagnose why env might not connect (e.g. on Cloudflare)
+const hasUrl = !!vars.VITE_SUPABASE_URL;
+const hasKey = !!vars.VITE_SUPABASE_ANON_KEY;
+const fromProcessEnv = !!(process.env.VITE_SUPABASE_URL && process.env.VITE_SUPABASE_ANON_KEY);
+const fromDotEnv = !!fromFile.VITE_SUPABASE_URL && !!fromFile.VITE_SUPABASE_ANON_KEY;
+console.log('[Supabase] build env:', {
+  hasUrl,
+  hasKey,
+  source: fromProcessEnv ? 'process.env (e.g. Cloudflare)' : fromDotEnv ? '.env file' : 'MISSING',
+});
+if (!hasUrl || !hasKey) {
+  console.warn(
+    '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is empty. Set them in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild.'
+  );
+}
+
 const content = Object.keys(vars).length
   ? Object.entries(vars)
       .map(([k, v]) => `${k}=${String(v).replace(/\n/g, ' ')}`)
