@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Writes Vite env vars into .env.production.local so Vite picks them up.
- * - On Cloudflare/CI: uses process.env (injected by the platform).
- * - Local: loads .env first so your local values are used when running npm run build.
+ * - On Cloudflare/CI: use process.env (injected by the platform).
+ * - Local: loads .env so your local values are used when running npm run build.
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
@@ -28,11 +28,17 @@ const fromFile = loadEnvFile('.env');
 const vars = {
   VITE_SUPABASE_URL: process.env.VITE_SUPABASE_URL ?? fromFile.VITE_SUPABASE_URL ?? '',
   VITE_SUPABASE_ANON_KEY: process.env.VITE_SUPABASE_ANON_KEY ?? fromFile.VITE_SUPABASE_ANON_KEY ?? '',
+  ...fromFile,
 };
+for (const key of Object.keys(process.env)) {
+  if (key.startsWith('VITE_')) vars[key] = process.env[key];
+}
 
-const content = Object.entries(vars)
-  .map(([k, v]) => `${k}=${String(v).replace(/\n/g, ' ')}`)
-  .join('\n');
+const content = Object.keys(vars).length
+  ? Object.entries(vars)
+      .map(([k, v]) => `${k}=${String(v).replace(/\n/g, ' ')}`)
+      .join('\n')
+  : '# No Vite env vars\n';
 
 writeFileSync('.env.production.local', content, 'utf8');
-console.log('Wrote .env.production.local (VITE_SUPABASE_*)');
+console.log('Wrote .env.production.local');
