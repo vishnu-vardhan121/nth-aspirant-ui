@@ -4,10 +4,22 @@ import Navbar from '../../components/Navbar';
 import { useAppDispatch } from '../../store/hooks';
 import { signIn as signInThunk } from '../../store/slices/authSlice';
 import { getSafeReturnPath } from '../../lib/authUtils';
+import { supabase } from '../../lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+function getDefaultPathForRole(role) {
+  if (role === 'aspirant') return '/dashboard';
+  if (role === 'admin') return '/admin';
+  if (role === 'interviewer') return '/interviewer';
+  return '/onboarding';
+}
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const returnAfterSignIn = useMemo(() => getSafeReturnPath(searchParams, '/dashboard'), [searchParams]);
+  const resetSuccess = searchParams.get('reset') === '1';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -27,7 +39,16 @@ export default function LoginPage() {
         setSubmitting(false);
         return;
       }
-      navigate(returnAfterSignIn, { replace: true });
+      const { data: roleData } = await supabase.rpc('get_my_role');
+      const role = roleData?.role ?? null;
+      const defaultPath = getDefaultPathForRole(role);
+      const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer'];
+      const useReturn =
+        allowedReturnPaths.includes(returnAfterSignIn) &&
+        ((role === 'aspirant' && returnAfterSignIn === '/dashboard') ||
+          (role === 'admin' && returnAfterSignIn === '/admin') ||
+          (role === 'interviewer' && returnAfterSignIn === '/interviewer'));
+      navigate(useReturn ? returnAfterSignIn : defaultPath, { replace: true });
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Something went wrong.' });
     }
@@ -46,26 +67,31 @@ export default function LoginPage() {
           <p className="text-slate-400 text-sm mb-8">Use your email and password to sign in.</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-300 mb-2">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-300">
                 Email
-              </label>
-              <input
+              </Label>
+              <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent"
                 placeholder="you@example.com"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
             </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
-              <input
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-slate-300">
+                  Password
+                </Label>
+                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[rgb(var(--nth-primary))] transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
                 id="password"
                 type="password"
                 value={password}
@@ -73,16 +99,21 @@ export default function LoginPage() {
                 required
                 minLength={6}
                 autoComplete="current-password"
-                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent"
                 placeholder="••••••••"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
             </div>
 
+            {resetSuccess && (
+              <div className="rounded-lg px-4 py-3 text-sm bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Password updated. Sign in with your new password.
+              </div>
+            )}
             {message.text && (
               <div
                 className={`rounded-lg px-4 py-3 text-sm ${
                   message.type === 'error'
-                    ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                    ? 'bg-destructive/10 text-destructive border border-destructive/20'
                     : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                 }`}
               >
@@ -90,13 +121,14 @@ export default function LoginPage() {
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
               disabled={submitting}
-              className="nth-btn-primary w-full py-3 rounded-xl text-base font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Sign in"
+              className="w-full h-11 text-base"
             >
               {submitting ? 'Please wait…' : 'Sign in'}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-8 text-center">

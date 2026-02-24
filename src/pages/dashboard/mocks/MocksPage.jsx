@@ -39,6 +39,10 @@ export default function MocksPage() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [bookingSlotId, setBookingSlotId] = useState(null);
   const [slotMessage, setSlotMessage] = useState({ type: '', text: '' });
+  const [requestWithoutSlot, setRequestWithoutSlot] = useState(false);
+  const [requestNotes, setRequestNotes] = useState('');
+  const [requestSaving, setRequestSaving] = useState(false);
+  const [requestMessage, setRequestMessage] = useState({ type: '', text: '' });
 
   const canBook = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
 
@@ -95,6 +99,23 @@ export default function MocksPage() {
       fetchAvailableSlots();
     } else {
       setSlotMessage({ type: 'error', text: data?.error ?? 'Could not book slot.' });
+    }
+  };
+
+  const handleRequestWithoutSlot = async (e) => {
+    e.preventDefault();
+    setRequestMessage({ type: '', text: '' });
+    setRequestSaving(true);
+    const { data } = await supabase.rpc('register_mock', { p_availability_notes: requestNotes.trim() || null });
+    setRequestSaving(false);
+    if (data?.ok) {
+      setRequestMessage({ type: 'success', text: 'Request submitted. Admin may assign a slot and notify you via Messages.' });
+      setRequestWithoutSlot(false);
+      setRequestNotes('');
+      fetchUsage();
+      fetchMyRegistrations();
+    } else {
+      setRequestMessage({ type: 'error', text: data?.error ?? 'Could not submit request.' });
     }
   };
 
@@ -156,9 +177,52 @@ export default function MocksPage() {
       {/* Usage */}
       {usage?.active && (
         <p className="text-sm text-[rgb(var(--nth-text-secondary-light))]">
-          Mocks this period: <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">{usage.used}</span>
+          Mocks completed this period: <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">{usage.used}</span>
           {usage.limit >= 0 && <> of {usage.limit}</>}
         </p>
+      )}
+
+      {/* Request without slot (backward compatibility) */}
+      {usage?.active && (
+        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3">Request without choosing a slot</h2>
+          <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
+            If you prefer not to pick a slot, you can submit a request with your availability notes. Admin may assign a slot and notify you.
+          </p>
+          {!requestWithoutSlot ? (
+            <button
+              type="button"
+              onClick={() => setRequestWithoutSlot(true)}
+              className="nth-btn-secondary px-3 py-2 text-sm font-medium"
+            >
+              Request mock (no slot)
+            </button>
+          ) : (
+            <form onSubmit={handleRequestWithoutSlot} className="space-y-3 max-w-md">
+              <div>
+                <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Availability notes (optional)</label>
+                <textarea
+                  value={requestNotes}
+                  onChange={(e) => setRequestNotes(e.target.value)}
+                  placeholder="e.g. Free Mon–Fri 2–5 PM"
+                  rows={2}
+                  className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                />
+              </div>
+              {requestMessage.text && (
+                <p className={`text-sm ${requestMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{requestMessage.text}</p>
+              )}
+              <div className="flex gap-2">
+                <button type="submit" disabled={requestSaving} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">
+                  {requestSaving ? 'Submitting…' : 'Submit request'}
+                </button>
+                <button type="button" onClick={() => { setRequestWithoutSlot(false); setRequestNotes(''); setRequestMessage({ type: '', text: '' }); }} className="nth-btn-secondary px-3 py-2 text-sm font-medium">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </section>
       )}
 
       {/* Book a slot */}

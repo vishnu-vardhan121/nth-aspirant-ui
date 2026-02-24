@@ -1,6 +1,7 @@
 // Supabase Edge Function: create auth user + insert into admins (use service_role).
-// Deploy: supabase functions deploy create-admin --no-verify-jwt
-// Call from admin panel with body: { email, password, name, role?, type?, contact?, created_by? }
+// Only callable by super admins (JWT verified by Supabase; we check admins.role = 'super admin').
+// Deploy: supabase functions deploy create-admin
+// Call from admin panel with body: { email, password, name, role?, type?, contact? }
 // role can be: super admin, admin, assistant admin, interviewer
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -10,16 +11,52 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function getCallerIdFromJwt(req: Request): string | null {
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.replace(/^Bearer\s+/i, "").trim();
+  if (!token) return null;
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  try {
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64.padEnd(b64.length + (4 - b64.length % 4) % 4, "=");
+    const payload = JSON.parse(atob(padded));
+    return payload.sub ?? null;
+  } catch {
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    const callerId = getCallerIdFromJwt(req);
+    if (!callerId) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const { data: callerRow } = await supabaseAdmin
+      .from("admins")
+      .select("role")
+      .eq("id", callerId)
+      .single();
+    if (!callerRow || (callerRow as { role?: string }).role !== "super admin") {
+      return new Response(
+        JSON.stringify({ error: "Only super admins can create admins" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
     const body = await req.json();
-    const { email, password, name, role = "admin", type, contact, created_by } = body;
+    const { email, password, name, role = "admin", type, contact } = body;
 
     if (!email || !password || !name) {
       return new Response(
@@ -57,7 +94,7 @@ Deno.serve(async (req) => {
       role: role ?? "admin",
       type: type ?? null,
       contact: contact ?? null,
-      created_by: created_by ?? null,
+      created_by: callerId,
     });
 
     if (insertError) {
