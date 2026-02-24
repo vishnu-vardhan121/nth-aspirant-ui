@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
+console.log('[Supabase] ForgotPasswordPage.jsx loaded');
+
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -18,7 +20,9 @@ export default function ForgotPasswordPage() {
     if (!email.trim()) return;
     setSubmitting(true);
     const redirectTo = `${window.location.origin}/reset-password`;
+    console.log('[Supabase] ForgotPasswordPage resetPasswordForEmail', { redirectTo });
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
+    console.log('[Supabase] ForgotPasswordPage resetPasswordForEmail result', { error: error?.message });
     setSubmitting(false);
     if (error) {
       setMessage({ type: 'error', text: error.message });

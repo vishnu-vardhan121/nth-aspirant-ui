@@ -32,14 +32,18 @@ export default function LoginPage() {
     e.preventDefault();
     setMessage({ type: '', text: '' });
     setSubmitting(true);
+    console.log('[Supabase] LoginPage handleSubmit start');
     try {
       const result = await dispatch(signInThunk({ email, password }));
+      console.log('[Supabase] LoginPage signInThunk result', { rejected: signInThunk.rejected.match(result) });
       if (signInThunk.rejected.match(result)) {
         setMessage({ type: 'error', text: result.payload?.message ?? 'Sign in failed.' });
         setSubmitting(false);
         return;
       }
-      const { data: roleData } = await supabase.rpc('get_my_role');
+      console.log('[Supabase] LoginPage calling supabase.rpc get_my_role');
+      const { data: roleData, error: rpcError } = await supabase.rpc('get_my_role');
+      console.log('[Supabase] LoginPage get_my_role result', { roleData, rpcError: rpcError?.message });
       const role = roleData?.role ?? null;
       const defaultPath = getDefaultPathForRole(role);
       const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer'];
