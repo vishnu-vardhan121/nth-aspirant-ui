@@ -1,26 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Only from env – no code-level fallbacks. Set in .env (local) or Cloudflare Pages → Settings → Environment variables.
-const url = import.meta.env.VITE_SUPABASE_URL ?? '';
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+// Prefer env (.env or Cloudflare). Fallback so the app works when Cloudflare build has no env (e.g. .env not in repo).
+const url =
+  import.meta.env.VITE_SUPABASE_URL || 'https://lglmhhykjithfypmgkxq.supabase.co';
+const anonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  'sb_publishable_21Um0v5JImpSwzcmMS90Ew_8AAqyK5R';
 
+const fromEnv = !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
 console.log('[Supabase] supabase.js init', {
   hasUrl: !!url,
   hasAnonKey: !!anonKey,
-  fromEnv: !!url && !!anonKey,
+  fromEnv,
 });
+if (!fromEnv) {
+  console.warn('[Supabase] Using code fallback (env was empty at build). To use env on Cloudflare: Pages → Settings → Environment variables → add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy.');
+}
 
-const NOT_CONFIGURED_MSG =
-  'Supabase env missing. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild.';
-
-const notConfigured = new Proxy(
-  {},
-  {
-    get(_, prop) {
-      console.error('[Supabase] env not set – access attempted:', prop);
-      throw new Error(NOT_CONFIGURED_MSG);
-    },
-  }
-);
-
-export const supabase = url && anonKey ? createClient(url, anonKey) : notConfigured;
+export const supabase = createClient(url, anonKey);

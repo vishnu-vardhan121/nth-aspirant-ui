@@ -45,9 +45,13 @@ console.log('[Supabase] build env:', {
   source: fromProcessEnv ? 'process.env (e.g. Cloudflare)' : fromDotEnv ? '.env file' : 'MISSING',
 });
 if (!hasUrl || !hasKey) {
-  console.warn(
-    '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is empty. Set them in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild.'
-  );
+  const msg =
+    '[Supabase] VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is empty. Set them in .env (local) or Cloudflare Pages → Settings → Environment variables, then rebuild. See DEPLOY.md for Cloudflare setup.';
+  if (process.env.CF_PAGES === '1') {
+    console.error(msg);
+    process.exit(1);
+  }
+  console.warn(msg);
 }
 
 const content = Object.keys(vars).length
