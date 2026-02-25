@@ -1,9 +1,6 @@
 /**
  * Single source of truth for pricing. Base, Silver, Gold.
  * Fresher: Base ₹399; Experienced: Base ₹499. Silver & Gold show xxx.
- *
- * Direct interviews (job applications) per plan must match DB: get_job_applications_limit
- * Base = 1, Silver = 2, Gold = 8.
  */
 const basePlan = {
   id: 'base',

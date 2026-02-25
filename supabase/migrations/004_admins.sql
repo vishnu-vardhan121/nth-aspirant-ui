@@ -1,5 +1,6 @@
--- 1) Admins table: one row per admin user (id = auth.uid()).
--- Used for admin login and is_admin() checks (e.g. pricing leads RLS).
+-- Admins table: one row per admin user (id = auth.uid()).
+-- If no row in aspirants for this user, app fetches from admins and shows admin panel.
+-- Run in Supabase Dashboard → SQL Editor (after 001 and 003).
 
 create table if not exists public.admins (
   id uuid primary key references auth.users(id) on delete cascade,
@@ -13,38 +14,42 @@ create table if not exists public.admins (
   updated_at timestamptz not null default now()
 );
 
-comment on table public.admins is 'Admin users; id = auth.uid() for each admin.';
+comment on column public.admins.created_by is 'Admin user id who created this admin (and triggered auth sign up).';
 
 alter table public.admins enable row level security;
 
--- 2) Helper so RLS policies do not recurse (security definer bypasses RLS).
-create or replace function public.is_admin()
-returns boolean
-language sql
-security definer
-set search_path = public
-as $$
-  select exists (select 1 from public.admins where id = auth.uid());
-$$;
-
--- 3) RLS: admins can select/insert/update (own row or any row if already admin).
+drop policy if exists "admins_select_own" on public.admins;
 drop policy if exists "admins_select_own_or_any_admin" on public.admins;
 create policy "admins_select_own_or_any_admin"
   on public.admins for select
-  using (auth.uid() = id or public.is_admin());
+  using (
+    auth.uid() = id
+    or exists (select 1 from public.admins a where a.id = auth.uid())
+  );
 
+drop policy if exists "admins_insert_own" on public.admins;
 drop policy if exists "admins_insert_own_or_by_admin" on public.admins;
 create policy "admins_insert_own_or_by_admin"
   on public.admins for insert
-  with check (auth.uid() = id or public.is_admin());
+  with check (
+    auth.uid() = id
+    or exists (select 1 from public.admins a where a.id = auth.uid())
+  );
 
+drop policy if exists "admins_update_own" on public.admins;
 drop policy if exists "admins_update_own_or_by_admin" on public.admins;
 create policy "admins_update_own_or_by_admin"
   on public.admins for update
-  using (auth.uid() = id or public.is_admin())
-  with check (auth.uid() = id or public.is_admin());
+  using (
+    auth.uid() = id
+    or exists (select 1 from public.admins a where a.id = auth.uid())
+  )
+  with check (
+    auth.uid() = id
+    or exists (select 1 from public.admins a where a.id = auth.uid())
+  );
 
--- 4) Trigger: set id = auth.uid() on insert when inserting own row.
+-- Trigger: set id = auth.uid() when inserting own row; else keep id (new admin created by existing admin)
 create or replace function public.admins_set_id()
 returns trigger as $$
 begin
@@ -60,7 +65,7 @@ create trigger admins_set_id_trigger
   before insert on public.admins
   for each row execute function public.admins_set_id();
 
--- 5) updated_at trigger
+-- updated_at trigger (reuse set_updated_at from 001 if it exists)
 create or replace function public.set_updated_at()
 returns trigger as $$
 begin

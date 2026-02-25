@@ -13,31 +13,31 @@ const TRUST_CARDS = [
     description:
       'Opportunities shared directly by trusted HRs and hiring partners.',
     icon: HiShieldCheck,
-    gradient: 'from-indigo-500 to-sky-500',
-    border: 'group-hover:border-indigo-400',
+    gradient: 'from-blue-500 to-cyan-400',
+    border: 'group-hover:border-blue-400',
   },
   {
     title: 'Roles Across All Levels',
     description:
       'From freshers to senior professionals, opportunities that grow with your career.',
     icon: HiArrowTrendingUp,
-    gradient: 'from-indigo-500 to-violet-500',
-    border: 'group-hover:border-indigo-400',
+    gradient: 'from-indigo-500 to-purple-500',
+    border: 'group-hover:indigo-400',
   },
   {
     title: 'Curated, Not Crowded',
     description: 'No spam. No fake listings. Only roles that matter.',
     icon: HiSparkles,
-    gradient: 'from-violet-500 to-indigo-500',
-    border: 'group-hover:border-violet-400',
+    gradient: 'from-purple-500 to-pink-500',
+    border: 'group-hover:purple-400',
   },
   {
     title: 'Influencer-Led Trust',
     description:
       'Backed by a hiring influencer with a proven industry network.',
     icon: HiUserGroup,
-    gradient: 'from-violet-500 to-sky-500',
-    border: 'group-hover:border-violet-400',
+    gradient: 'from-pink-500 to-rose-500',
+    border: 'group-hover:pink-400',
   },
 ];
 
@@ -64,19 +64,19 @@ export default function TrustSection() {
   return (
     <section
       id="trust"
-      className="relative bg-white py-12 sm:py-14 md:py-16 overflow-hidden"
+      className="relative bg-white py-20 sm:py-28 overflow-hidden"
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-50 via-white to-white pointer-events-none" />
       
       <SectionContainer>
         <motion.div
-          className="text-center mb-8 sm:mb-10 max-w-3xl mx-auto"
+          className="text-center mb-16 sm:mb-20 max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-6">
             Why Professionals Trust NTH
           </h2>
           <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-2xl mx-auto">
@@ -85,7 +85,7 @@ export default function TrustSection() {
         </motion.div>
 
         <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -97,18 +97,18 @@ export default function TrustSection() {
               <motion.div
                 key={card.title}
                 variants={itemVariants}
-                className={`group relative p-6 rounded-2xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${card.border}`}
+                className={`group relative p-8 rounded-3xl bg-white border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${card.border}`}
               >
                 <div
-                  className={`inline-flex items-center justify-center w-12 h-12 rounded-xl mb-4 bg-gradient-to-br ${card.gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                  className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6 bg-gradient-to-br ${card.gradient} text-white shadow-lg group-hover:scale-110 transition-transform duration-300`}
                 >
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-7 h-7" />
                 </div>
                 
-                <h3 className="text-lg font-bold text-[rgb(var(--nth-text-primary-light))] mb-2">
+                <h3 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-3">
                   {card.title}
                 </h3>
-                <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
+                <p className="text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
                   {card.description}
                 </p>
               </motion.div>

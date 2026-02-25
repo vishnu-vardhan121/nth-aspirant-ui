@@ -7,22 +7,22 @@ const STEPS = [
     title: 'Recruiters Post',
     description: 'Verified HR professionals and recruiters post genuine openings directly to the platform.',
     icon: HiBriefcase,
-    color: 'from-indigo-500 to-sky-500',
-    shadow: 'shadow-indigo-500/30',
+    color: 'from-blue-500 to-indigo-600',
+    shadow: 'shadow-blue-500/30',
   },
   {
     title: 'Influencers Curate',
     description: 'Trusted industry voices and hiring influencers vet and highlight the best opportunities.',
     icon: HiUserGroup,
-    color: 'from-indigo-500 to-violet-600',
+    color: 'from-indigo-500 to-purple-600',
     shadow: 'shadow-indigo-500/30',
   },
   {
     title: 'You Get Hired',
     description: 'Apply to verified roles with confidence and track your application status in real-time.',
     icon: HiSparkles,
-    color: 'from-violet-500 to-indigo-500',
-    shadow: 'shadow-violet-500/30',
+    color: 'from-purple-500 to-pink-600',
+    shadow: 'shadow-purple-500/30',
   },
 ];
 
@@ -45,16 +45,16 @@ const itemVariants = {
 
 export default function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="relative bg-[rgb(var(--nth-bg-soft))] py-12 sm:py-14 md:py-16 overflow-hidden">
+    <section id="how-it-works" className="relative bg-[rgb(var(--nth-bg-soft))] py-20 sm:py-28 overflow-hidden">
       <SectionContainer>
         <motion.div
-          className="text-center max-w-3xl mx-auto mb-8 sm:mb-10"
+          className="text-center max-w-3xl mx-auto mb-16 sm:mb-24"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.7 }}
         >
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-6">
             Simplified Hiring Flow
           </h2>
           <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
@@ -66,7 +66,7 @@ export default function HowItWorksSection() {
           <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent dashed-line" />
 
           <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6"
+            className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8"
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
@@ -80,21 +80,21 @@ export default function HowItWorksSection() {
                   variants={itemVariants}
                   className="relative flex flex-col items-center text-center group"
                 >
-                  <div className="relative z-10 mb-5">
+                  <div className="relative z-10 mb-8">
                     <div
-                      className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br ${step.color} ${step.shadow} shadow-xl transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
+                      className={`w-24 h-24 rounded-3xl flex items-center justify-center text-white bg-gradient-to-br ${step.color} ${step.shadow} shadow-xl transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
                     >
-                      <Icon className="w-9 h-9" />
+                      <Icon className="w-10 h-10" />
                     </div>
                     <div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center font-bold text-slate-400 shadow-sm text-sm">
                       {index + 1}
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-3">
+                  <h3 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-4">
                     {step.title}
                   </h3>
-                  <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-xs mx-auto">
+                  <p className="text-base text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-xs mx-auto">
                     {step.description}
                   </p>
                 </motion.div>

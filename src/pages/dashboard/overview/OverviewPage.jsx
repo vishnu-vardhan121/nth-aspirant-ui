@@ -92,7 +92,7 @@ export default function OverviewPage() {
     ? `${applicationUsage.used} / ${applicationUsage.limit}`
     : (applicationUsage?.used ?? '—');
 
-  const mocksLabel = 'Mocks completed this period';
+  const mocksLabel = 'Mocks this period';
   const mocksValue = mockUsage?.active
     ? (mockUsage.limit >= 0 ? `${mockUsage.used} / ${mockUsage.limit}` : mockUsage.used)
     : '—';

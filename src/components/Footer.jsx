@@ -14,7 +14,7 @@ export default function Footer() {
 
   return (
     <footer
-      className="relative py-8 sm:py-10"
+      className="relative py-10 sm:py-12 md:py-16"
       style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
     >
       <SectionContainer useGrid>
@@ -45,7 +45,7 @@ export default function Footer() {
             })}
           </nav>
         </div>
-        <div className="col-span-full mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
+        <div className="col-span-full mt-6 sm:mt-8 pt-6 sm:pt-8 border-t border-white/10">
           <p className="text-xs sm:text-sm text-slate-500">
             © {new Date().getFullYear()} NTH. All rights reserved.
           </p>

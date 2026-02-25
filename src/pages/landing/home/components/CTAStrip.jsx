@@ -7,17 +7,17 @@ export default function CTAStrip() {
   const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
 
   return (
-    <section className="relative py-10 sm:py-12 overflow-hidden bg-white">
-      {/* Background decorations - theme indigo/sky */}
+    <section className="relative py-20 sm:py-24 overflow-hidden bg-white">
+      {/* Background decorations */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100 rounded-full blur-[100px]" />
-        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-sky-100 rounded-full blur-[80px]" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-100 rounded-full blur-[80px]" />
       </div>
 
       <SectionContainer>
         <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.h2
-            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-4 tracking-tight"
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-6 tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -26,7 +26,7 @@ export default function CTAStrip() {
             Ready to fast-track your career?
           </motion.h2>
           <motion.p
-            className="text-base sm:text-lg text-[rgb(var(--nth-text-secondary-light))] mb-6 max-w-2xl mx-auto"
+            className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] mb-10 max-w-2xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}

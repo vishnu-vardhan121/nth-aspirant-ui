@@ -21,8 +21,6 @@ export default function AdminMocksPage() {
   const [completedReport, setCompletedReport] = useState([]);
   const [reportFrom, setReportFrom] = useState('');
   const [reportTo, setReportTo] = useState('');
-  const [reportSortBy, setReportSortBy] = useState('');
-  const [reportOrder, setReportOrder] = useState('desc');
   const [loading, setLoading] = useState(true);
   const [completingId, setCompletingId] = useState(null);
   const [scheduleModal, setScheduleModal] = useState(null);
@@ -32,25 +30,6 @@ export default function AdminMocksPage() {
   const [interviewers, setInterviewers] = useState([]);
   const [createSlotsForm, setCreateSlotsForm] = useState({ interviewerId: '', date: '', startTime: '14:00', endTime: '16:00', duration: 25, meetLink: '' });
   const [createSlotsSaving, setCreateSlotsSaving] = useState(false);
-  const [slots, setSlots] = useState([]);
-  const [slotsFrom, setSlotsFrom] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 7);
-    return d.toISOString().slice(0, 10);
-  });
-  const [slotsTo, setSlotsTo] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().slice(0, 10);
-  });
-  const [slotsInterviewerId, setSlotsInterviewerId] = useState('');
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const [rescheduleSlotAdmin, setRescheduleSlotAdmin] = useState(null);
-  const [rescheduleFormAdmin, setRescheduleFormAdmin] = useState({ start: '', end: '' });
-  const [rescheduleSavingAdmin, setRescheduleSavingAdmin] = useState(false);
-  const [cancelSlotAdmin, setCancelSlotAdmin] = useState(null);
-  const [cancelReasonAdmin, setCancelReasonAdmin] = useState('');
-  const [cancelSavingAdmin, setCancelSavingAdmin] = useState(false);
 
   const setFlashMsg = (type, text) => {
     setFlash({ type, text });
@@ -72,8 +51,6 @@ export default function AdminMocksPage() {
     const { data } = await supabase.rpc('get_admin_mocks_completed_report', {
       p_from_date: from,
       p_to_date: to,
-      p_sort_by: reportSortBy || null,
-      p_order: reportOrder || 'desc',
     });
     setCompletedReport(Array.isArray(data) ? data : []);
   };
@@ -84,26 +61,11 @@ export default function AdminMocksPage() {
 
   useEffect(() => {
     fetchCompletedReport();
-  }, [reportFrom, reportTo, reportSortBy, reportOrder]);
+  }, [reportFrom, reportTo]);
 
   useEffect(() => {
     supabase.rpc('get_interviewers_list').then(({ data }) => setInterviewers(Array.isArray(data) ? data : []));
   }, []);
-
-  const fetchSlots = async () => {
-    setSlotsLoading(true);
-    const { data } = await supabase.rpc('get_admin_mock_slots', {
-      p_from_date: slotsFrom || null,
-      p_to_date: slotsTo || null,
-      p_interviewer_id: slotsInterviewerId || null,
-    });
-    setSlots(Array.isArray(data) ? data : []);
-    setSlotsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchSlots();
-  }, [slotsFrom, slotsTo, slotsInterviewerId]);
 
   const handleCreateSlots = async (e) => {
     e.preventDefault();
@@ -129,8 +91,6 @@ export default function AdminMocksPage() {
     if (data?.ok) {
       setFlashMsg('success', 'Slots created. Aspirants can book them from the Mocks page.');
       setCreateSlotsForm((f) => ({ ...f, interviewerId: '', date: '', meetLink: '' }));
-      fetchSlots();
-      fetchMocks();
     } else {
       setFlashMsg('error', data?.error ?? 'Failed to create slots.');
     }
@@ -151,7 +111,6 @@ export default function AdminMocksPage() {
         });
       }
       fetchMocks();
-      fetchSlots();
       fetchCompletedReport();
       setFlashMsg('success', 'Mock marked as completed.');
     } else {
@@ -172,7 +131,6 @@ export default function AdminMocksPage() {
         });
       }
       fetchMocks();
-      fetchSlots();
       fetchCompletedReport();
       setFlashMsg('success', 'Marked no-show. Slot freed.');
     } else {
@@ -184,7 +142,6 @@ export default function AdminMocksPage() {
     const { data } = await supabase.rpc('mark_mock_cancelled', { p_registration_id: r.id });
     if (data?.ok) {
       fetchMocks();
-      fetchSlots();
       fetchCompletedReport();
       setFlashMsg('success', 'Slot cancelled.');
     } else {
@@ -231,64 +188,9 @@ export default function AdminMocksPage() {
       }
       setScheduleModal(null);
       fetchMocks();
-      fetchSlots();
       setFlashMsg('success', 'Schedule saved.');
     } else {
       setFlashMsg('error', data?.error ?? 'Failed to save schedule.');
-    }
-  };
-
-  const openRescheduleSlotAdmin = (slot) => {
-    setRescheduleSlotAdmin(slot);
-    setRescheduleFormAdmin({
-      start: new Date(slot.start_at).toISOString().slice(0, 16),
-      end: new Date(slot.end_at).toISOString().slice(0, 16),
-    });
-  };
-
-  const handleRescheduleSlotAdminSubmit = async (e) => {
-    e.preventDefault();
-    if (!rescheduleSlotAdmin) return;
-    const startAt = new Date(rescheduleFormAdmin.start);
-    const endAt = new Date(rescheduleFormAdmin.end);
-    if (endAt <= startAt) {
-      setFlashMsg('error', 'End time must be after start time.');
-      return;
-    }
-    setRescheduleSavingAdmin(true);
-    const { data } = await supabase.rpc('reschedule_mock_slot', {
-      p_slot_id: rescheduleSlotAdmin.id,
-      p_new_start_at: startAt.toISOString(),
-      p_new_end_at: endAt.toISOString(),
-    });
-    setRescheduleSavingAdmin(false);
-    if (data?.ok) {
-      setRescheduleSlotAdmin(null);
-      setFlashMsg('success', 'Slot rescheduled. Aspirant will be notified if booked.');
-      fetchSlots();
-      fetchMocks();
-    } else {
-      setFlashMsg('error', data?.error ?? 'Failed to reschedule.');
-    }
-  };
-
-  const handleCancelSlotAdminSubmit = async (e) => {
-    e.preventDefault();
-    if (!cancelSlotAdmin) return;
-    setCancelSavingAdmin(true);
-    const { data } = await supabase.rpc('cancel_mock_slot', {
-      p_slot_id: cancelSlotAdmin.id,
-      p_reason: cancelReasonAdmin.trim() || null,
-    });
-    setCancelSavingAdmin(false);
-    if (data?.ok) {
-      setCancelSlotAdmin(null);
-      setCancelReasonAdmin('');
-      setFlashMsg('success', 'Slot cancelled. Aspirant will be notified if it was booked.');
-      fetchSlots();
-      fetchMocks();
-    } else {
-      setFlashMsg('error', data?.error ?? 'Failed to cancel.');
     }
   };
 
@@ -395,147 +297,6 @@ export default function AdminMocksPage() {
         )}
       </div>
 
-      {/* Scheduled slots: view, reschedule, cancel */}
-      <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Scheduled slots (view / edit / cancel)</h2>
-        <p className="text-sm text-slate-600 mb-4">
-          All slots you created. Filter by date range and interviewer. Reschedule or cancel a slot; the aspirant will be notified if the slot was booked.
-        </p>
-        <div className="flex flex-wrap items-end gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">From date</label>
-            <input
-              type="date"
-              value={slotsFrom}
-              onChange={(e) => setSlotsFrom(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">To date</label>
-            <input
-              type="date"
-              value={slotsTo}
-              onChange={(e) => setSlotsTo(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Interviewer</label>
-            <select
-              value={slotsInterviewerId}
-              onChange={(e) => setSlotsInterviewerId(e.target.value)}
-              className="rounded-lg border border-slate-300 px-3 py-2 text-sm min-w-[180px]"
-            >
-              <option value="">All</option>
-              {interviewers.map((i) => (
-                <option key={i.id} value={i.id}>{i.name}</option>
-              ))}
-            </select>
-          </div>
-          <button type="button" onClick={fetchSlots} className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-            Refresh
-          </button>
-        </div>
-        {slotsLoading ? (
-          <p className="text-sm text-slate-500 py-4">Loading slots…</p>
-        ) : slots.length === 0 ? (
-          <p className="text-sm text-slate-500 py-4">No slots in this range. Create slots above to see them here.</p>
-        ) : (
-          <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
-            <table className="w-full text-left text-sm min-w-[640px]">
-              <thead className="bg-slate-50 border-b border-slate-200">
-                <tr>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Date & time</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Interviewer</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Status</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Meet</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {slots.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-2 text-slate-900 whitespace-nowrap">{formatDateTime(s.start_at)} – {formatDateTime(s.end_at)}</td>
-                    <td className="px-3 py-2 text-slate-700">{s.interviewer_name ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s.status === 'booked' ? 'bg-green-100 text-green-800' : s.status === 'cancelled' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}`}>
-                        {s.status}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 text-slate-700">
-                      {s.aspirant_name ? <>{s.aspirant_name}{s.aspirant_email && <span className="block text-xs text-slate-500">{s.aspirant_email}</span>}</> : '—'}
-                    </td>
-                    <td className="px-3 py-2">
-                      {s.meet_link ? <a href={s.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Join</a> : '—'}
-                    </td>
-                    <td className="px-3 py-2">
-                      {s.status !== 'cancelled' && (
-                        <div className="flex flex-wrap gap-2">
-                          <button type="button" onClick={() => openRescheduleSlotAdmin(s)} className="text-sm font-medium text-indigo-600 hover:underline">Reschedule</button>
-                          <button type="button" onClick={() => { setCancelSlotAdmin(s); setCancelReasonAdmin(''); }} className="text-sm font-medium text-red-600 hover:underline">Cancel</button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* Reschedule slot modal (admin) */}
-      {rescheduleSlotAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Reschedule slot</h3>
-            <p className="text-sm text-slate-600 mb-4">
-              {formatDateTime(rescheduleSlotAdmin.start_at)} – {rescheduleSlotAdmin.interviewer_name}
-              {rescheduleSlotAdmin.aspirant_name && <span className="block mt-1">Booked by: {rescheduleSlotAdmin.aspirant_name}</span>}
-            </p>
-            <form onSubmit={handleRescheduleSlotAdminSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New start</label>
-                <input type="datetime-local" value={rescheduleFormAdmin.start} onChange={(e) => setRescheduleFormAdmin((f) => ({ ...f, start: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New end</label>
-                <input type="datetime-local" value={rescheduleFormAdmin.end} onChange={(e) => setRescheduleFormAdmin((f) => ({ ...f, end: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={rescheduleSavingAdmin} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{rescheduleSavingAdmin ? 'Saving…' : 'Reschedule'}</button>
-                <button type="button" onClick={() => setRescheduleSlotAdmin(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Cancel slot modal (admin) */}
-      {cancelSlotAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Cancel slot</h3>
-            <p className="text-sm text-slate-600 mb-4">
-              {formatDateTime(cancelSlotAdmin.start_at)} – {cancelSlotAdmin.interviewer_name}
-              {cancelSlotAdmin.aspirant_name && <span className="block mt-1">Booked by: {cancelSlotAdmin.aspirant_name}</span>}
-            </p>
-            <form onSubmit={handleCancelSlotAdminSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason (optional)</label>
-                <input type="text" value={cancelReasonAdmin} onChange={(e) => setCancelReasonAdmin(e.target.value)} placeholder="Optional" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={cancelSavingAdmin} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{cancelSavingAdmin ? 'Cancelling…' : 'Cancel slot'}</button>
-                <button type="button" onClick={() => { setCancelSlotAdmin(null); setCancelReasonAdmin(''); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Back</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* Pending requests – easy to spot */}
       {registrations.filter((r) => r.status === 'requested').length > 0 && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-6">
@@ -548,10 +309,8 @@ export default function AdminMocksPage() {
         </div>
       )}
 
-      {/* All registrations (history) */}
+      {/* Main table: scrollable with sticky Action column; cards on small screens */}
       <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-8">
-        <h2 className="text-lg font-semibold text-slate-900 px-4 pt-4 pb-2">All registrations (history)</h2>
-        <p className="text-sm text-slate-600 px-4 pb-4">All mock requests and bookings. Requested, scheduled, completed, no-show, and cancelled.</p>
         {/* Desktop: scrollable table, Action column sticky right */}
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left min-w-[900px]">
@@ -792,34 +551,6 @@ export default function AdminMocksPage() {
               onChange={(e) => setReportTo(e.target.value)}
               className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
             />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Sort by</label>
-            <select
-              value={reportSortBy}
-              onChange={(e) => setReportSortBy(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-            >
-              <option value="">Default (date)</option>
-              <option value="technical_score">Technical score</option>
-              <option value="communication_score">Communication score</option>
-              <option value="problem_solving_score">Problem solving score</option>
-              <option value="overall_score">Overall score</option>
-              <option value="completed_at">Completed at</option>
-              <option value="scheduled_at">Scheduled at</option>
-              <option value="aspirant_name">Aspirant name</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1">Order</label>
-            <select
-              value={reportOrder}
-              onChange={(e) => setReportOrder(e.target.value)}
-              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
           </div>
         </div>
         <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">

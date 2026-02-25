@@ -42,10 +42,6 @@ end $$;
 update public.jobs set audience_tracks = array['fresher'] where array_length(audience_tracks, 1) is null or audience_tracks = '{}';
 
 alter table public.jobs alter column audience_tracks set not null;
-
--- Drop policy that depends on audience_track/min_plan before dropping those columns
-drop policy if exists "jobs_aspirant_select" on public.jobs;
-
 alter table public.jobs drop column if exists audience_track;
 alter table public.jobs drop column if exists min_plan;
 
@@ -59,6 +55,7 @@ alter table public.jobs add constraint jobs_allowed_plans_check
 comment on column public.jobs.audience_tracks is 'Target tracks: fresher and/or experienced.';
 comment on column public.jobs.allowed_plans is 'For premium: which plans can see this job (base/silver/gold). Null = free (all plans).';
 
+drop policy if exists "jobs_aspirant_select" on public.jobs;
 create policy "jobs_aspirant_select"
   on public.jobs for select
   using (

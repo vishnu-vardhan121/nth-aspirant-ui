@@ -6,6 +6,7 @@ returns boolean
 language sql
 security definer
 set search_path = public
+stable
 as $$
   select exists (select 1 from public.admins where id = auth.uid());
 $$;

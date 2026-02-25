@@ -1,3 +1,6 @@
-# Cloudflare Pages (not Workers)
+# Cloudflare Pages – static site (Vite build)
+# Deploy: npm run build && npx wrangler pages deploy dist
+
 name = "nth-aspirant-ui"
-pages_build_output_dir = "dist"
+pages_build_output_dir = "./dist"
+compatibility_date = "2025-02-01"

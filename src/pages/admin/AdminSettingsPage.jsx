@@ -11,22 +11,14 @@ export default function AdminSettingsPage() {
   const [mockLimits, setMockLimits] = useState({ base: '', silver: '', gold: '' });
   const [mockLimitsSaving, setMockLimitsSaving] = useState(false);
   const [mockLimitsMessage, setMockLimitsMessage] = useState({ type: '', text: '' });
-  const [directInterviewLimits, setDirectInterviewLimits] = useState({ base: '', silver: '', gold: '' });
-  const [directInterviewSaving, setDirectInterviewSaving] = useState(false);
-  const [directInterviewMessage, setDirectInterviewMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     const fetchStatus = async () => {
       const { data: signupData, error: signupError } = await supabase.rpc('get_daily_signup_status');
-      const [mockBase, mockSilver, mockGold] = await Promise.all([
+      const [base, silver, gold] = await Promise.all([
         supabase.rpc('get_mock_limit', { plan_name: 'base' }).then((r) => r.data),
         supabase.rpc('get_mock_limit', { plan_name: 'silver' }).then((r) => r.data),
         supabase.rpc('get_mock_limit', { plan_name: 'gold' }).then((r) => r.data),
-      ]);
-      const [diBase, diSilver, diGold] = await Promise.all([
-        supabase.rpc('get_job_applications_limit', { plan_name: 'base' }).then((r) => r.data),
-        supabase.rpc('get_job_applications_limit', { plan_name: 'silver' }).then((r) => r.data),
-        supabase.rpc('get_job_applications_limit', { plan_name: 'gold' }).then((r) => r.data),
       ]);
       if (!signupError && signupData) {
         const lim = signupData.limit;
@@ -34,14 +26,9 @@ export default function AdminSettingsPage() {
         setCountToday(signupData.count_today ?? 0);
       }
       setMockLimits({
-        base: mockBase != null ? String(mockBase) : '',
-        silver: mockSilver != null ? String(mockSilver) : '',
-        gold: mockGold != null ? String(mockGold) : '',
-      });
-      setDirectInterviewLimits({
-        base: diBase != null ? String(diBase) : '',
-        silver: diSilver != null ? String(diSilver) : '',
-        gold: diGold != null ? String(diGold) : '',
+        base: base != null ? String(base) : '',
+        silver: silver != null ? String(silver) : '',
+        gold: gold != null ? String(gold) : '',
       });
       setLoading(false);
     };
@@ -92,26 +79,6 @@ export default function AdminSettingsPage() {
     }
   };
 
-  const handleSaveDirectInterviewLimits = async (e) => {
-    e.preventDefault();
-    setDirectInterviewMessage({ type: '', text: '' });
-    const base = directInterviewLimits.base.trim() === '' ? null : parseInt(directInterviewLimits.base, 10);
-    const silver = directInterviewLimits.silver.trim() === '' ? null : parseInt(directInterviewLimits.silver, 10);
-    const gold = directInterviewLimits.gold.trim() === '' ? null : parseInt(directInterviewLimits.gold, 10);
-    if ((base != null && (isNaN(base) || base < -1)) || (silver != null && (isNaN(silver) || silver < -1)) || (gold != null && (isNaN(gold) || gold < -1))) {
-      setDirectInterviewMessage({ type: 'error', text: 'Enter numbers ≥ 0. Use -1 for unlimited.' });
-      return;
-    }
-    setDirectInterviewSaving(true);
-    const { data } = await supabase.rpc('set_direct_interview_limits', { p_base: base, p_silver: silver, p_gold: gold });
-    setDirectInterviewSaving(false);
-    if (data?.ok) {
-      setDirectInterviewMessage({ type: 'success', text: 'Direct interview limits saved.' });
-    } else {
-      setDirectInterviewMessage({ type: 'error', text: data?.error ?? 'Failed to save.' });
-    }
-  };
-
   if (loading) {
     return <PageLoader size="md" label="Loading settings…" className="py-12" />;
   }
@@ -124,19 +91,19 @@ export default function AdminSettingsPage() {
       </p>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 max-w-md">
-        <h2 className="text-lg font-semibold text-slate-900 mb-1">Daily lead limit</h2>
+        <h2 className="text-lg font-semibold text-slate-900 mb-1">Daily signup limit</h2>
         <p className="text-slate-600 text-sm mb-4">
-          Maximum number of pricing page leads per day. Leave empty or set to -1 for unlimited.
+          Maximum number of new signups per day. Leave empty or set to -1 for unlimited.
         </p>
         {countToday !== null && (
           <p className="text-sm text-slate-500 mb-3">
-            Leads today: <span className="font-medium text-slate-700">{countToday}</span>
+            Signups today: <span className="font-medium text-slate-700">{countToday}</span>
           </p>
         )}
         <form onSubmit={handleSave} className="flex flex-wrap items-end gap-3">
           <div>
             <label htmlFor="daily_limit" className="block text-sm font-medium text-slate-700 mb-1">
-              Max leads per day
+              Max signups per day
             </label>
             <input
               id="daily_limit"
@@ -210,57 +177,6 @@ export default function AdminSettingsPage() {
         {mockLimitsMessage.text && (
           <p className={`mt-3 text-sm ${mockLimitsMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
             {mockLimitsMessage.text}
-          </p>
-        )}
-      </section>
-
-      <section className="rounded-xl border border-slate-200 bg-white p-6 max-w-md mt-8">
-        <h2 className="text-lg font-semibold text-slate-900 mb-1">Direct interview limits per plan</h2>
-        <p className="text-slate-600 text-sm mb-4">
-          Maximum job applications (direct company interviews) per plan per month. Base / Silver / Gold. Use -1 for unlimited.
-        </p>
-        <form onSubmit={handleSaveDirectInterviewLimits} className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Base</label>
-            <input
-              type="number"
-              min="-1"
-              value={directInterviewLimits.base}
-              onChange={(e) => setDirectInterviewLimits((f) => ({ ...f, base: e.target.value }))}
-              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Silver</label>
-            <input
-              type="number"
-              min="-1"
-              value={directInterviewLimits.silver}
-              onChange={(e) => setDirectInterviewLimits((f) => ({ ...f, silver: e.target.value }))}
-              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Gold</label>
-            <input
-              type="number"
-              min="-1"
-              value={directInterviewLimits.gold}
-              onChange={(e) => setDirectInterviewLimits((f) => ({ ...f, gold: e.target.value }))}
-              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={directInterviewSaving}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {directInterviewSaving ? 'Saving…' : 'Save'}
-          </button>
-        </form>
-        {directInterviewMessage.text && (
-          <p className={`mt-3 text-sm ${directInterviewMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
-            {directInterviewMessage.text}
           </p>
         )}
       </section>

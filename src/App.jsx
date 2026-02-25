@@ -10,9 +10,6 @@ import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
-import SignUpPage from './pages/auth/SignUpPage';
-import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
-import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import OnboardingPage from './pages/auth/OnboardingPage';
 import OverviewPage from './pages/dashboard/overview/OverviewPage';
 import JobsPage from './pages/dashboard/jobs/JobsPage';
@@ -43,9 +40,6 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
           path="/onboarding"
           element={

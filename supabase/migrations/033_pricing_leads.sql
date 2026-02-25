@@ -32,10 +32,10 @@ create policy "pricing_leads_admin_select"
 create or replace function public.submit_pricing_lead(
   p_plan_id text,
   p_track text,
-  p_email text,
-  p_contact_number text,
   p_name text default null,
   p_looking_for_role text default null,
+  p_email text,
+  p_contact_number text,
   p_graduation_pass text default null,
   p_current_company text default null,
   p_experience_years text default null,
