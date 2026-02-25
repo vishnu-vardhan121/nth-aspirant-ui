@@ -1,8 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
 
-console.log('[Supabase] interviewerSlice.js loaded');
-
 // Interviewer = admin user with role = 'interviewer' (single role field).
 
 const initialState = {
@@ -13,22 +11,15 @@ const initialState = {
 export const fetchInterviewerProfile = createAsyncThunk(
   'interviewer/fetchProfile',
   async (userId, { rejectWithValue }) => {
-    console.log('[Supabase] interviewerSlice fetchInterviewerProfile', { userId });
     if (!userId) return null;
-    try {
-      const { data, error } = await supabase
-        .from('admins')
-        .select('id, name, email')
-        .eq('id', userId)
-        .eq('role', 'interviewer')
-        .maybeSingle();
-      console.log('[Supabase] interviewerSlice admins select result', { hasData: !!data, error: error?.message });
-      if (error) return rejectWithValue(error);
-      return data;
-    } catch (err) {
-      console.error('[Supabase] interviewerSlice fetchInterviewerProfile throw', err);
-      throw err;
-    }
+    const { data, error } = await supabase
+      .from('admins')
+      .select('id, name, email')
+      .eq('id', userId)
+      .eq('role', 'interviewer')
+      .maybeSingle();
+    if (error) return rejectWithValue(error);
+    return data;
   }
 );
 

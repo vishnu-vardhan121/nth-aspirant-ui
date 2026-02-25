@@ -13,18 +13,15 @@ import { fetchInterviewerProfile, clearInterviewerProfile } from '../../store/sl
  * Aspirant → aspirant dashboard. Admin → admin panel.
  */
 export default function AuthListener() {
-  console.log('[Supabase] AuthListener render');
   const dispatch = useDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
 
   useEffect(() => {
-    console.log('[Supabase] AuthListener useEffect getSession + onAuthStateChange');
     let subscription;
     try {
       supabase.auth.getSession().then(({ data: { session } }) => {
-        console.log('[Supabase] AuthListener getSession result', { hasSession: !!session, userId: session?.user?.id });
         dispatch(setAuth({ session, user: session?.user ?? null }));
         if (session?.user?.id) {
           dispatch(fetchAspirantProfile(session.user.id));
@@ -34,7 +31,7 @@ export default function AuthListener() {
           dispatch(clearInterviewerProfile());
         }
       }).catch((err) => {
-        console.warn('[Supabase] AuthListener getSession failed:', err);
+        console.warn('Auth getSession failed:', err);
         dispatch(setAuth({ session: null, user: null }));
         dispatch(clearAspirantProfile());
         dispatch(clearAdminProfile());
@@ -42,7 +39,6 @@ export default function AuthListener() {
       });
 
       const result = supabase.auth.onAuthStateChange((_event, session) => {
-        console.log('[Supabase] AuthListener onAuthStateChange', { event: _event, hasSession: !!session });
         dispatch(setAuth({ session, user: session?.user ?? null }));
         if (session?.user?.id) {
           dispatch(fetchAspirantProfile(session.user.id));
@@ -53,17 +49,13 @@ export default function AuthListener() {
         }
       });
       subscription = result?.data?.subscription;
-      console.log('[Supabase] AuthListener onAuthStateChange subscribed');
     } catch (err) {
-      console.warn('[Supabase] AuthListener init failed:', err);
+      console.warn('Auth listener init failed:', err);
       dispatch(setAuth({ session: null, user: null }));
       dispatch(clearAspirantProfile());
       dispatch(clearAdminProfile());
     }
-    return () => {
-      console.log('[Supabase] AuthListener cleanup unsubscribe');
-      subscription?.unsubscribe?.();
-    };
+    return () => subscription?.unsubscribe?.();
   }, [dispatch]);
 
   // When aspirant is done and null, fetch admin and interviewer (so admin/interviewer users get their profile)
