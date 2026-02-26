@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
 
+console.log('[Supabase] authSlice.js loaded');
+
 const initialState = {
   user: null,
   session: null,
@@ -10,30 +12,51 @@ const initialState = {
 export const signIn = createAsyncThunk(
   'auth/signIn',
   async ({ email, password }, { rejectWithValue }) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) return rejectWithValue(error);
-    return data;
+    console.log('[Supabase] authSlice signIn called', { email: email ? `${email.slice(0, 3)}***` : '' });
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      console.log('[Supabase] authSlice signIn result', { hasData: !!data, error: error?.message });
+      if (error) return rejectWithValue(error);
+      return data;
+    } catch (err) {
+      console.error('[Supabase] authSlice signIn throw', err);
+      throw err;
+    }
   }
 );
 
 export const signUp = createAsyncThunk(
   'auth/signUp',
   async ({ email, password, options = {} }, { rejectWithValue }) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: options.redirectTo },
-    });
-    if (error) return rejectWithValue(error);
-    return data;
+    console.log('[Supabase] authSlice signUp called', { email: email ? `${email.slice(0, 3)}***` : '' });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: options.redirectTo },
+      });
+      console.log('[Supabase] authSlice signUp result', { hasData: !!data, error: error?.message });
+      if (error) return rejectWithValue(error);
+      return data;
+    } catch (err) {
+      console.error('[Supabase] authSlice signUp throw', err);
+      throw err;
+    }
   }
 );
 
 export const signOut = createAsyncThunk('auth/signOut', async () => {
-  await supabase.auth.signOut();
+  console.log('[Supabase] authSlice signOut called');
+  try {
+    await supabase.auth.signOut();
+    console.log('[Supabase] authSlice signOut done');
+  } catch (err) {
+    console.error('[Supabase] authSlice signOut throw', err);
+    throw err;
+  }
 });
 
 const authSlice = createSlice({

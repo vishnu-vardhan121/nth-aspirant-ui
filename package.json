@@ -8,9 +8,7 @@
     "build": "node scripts/write-env.js && vite build",
     "build:no-env": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview",
-    "deploy:create-admin": "supabase functions deploy create-admin",
-    "deploy:create-aspirant": "supabase functions deploy create-aspirant"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -29,7 +27,6 @@
     "tailwind-merge": "^3.5.0"
   },
   "devDependencies": {
-    "supabase": "^2.0.0",
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "^4.1.18",
     "@types/react": "^19.2.5",
@@ -43,5 +40,6 @@
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
     "vite": "^7.2.4"
-  }
+  },
+  "packageManager": "yarn@4.5.0+sha512.837566d24eec14ec0f5f1411adb544e892b3454255e61fdef8fd05f3429480102806bac7446bc9daff3896b01ae4b62d00096c7e989f1596f2af10b927532f39"
 }

@@ -1,6 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
 
+console.log('[Supabase] aspirantSlice.js loaded');
+
 const initialState = {
   profile: null,
   loading: true,
@@ -9,14 +11,21 @@ const initialState = {
 export const fetchAspirantProfile = createAsyncThunk(
   'aspirant/fetchProfile',
   async (userId, { rejectWithValue }) => {
+    console.log('[Supabase] aspirantSlice fetchAspirantProfile', { userId });
     if (!userId) return null;
-    const { data, error } = await supabase
-      .from('aspirants')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) return rejectWithValue(error);
-    return data;
+    try {
+      const { data, error } = await supabase
+        .from('aspirants')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      console.log('[Supabase] aspirantSlice aspirants select result', { hasData: !!data, error: error?.message });
+      if (error) return rejectWithValue(error);
+      return data;
+    } catch (err) {
+      console.error('[Supabase] aspirantSlice fetchAspirantProfile throw', err);
+      throw err;
+    }
   }
 );
 

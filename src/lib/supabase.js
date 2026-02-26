@@ -1,63 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Hardcoded fallback per user request; remove when Cloudflare env vars are set.
+const FALLBACK_URL = 'https://dnkshewywsxqzoknnczm.supabase.co';
+const FALLBACK_ANON_KEY = 'sb_publishable_4jy2V2VITPmrsaaLpykKRw_D0yvUPNz';
 
-/** Chainable noop query result: supports .then(), .maybeSingle(), .single(), .order(), .limit(), .in() */
-function noopQuery(payload = { data: null, error: null }) {
-  const out = { then: (f) => (typeof f === 'function' ? Promise.resolve(f(payload)) : out) };
-  out.maybeSingle = () => out;
-  out.single = () => out;
-  out.order = () => out;
-  out.limit = () => out;
-  out.in = () => out;
-  return out;
-}
+const url = import.meta.env.VITE_SUPABASE_URL || FALLBACK_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_ANON_KEY;
 
-const noopSupabase = {
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    refreshSession: () => Promise.resolve({ data: { session: null }, error: null }),
-    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
-    signInWithPassword: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-    signUp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-    signOut: () => Promise.resolve(),
-    resetPasswordForEmail: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-    updateUser: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-  },
-  storage: {
-    from: () => ({
-      upload: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-      createSignedUrl: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-      remove: () => Promise.resolve({ data: null, error: null }),
-    }),
-  },
-  from: () => ({
-    select: () => ({
-      eq: () => noopQuery({ data: null, error: null }),
-      in: () => noopQuery({ data: [], error: null }),
-      order: () => ({ eq: () => noopQuery({ data: [], error: null }), limit: () => noopQuery({ data: [], error: null }) }),
-      limit: () => noopQuery({ data: [], error: null }),
-    }),
-    update: () => ({ eq: () => ({ then: (f) => (typeof f === 'function' ? Promise.resolve(f({ error: { message: 'Supabase not configured' } })) : null) }) }),
-    insert: () => ({ then: (f) => (typeof f === 'function' ? Promise.resolve(f({ error: { message: 'Supabase not configured' } })) : null) }),
-    upsert: () => ({ select: () => ({ single: () => noopQuery({ data: null, error: { message: 'Supabase not configured' } }) }) }),
-  }),
-  rpc: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-  functions: { invoke: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }) },
-  channel: () => ({ on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }) }),
-  removeChannel: () => {},
+const mask = (val = '') => {
+  if (!val) return 'EMPTY';
+  if (val.length <= 12) return `${val.slice(0, 3)}…${val.slice(-3)}`;
+  return `${val.slice(0, 8)}…${val.slice(-4)}`;
 };
 
-let supabase;
-try {
-  if (supabaseUrl && supabaseAnonKey) {
-    supabase = createClient(supabaseUrl, supabaseAnonKey);
-  } else {
-    supabase = noopSupabase;
-  }
-} catch (e) {
-  supabase = noopSupabase;
-}
+console.log('[Supabase] supabase.js init', {
+  hasUrl: !!url,
+  hasAnonKey: !!anonKey,
+  fromEnv: !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY),
+  urlMasked: mask(url),
+  anonKeyMasked: mask(anonKey),
+});
 
-export { supabase };
+export const supabase = createClient(url, anonKey);
