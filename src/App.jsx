@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthListener from './components/auth/AuthListener';
+import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RequireAspirantProfile from './components/auth/RequireAspirantProfile';
 import RequireAdminProfile from './components/auth/RequireAdminProfile';
@@ -40,6 +41,7 @@ import SuccessGuaranteePage from './pages/landing/guarantee/SuccessGuaranteePage
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthListener />
       <Routes>
         <Route path="/" element={<LandingPage />} />
