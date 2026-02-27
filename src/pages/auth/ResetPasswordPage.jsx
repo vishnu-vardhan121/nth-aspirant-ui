@@ -134,7 +134,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -150,7 +150,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
 

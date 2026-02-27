@@ -8,6 +8,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
+import JobDetailsPage from './pages/landing/home/JobDetailsPage';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
@@ -34,6 +35,7 @@ import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
+import SuccessGuaranteePage from './pages/landing/guarantee/SuccessGuaranteePage';
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
       <AuthListener />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/jobs/:id" element={<JobDetailsPage />} />
+        <Route path="/guarantee" element={<SuccessGuaranteePage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />

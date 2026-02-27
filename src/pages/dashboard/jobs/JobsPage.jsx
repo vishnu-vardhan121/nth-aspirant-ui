@@ -34,7 +34,7 @@ export default function JobsPage() {
     const fetchJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, walk_in_date, address, apply_link')
+        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, walk_in_date, address, apply_link, audience_tracks')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
       if (!error) setJobs(data ?? []);
@@ -59,21 +59,35 @@ export default function JobsPage() {
     fetchApplied();
   }, []);
 
-  const jobsForList = useMemo(() => jobs.map((j) => ({
-    id: j.id,
-    title: j.title,
-    company: j.company_name ?? '',
-    location: j.location ?? '—',
-    type: j.job_type ?? '—',
-    postedAt: formatPostedAt(j.created_at),
-    snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
-    applicationDeadline: formatDate(j.application_deadline),
-    applicationDeadlineRaw: j.application_deadline,
-    walkInDate: formatDate(j.walk_in_date),
-    address: j.address ?? '',
-    applyLink: j.apply_link ?? '',
-    isExpired: isApplicationExpired(j.application_deadline),
-  })), [jobs]);
+  const jobsForList = useMemo(() => jobs.map((j) => {
+    const tracks = Array.isArray(j.audience_tracks) ? j.audience_tracks : [];
+    const hasFresher = tracks.includes('fresher');
+    const hasExperienced = tracks.includes('experienced');
+    const experienceLabel = hasFresher && hasExperienced
+      ? 'Fresher & Experienced'
+      : hasFresher
+        ? 'Fresher'
+        : hasExperienced
+          ? 'Experienced'
+          : 'Any Experience';
+
+    return {
+      id: j.id,
+      title: j.title,
+      company: j.company_name ?? '',
+      location: j.location ?? '—',
+      type: j.job_type ?? '—',
+      experience: experienceLabel,
+      postedAt: formatPostedAt(j.created_at),
+      snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
+      applicationDeadline: formatDate(j.application_deadline),
+      applicationDeadlineRaw: j.application_deadline,
+      walkInDate: formatDate(j.walk_in_date),
+      address: j.address ?? '',
+      applyLink: j.apply_link ?? '',
+      isExpired: isApplicationExpired(j.application_deadline),
+    };
+  }), [jobs]);
 
   return (
     <div className="space-y-6">

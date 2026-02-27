@@ -131,20 +131,20 @@ export default function MocksPage() {
       {/* Process explanation */}
       <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
-          <HiAcademicCap className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
+          <HiAcademicCap className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
           How it works
         </h2>
         <ol className="space-y-3 text-[rgb(var(--nth-text-secondary-light))] text-sm">
           <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">1</span>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">1</span>
             <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Book a slot</strong> — Choose an available date and time below. You can book mocks within your plan limit.</span>
           </li>
           <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">2</span>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">2</span>
             <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Join at your time</strong> — Use the Meet link in My mock registrations to join the interview. You’ll get the link as soon as you book.</span>
           </li>
           <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgb(var(--nth-primary))]/10 text-[rgb(var(--nth-primary))] font-semibold text-xs">3</span>
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">3</span>
             <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Get feedback</strong> — After the mock, your interviewer will submit scores and notes. View them here once the mock is marked completed.</span>
           </li>
         </ol>
@@ -154,7 +154,7 @@ export default function MocksPage() {
       {mockNotices.length > 0 && (
         <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
-            <HiMegaphone className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
+            <HiMegaphone className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
             Mock updates & notices
           </h2>
           <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
@@ -164,7 +164,7 @@ export default function MocksPage() {
             {mockNotices.map((n) => (
               <li
                 key={n.id}
-                className={`rounded-lg border p-4 ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[rgb(var(--nth-primary))]/30 bg-[rgb(var(--nth-primary))]/5'}`}
+                className={`rounded-lg border p-4 ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}
               >
                 <p className="text-sm text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap">{n.body}</p>
                 <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-2">{formatDateTime(n.created_at)}</p>
@@ -347,7 +347,7 @@ export default function MocksPage() {
                       href={r.meet_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[rgb(var(--nth-primary))] text-white text-sm font-medium hover:opacity-90 shrink-0"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[hsl(var(--nth-primary))] text-white text-sm font-medium hover:opacity-90 shrink-0"
                     >
                       <HiLink className="w-4 h-4" /> Join Meet
                     </a>

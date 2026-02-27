@@ -26,8 +26,8 @@ export default function MessageNotification({ notification, onDismiss }) {
       style={{ animation: 'messageNotificationIn 0.25s ease-out' }}
     >
       <div className="flex gap-3 p-4">
-        <span className="w-10 h-10 rounded-full bg-[rgb(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
-          <HiChatBubbleLeftRight className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
+        <span className="w-10 h-10 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
+          <HiChatBubbleLeftRight className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
         </span>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[rgb(var(--nth-text-primary-light))]">{title}</p>
@@ -39,7 +39,7 @@ export default function MessageNotification({ notification, onDismiss }) {
           <Link
             to={link || '/dashboard/messages'}
             onClick={onDismiss}
-            className="inline-block mt-2 text-sm font-medium text-[rgb(var(--nth-primary))] hover:underline"
+            className="inline-block mt-2 text-sm font-medium text-[hsl(var(--nth-primary))] hover:underline"
           >
             View messages →
           </Link>

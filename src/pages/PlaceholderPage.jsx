@@ -15,7 +15,7 @@ export default function PlaceholderPage({ title, message = 'Coming soon.' }) {
           to="/"
           className="text-sm font-medium px-4 py-2 rounded-lg transition-colors"
           style={{
-            color: 'rgb(var(--nth-primary-light))',
+            color: 'hsl(var(--nth-primary-light))',
           }}
         >
           ← Back to Home

@@ -79,7 +79,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -87,7 +87,7 @@ export default function LoginPage() {
                 <Label htmlFor="password" className="text-slate-300">
                   Password
                 </Label>
-                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[rgb(var(--nth-primary))] transition-colors">
+                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[hsl(var(--nth-primary))] transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -100,7 +100,7 @@ export default function LoginPage() {
                 minLength={6}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
 

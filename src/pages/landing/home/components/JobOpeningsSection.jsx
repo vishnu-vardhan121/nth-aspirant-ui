@@ -173,10 +173,12 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
             </div>
           )}
           
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
-            <span className="truncate">{job.city}</span>
-          </div>
+          {job.city && job.city !== '—' && (
+            <div className="flex items-center gap-2 text-sm text-slate-600">
+              <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
+              <span className="truncate">{job.city}</span>
+            </div>
+          )}
           {job.applicationDeadline && (
             <p className="text-xs text-slate-500">Apply by {job.applicationDeadline}</p>
           )}
@@ -213,21 +215,29 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
             </div>
           ) : canView ? (
             <div>
-              <button
-                type="button"
-                onClick={handleApply}
-                disabled={applying}
-                className={`block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 ${
-                  isFree
-                    ? 'bg-gradient-to-r from-indigo-500 via-indigo-600 to-sky-600 hover:from-indigo-600 hover:via-indigo-700 hover:to-sky-700 text-white shadow-indigo-500/25 hover:shadow-indigo-600/40'
-                    : 'bg-gradient-to-r from-violet-500 via-violet-600 to-indigo-600 hover:from-violet-600 hover:via-violet-700 hover:to-indigo-700 text-white shadow-violet-500/25 hover:shadow-violet-600/40'
-                }`}
-              >
-                <span className="flex items-center justify-center gap-2.5">
-                  <span>{applying ? 'Applying…' : 'Apply Now'}</span>
-                  <HiArrowRight className="w-4 h-4" />
-                </span>
-              </button>
+              {isFree ? (
+                <Link
+                  to={`/jobs/${job.id}`}
+                  className="block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl bg-gradient-to-r from-indigo-500 via-indigo-600 to-sky-600 hover:from-indigo-600 hover:via-indigo-700 hover:to-sky-700 text-white shadow-indigo-500/25 hover:shadow-indigo-600/40"
+                >
+                  <span className="flex items-center justify-center gap-2.5">
+                    <span>View & Apply</span>
+                    <HiArrowRight className="w-4 h-4" />
+                  </span>
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApply}
+                  disabled={applying}
+                  className="block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 bg-gradient-to-r from-violet-500 via-violet-600 to-indigo-600 hover:from-violet-600 hover:via-violet-700 hover:to-indigo-700 text-white shadow-violet-500/25 hover:shadow-violet-600/40"
+                >
+                  <span className="flex items-center justify-center gap-2.5">
+                    <span>{applying ? 'Applying…' : 'Apply Now'}</span>
+                    <HiArrowRight className="w-4 h-4" />
+                  </span>
+                </button>
+              )}
             </div>
           ) : (
             <div>
