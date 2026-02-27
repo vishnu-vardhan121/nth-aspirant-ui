@@ -3,6 +3,7 @@ import SectionContainer from './SectionContainer';
 
 const FOOTER_LINKS = [
   { label: 'Pricing', to: '/pricing' },
+  { label: 'Guarantee', to: '/guarantee' },
   { label: 'Login', to: '/login' },
   { label: 'How it works', to: '/#how-it-works' },
   { label: 'Contact', to: 'mailto:contact@nth.example.com' },

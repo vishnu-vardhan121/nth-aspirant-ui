@@ -32,18 +32,14 @@ export default function LoginPage() {
     e.preventDefault();
     setMessage({ type: '', text: '' });
     setSubmitting(true);
-    console.log('[Supabase] LoginPage handleSubmit start');
     try {
       const result = await dispatch(signInThunk({ email, password }));
-      console.log('[Supabase] LoginPage signInThunk result', { rejected: signInThunk.rejected.match(result) });
       if (signInThunk.rejected.match(result)) {
         setMessage({ type: 'error', text: result.payload?.message ?? 'Sign in failed.' });
         setSubmitting(false);
         return;
       }
-      console.log('[Supabase] LoginPage calling supabase.rpc get_my_role');
-      const { data: roleData, error: rpcError } = await supabase.rpc('get_my_role');
-      console.log('[Supabase] LoginPage get_my_role result', { roleData, rpcError: rpcError?.message });
+      const { data: roleData } = await supabase.rpc('get_my_role');
       const role = roleData?.role ?? null;
       const defaultPath = getDefaultPathForRole(role);
       const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer'];
@@ -83,7 +79,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -91,7 +87,7 @@ export default function LoginPage() {
                 <Label htmlFor="password" className="text-slate-300">
                   Password
                 </Label>
-                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[rgb(var(--nth-primary))] transition-colors">
+                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[hsl(var(--nth-primary))] transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -104,7 +100,7 @@ export default function LoginPage() {
                 minLength={6}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
 

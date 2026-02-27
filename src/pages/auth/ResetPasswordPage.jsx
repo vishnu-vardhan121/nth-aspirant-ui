@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-console.log('[Supabase] ResetPasswordPage.jsx loaded');
-
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -18,7 +16,6 @@ export default function ResetPasswordPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('[Supabase] ResetPasswordPage useEffect init');
     const hash = window.location.hash;
     const hasRecovery = hash && hash.includes('type=recovery');
 
@@ -28,12 +25,10 @@ export default function ResetPasswordPage() {
     }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      console.log('[Supabase] ResetPasswordPage onAuthStateChange', { event });
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('[Supabase] ResetPasswordPage getSession', { hasSession: !!session });
       if (session) setReady(true);
     });
 
@@ -62,9 +57,7 @@ export default function ResetPasswordPage() {
       return;
     }
     setSubmitting(true);
-    console.log('[Supabase] ResetPasswordPage updateUser');
     const { error } = await supabase.auth.updateUser({ password });
-    console.log('[Supabase] ResetPasswordPage updateUser result', { error: error?.message });
     setSubmitting(false);
     if (error) {
       setMessage({ type: 'error', text: error.message });
@@ -141,7 +134,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -157,7 +150,7 @@ export default function ResetPasswordPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
               />
             </div>
 

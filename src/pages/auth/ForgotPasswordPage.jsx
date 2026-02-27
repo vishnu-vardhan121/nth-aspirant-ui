@@ -6,8 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-console.log('[Supabase] ForgotPasswordPage.jsx loaded');
-
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -20,9 +18,7 @@ export default function ForgotPasswordPage() {
     if (!email.trim()) return;
     setSubmitting(true);
     const redirectTo = `${window.location.origin}/reset-password`;
-    console.log('[Supabase] ForgotPasswordPage resetPasswordForEmail', { redirectTo });
     const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), { redirectTo });
-    console.log('[Supabase] ForgotPasswordPage resetPasswordForEmail result', { error: error?.message });
     setSubmitting(false);
     if (error) {
       setMessage({ type: 'error', text: error.message });
@@ -54,7 +50,7 @@ export default function ForgotPasswordPage() {
                 {message.text}
               </div>
               <p className="text-center text-sm text-slate-400">
-                <Link to="/login" className="text-[rgb(var(--nth-primary))] hover:underline">
+                <Link to="/login" className="text-[hsl(var(--nth-primary))] hover:underline">
                   Back to sign in
                 </Link>
               </p>
@@ -73,7 +69,7 @@ export default function ForgotPasswordPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
                 />
               </div>
 

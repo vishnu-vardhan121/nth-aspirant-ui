@@ -42,7 +42,7 @@ export default function PricingTeaserSection() {
               key={tier.name}
               className={`p-8 rounded-3xl border transition-all duration-300 ${
                 tier.popular
-                  ? 'border-[rgb(var(--nth-primary))] bg-[rgb(var(--nth-bg-soft))] shadow-lg scale-105 z-10'
+                  ? 'border-[hsl(var(--nth-primary))] bg-[rgb(var(--nth-bg-soft))] shadow-lg scale-105 z-10'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >

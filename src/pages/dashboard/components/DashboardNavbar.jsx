@@ -50,7 +50,7 @@ export default function DashboardNavbar({ onMenuClick }) {
 
         <Link
           to={pricingTo}
-          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-[rgb(var(--nth-primary))] hover:underline"
+          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--nth-primary))] hover:underline"
         >
           Upgrade
           <HiChevronDown className="w-3.5 h-3.5 -rotate-90" />
@@ -67,7 +67,7 @@ export default function DashboardNavbar({ onMenuClick }) {
         <div
           className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 shadow-sm"
           style={{
-            background: `linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)`,
+            background: `linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)`,
           }}
           title={user?.email}
         >

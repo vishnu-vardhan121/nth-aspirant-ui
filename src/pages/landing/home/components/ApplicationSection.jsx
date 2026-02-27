@@ -75,7 +75,7 @@ export default function ApplicationSection() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight mb-5 text-[rgb(var(--nth-text-primary-light))] leading-[1.2]">
               Built for your{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[rgb(var(--nth-primary))] to-[rgb(var(--nth-accent))]">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-[hsl(var(--nth-primary))] to-[hsl(var(--nth-accent))]">
                 career journey
               </span>
             </h2>
