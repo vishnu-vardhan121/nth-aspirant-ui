@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { HiXMark } from 'react-icons/hi2';
+import { HiXMark, HiDocumentArrowUp } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
+
+const RESUME_ACCEPT = '.pdf,.doc,.docx';
+const RESUME_MAX_SIZE_MB = 5;
 
 export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
   const [formData, setFormData] = useState({
@@ -16,6 +19,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
     extraNote: ''
   });
   
+  const [resumeFile, setResumeFile] = useState(null);
   const [skillInput, setSkillInput] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -72,6 +76,22 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
       return;
     }
 
+    if (!resumeFile) {
+      setError('Please upload your resume (PDF, DOC, or DOCX).');
+      return;
+    }
+
+    const ext = resumeFile.name.split('.').pop()?.toLowerCase();
+    if (!['pdf', 'doc', 'docx'].includes(ext)) {
+      setError('Resume must be PDF, DOC, or DOCX.');
+      return;
+    }
+
+    if (resumeFile.size > RESUME_MAX_SIZE_MB * 1024 * 1024) {
+      setError(`Resume must be under ${RESUME_MAX_SIZE_MB} MB.`);
+      return;
+    }
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError('Please enter a valid email address.');
@@ -91,6 +111,22 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
 
     setSubmitting(true);
 
+    let resumeUrl = null;
+    try {
+      const storagePath = `free-leads/${crypto.randomUUID()}_${resumeFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const { error: uploadError } = await supabase.storage.from('resumes').upload(storagePath, resumeFile, { upsert: false });
+      if (uploadError) {
+        setError(uploadError.message || 'Failed to upload resume. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+      resumeUrl = storagePath;
+    } catch (err) {
+      setError(err?.message || 'Failed to upload resume.');
+      setSubmitting(false);
+      return;
+    }
+
     const { data: dbData, error: dbError } = await supabase.rpc('submit_free_job_lead', {
       p_job_id: jobId,
       p_track: formData.track,
@@ -102,7 +138,8 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
       p_previous_company: formData.track === 'experienced' ? formData.previousCompany : null,
       p_role_played: formData.track === 'experienced' ? formData.rolePlayed : null,
       p_current_ctc: formData.track === 'experienced' ? formData.currentCtc : null,
-      p_extra_note: formData.extraNote
+      p_extra_note: formData.extraNote,
+      p_resume_url: resumeUrl
     });
 
     setSubmitting(false);
@@ -208,6 +245,45 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
                   className="w-full px-4 py-3 rounded-xl bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all text-slate-900 outline-none"
                   placeholder="10-digit mobile number"
                 />
+              </div>
+
+              <div className="space-y-2 lg:col-span-2">
+                <label className="text-sm font-bold text-slate-700">Resume *</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept={RESUME_ACCEPT}
+                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                  <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 border-dashed transition-colors ${
+                    resumeFile ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                  }`}>
+                    <HiDocumentArrowUp className="w-8 h-8 text-indigo-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      {resumeFile ? (
+                        <>
+                          <p className="text-sm font-medium text-slate-800 truncate">{resumeFile.name}</p>
+                          <p className="text-xs text-slate-500">{(resumeFile.size / 1024).toFixed(1)} KB • Click to change</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-sm font-medium text-slate-600">PDF, DOC, or DOCX (max {RESUME_MAX_SIZE_MB} MB)</p>
+                          <p className="text-xs text-slate-500">Click to upload your resume</p>
+                        </>
+                      )}
+                    </div>
+                    {resumeFile && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setResumeFile(null); }}
+                        className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors shrink-0"
+                      >
+                        <HiXMark className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2 lg:col-span-2">

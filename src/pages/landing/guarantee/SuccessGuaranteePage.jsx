@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Check, ArrowRight, Shield, Users, Star, Sparkles, MessageSquare, Calendar, FileCheck } from 'lucide-react';
+import { Check, Shield, Users, Star, Sparkles, MessageSquare, Calendar, FileCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -121,7 +121,6 @@ export default function SuccessGuarantee() {
               className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 !text-white font-bold px-10 py-4 rounded-full nth-shadow-lg hover:opacity-90 transition-all text-base hover:scale-105 active:scale-95 duration-200"
             >
               Secure Your Future Today
-              <ArrowRight size={18} />
             </Link>
             <p className="text-white/40 text-sm mt-4">Backed by a 100% refund guarantee</p>
           </div>
@@ -287,7 +286,6 @@ export default function SuccessGuarantee() {
               >
                 <summary className="cursor-pointer p-6 font-bold text-slate-900 flex items-center justify-between list-none">
                   {faq.q}
-                  <ArrowRight size={18} className="text-primary transition-transform group-open:rotate-90 shrink-0 ml-4" />
                 </summary>
                 <div className="px-6 pb-6 text-slate-600 leading-relaxed -mt-2 animate-accordion-down">{faq.a}</div>
               </motion.details>
@@ -315,7 +313,6 @@ export default function SuccessGuarantee() {
             className="inline-flex items-center gap-3 bg-primary hover:bg-primary/90 !text-white font-bold px-10 py-4 rounded-full nth-shadow-lg hover:opacity-90 transition-all text-base hover:scale-105 active:scale-95 duration-200"
           >
             Apply for Membership
-            <ArrowRight size={18} />
           </Link>
         </div>
       </section>

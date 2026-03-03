@@ -66,6 +66,17 @@
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  @keyframes cta-pulse {
+    0%, 100% { box-shadow: 0 4px 14px rgba(99,102,241,0.35), 0 0 0 0 rgba(99,102,241,0.4); }
+    50% { box-shadow: 0 6px 20px rgba(99,102,241,0.5), 0 0 0 8px rgba(99,102,241,0); }
+  }
+  @keyframes border-glow-spin {
+    to { transform: rotate(360deg); }
+  }
 
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
@@ -73,6 +84,42 @@
   --animate-fade-in: fade-in 0.5s ease-out forwards;
   --animate-slide-in-right: slide-in-right 0.7s ease-out forwards;
   --animate-shimmer: shimmer 2s linear infinite;
+  --animate-marquee: marquee 40s linear infinite;
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+.animate-cta-pulse {
+  animation: cta-pulse 2s ease-in-out infinite;
+}
+
+.cta-moving-border {
+  position: relative;
+  border-radius: 9999px;
+  padding: 2px;
+  overflow: hidden;
+  display: inline-flex;
+}
+.cta-moving-border::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg 300deg,
+    rgba(129, 140, 248, 0.9) 300deg 320deg,
+    rgba(191, 219, 254, 0.9) 320deg 340deg,
+    transparent 340deg 360deg
+  );
+  animation: border-glow-spin 6s linear infinite;
+  z-index: 0;
+}
+.cta-moving-border > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* NTH design system */
@@ -207,6 +254,23 @@ body {
   background-color: rgb(var(--nth-bg-light));
 }
 
+/* Dark sections: override global color so text is visible on dark backgrounds */
+#hero,
+#cta-strip,
+#job-openings {
+  color: rgb(248 250 252);
+}
+#hero a,
+#cta-strip a,
+#job-openings a {
+  color: inherit;
+}
+#hero a:hover,
+#cta-strip a:hover,
+#job-openings a:hover {
+  color: rgb(255 255 255);
+}
+
 /* Landing page: no horizontal scroll and hide vertical scrollbar (page still scrolls) */
 .nth-landing-root {
   overflow-x: hidden;
@@ -223,10 +287,16 @@ body.nth-landing-page::-webkit-scrollbar {
   display: none;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Utility: hide horizontal scrollbar for custom scrollers */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Heading sizes are controlled via Tailwind utilities (text-*) */
 
 /* Buttons: no global dark style – each button uses Tailwind or .nth-btn-primary for consistent theme */
 button {

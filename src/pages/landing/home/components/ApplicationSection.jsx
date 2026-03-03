@@ -94,19 +94,6 @@ export default function ApplicationSection() {
                 whileTap={{ scale: 0.98 }}
               >
                 View Plans & Get Started
-                <svg
-                  className="w-5 h-5 transition-transform group-hover:translate-x-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
               </motion.span>
             </Link>
           </motion.div>
