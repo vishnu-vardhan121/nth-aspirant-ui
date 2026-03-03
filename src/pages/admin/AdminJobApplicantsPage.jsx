@@ -3,7 +3,6 @@ import { Link, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loader, PageLoader } from '../../components/ui/Loader';
 import {
-  HiArrowLeft,
   HiXMark,
   HiUser,
   HiEnvelope,
@@ -243,7 +242,6 @@ export default function AdminJobApplicantsPage() {
         to="/admin/jobs"
         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm mb-4"
       >
-        <HiArrowLeft className="w-4 h-4" />
         Back to jobs
       </Link>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Applicants</h1>
