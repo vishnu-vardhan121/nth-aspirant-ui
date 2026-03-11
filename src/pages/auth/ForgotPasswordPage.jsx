@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
                 {message.text}
               </div>
               <p className="text-center text-sm text-slate-400">
-                <Link to="/login" className="text-[rgb(var(--nth-primary))] hover:underline">
+                <Link to="/login" className="text-[hsl(var(--nth-primary))] hover:underline">
                   Back to sign in
                 </Link>
               </p>
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
                   required
                   autoComplete="email"
                   placeholder="you@example.com"
-                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
+                  className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
                 />
               </div>
 

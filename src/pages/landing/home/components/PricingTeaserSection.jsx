@@ -42,7 +42,7 @@ export default function PricingTeaserSection() {
               key={tier.name}
               className={`p-8 rounded-3xl border transition-all duration-300 ${
                 tier.popular
-                  ? 'border-[rgb(var(--nth-primary))] bg-[rgb(var(--nth-bg-soft))] shadow-lg scale-105 z-10'
+                  ? 'border-[hsl(var(--nth-primary))] bg-[rgb(var(--nth-bg-soft))] shadow-lg scale-105 z-10'
                   : 'border-slate-200 bg-white hover:border-slate-300'
               }`}
             >
@@ -70,19 +70,6 @@ export default function PricingTeaserSection() {
             className="nth-btn-primary inline-flex items-center justify-center gap-2 text-lg px-8 py-3 hover:text-white"
           >
             Compare Plans
-            <svg
-              className="w-5 h-5 ml-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 8l4 4m0 0l-4 4m4-4H3"
-              />
-            </svg>
           </Link>
         </motion.div>
       </SectionContainer>

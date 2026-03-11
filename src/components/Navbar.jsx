@@ -13,10 +13,10 @@ function NavLink({ label, to, showLightNav }) {
   const isExternal = to.startsWith('#');
   // When navbar is light (white bg), use dark text for visibility. Otherwise white text.
   const textColorClass = showLightNav
-    ? 'text-slate-800 hover:text-[rgb(var(--nth-primary))]'
+    ? 'text-slate-800 hover:text-[hsl(var(--nth-primary))]'
     : 'text-white/90 hover:text-white';
 
-  const underlineColor = showLightNav ? 'rgb(var(--nth-primary) / 0.8)' : 'white';
+  const underlineColor = showLightNav ? 'hsl(var(--nth-primary) / 0.8)' : 'white';
 
   const content = (
     <span className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${textColorClass}`}>
@@ -57,10 +57,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const authLinks = isAuthenticated
-    ? [
-        { label: 'Dashboard', to: '/dashboard' },
-        { label: 'Sign out', isSignOut: true },
-      ]
+    ? [{ label: 'Dashboard', to: '/dashboard' }]
     : [{ label: 'Login', to: '/login' }];
   const navLinks = [...STATIC_LINKS, ...authLinks].map((link) =>
     link.to === '/pricing'
@@ -111,7 +108,7 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <img 
-                src={showLightStyle ? "/lologo.png" : "/lilogo.png"}
+                src={showLightStyle ? "/dark-logo.png" : "/white-logo.png"}
                 alt="Naveen Talent Hub"
                 className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105"
               />
@@ -130,7 +127,7 @@ export default function Navbar() {
                   }}
                   className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${
                     showLightStyle
-                      ? 'text-slate-800 hover:text-[rgb(var(--nth-primary))]'
+                      ? 'text-slate-800 hover:text-[hsl(var(--nth-primary))]'
                       : 'text-white/90 hover:text-white'
                   }`}
                 >
@@ -215,7 +212,7 @@ export default function Navbar() {
                       type="button"
                       className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-colors ${
                         showLightStyle
-                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
+                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[hsl(var(--nth-primary))]'
                           : 'text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                       onClick={() => {
@@ -246,7 +243,7 @@ export default function Navbar() {
                       to={link.to}
                       className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
                         showLightStyle
-                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[rgb(var(--nth-primary))]'
+                          ? 'text-slate-800 hover:bg-slate-50 hover:text-[hsl(var(--nth-primary))]'
                           : 'text-slate-300 hover:bg-white/10 hover:text-white'
                       }`}
                       onClick={() => setIsMobileMenuOpen(false)}

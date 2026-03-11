@@ -29,12 +29,13 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [usage, setUsage] = useState(null); // { used, limit, active }
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [applicationStatusByJobId, setApplicationStatusByJobId] = useState({});
 
   useEffect(() => {
     const fetchJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, walk_in_date, address, apply_link')
+        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, walk_in_date, address, apply_link, audience_tracks')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
       if (!error) setJobs(data ?? []);
@@ -53,27 +54,46 @@ export default function JobsPage() {
 
   useEffect(() => {
     const fetchApplied = async () => {
-      const { data, error } = await supabase.from('applications').select('job_id');
-      if (!error && data) setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+      const { data, error } = await supabase.from('applications').select('job_id, status').neq('status', 'rejected');
+      if (!error && data) {
+        setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+        const byJob = {};
+        data.forEach((r) => { byJob[r.job_id] = r.status || 'applied'; });
+        setApplicationStatusByJobId(byJob);
+      }
     };
     fetchApplied();
   }, []);
 
-  const jobsForList = useMemo(() => jobs.map((j) => ({
-    id: j.id,
-    title: j.title,
-    company: j.company_name ?? '',
-    location: j.location ?? '—',
-    type: j.job_type ?? '—',
-    postedAt: formatPostedAt(j.created_at),
-    snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
-    applicationDeadline: formatDate(j.application_deadline),
-    applicationDeadlineRaw: j.application_deadline,
-    walkInDate: formatDate(j.walk_in_date),
-    address: j.address ?? '',
-    applyLink: j.apply_link ?? '',
-    isExpired: isApplicationExpired(j.application_deadline),
-  })), [jobs]);
+  const jobsForList = useMemo(() => jobs.map((j) => {
+    const tracks = Array.isArray(j.audience_tracks) ? j.audience_tracks : [];
+    const hasFresher = tracks.includes('fresher');
+    const hasExperienced = tracks.includes('experienced');
+    const experienceLabel = hasFresher && hasExperienced
+      ? 'Fresher & Experienced'
+      : hasFresher
+        ? 'Fresher'
+        : hasExperienced
+          ? 'Experienced'
+          : 'Any Experience';
+
+    return {
+      id: j.id,
+      title: j.title,
+      company: j.company_name ?? '',
+      location: j.location ?? '—',
+      type: j.job_type ?? '—',
+      experience: experienceLabel,
+      postedAt: formatPostedAt(j.created_at),
+      snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
+      applicationDeadline: formatDate(j.application_deadline),
+      applicationDeadlineRaw: j.application_deadline,
+      walkInDate: formatDate(j.walk_in_date),
+      address: j.address ?? '',
+      applyLink: j.apply_link ?? '',
+      isExpired: isApplicationExpired(j.application_deadline),
+    };
+  }), [jobs]);
 
   return (
     <div className="space-y-6">
@@ -93,12 +113,18 @@ export default function JobsPage() {
           jobs={jobsForList}
           usage={usage}
           appliedJobIds={appliedJobIds}
+          applicationStatusByJobId={applicationStatusByJobId}
           onUsageChange={() => {
             supabase.rpc('get_application_usage').then(({ data }) => {
               if (data) setUsage(data);
             });
-            supabase.from('applications').select('job_id').then(({ data }) => {
-              if (data) setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+            supabase.from('applications').select('job_id, status').neq('status', 'rejected').then(({ data }) => {
+              if (data) {
+                setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+                const byJob = {};
+                data.forEach((r) => { byJob[r.job_id] = r.status || 'applied'; });
+                setApplicationStatusByJobId(byJob);
+              }
             });
           }}
         />

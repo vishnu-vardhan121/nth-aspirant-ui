@@ -3,7 +3,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, ButtonLoader } from '../../components/ui/Loader';
-import { HiArrowLeft } from 'react-icons/hi2';
 
 const JOB_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
 const TRACK_OPTIONS = [
@@ -47,6 +46,7 @@ export default function EditJobPage() {
     allowed_plans: [],
     show_on_landing: false,
     status: 'open',
+    application_limit: '',
   });
 
   const toggleTrack = (track) => {
@@ -97,6 +97,7 @@ export default function EditJobPage() {
           allowed_plans: Array.isArray(data.allowed_plans) ? data.allowed_plans : [],
           show_on_landing: data.show_on_landing ?? false,
           status: data.status ?? 'open',
+          application_limit: data.application_limit ?? '',
         });
       }
       setLoading(false);
@@ -131,6 +132,7 @@ export default function EditJobPage() {
           allowed_plans: form.job_tier === 'premium' && form.allowed_plans.length ? form.allowed_plans : null,
           show_on_landing: form.show_on_landing,
           status: form.status,
+          application_limit: form.application_limit ? parseInt(form.application_limit, 10) : null,
         })
         .eq('id', id);
       if (error) throw error;
@@ -151,7 +153,6 @@ export default function EditJobPage() {
         onClick={() => navigate('/admin/jobs')}
         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm mb-6"
       >
-        <HiArrowLeft className="w-4 h-4" />
         Back to jobs
       </button>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Edit job</h1>
@@ -318,6 +319,18 @@ export default function EditJobPage() {
           <label htmlFor="edit_show_on_landing" className="text-sm font-medium text-slate-700">
             Show on landing page
           </label>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">Application limit</label>
+          <input
+            type="number"
+            min="1"
+            value={form.application_limit}
+            onChange={(e) => setForm((p) => ({ ...p, application_limit: e.target.value }))}
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+            placeholder="e.g. 200 (optional)"
+          />
+          <p className="text-xs text-slate-500 mt-1">Leave blank for no limit.</p>
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
