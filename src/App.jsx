@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AuthListener from './components/auth/AuthListener';
-import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RequireAspirantProfile from './components/auth/RequireAspirantProfile';
 import RequireAdminProfile from './components/auth/RequireAdminProfile';
@@ -9,7 +8,6 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
-import JobDetailsPage from './pages/landing/home/JobDetailsPage';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
@@ -31,24 +29,18 @@ import AdminMocksPage from './pages/admin/AdminMocksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
-import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
-import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
-import SuccessGuaranteePage from './pages/landing/guarantee/SuccessGuaranteePage';
 
 function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
       <AuthListener />
       <Routes>
         <Route path="/" element={<LandingPage />} />
-        <Route path="/jobs/:id" element={<JobDetailsPage />} />
-        <Route path="/guarantee" element={<SuccessGuaranteePage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
@@ -84,8 +76,6 @@ function App() {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
-          <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
-          <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />
         </Route>
         <Route
           path="/interviewer"

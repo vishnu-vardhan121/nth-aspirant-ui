@@ -1,28 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
 import { supabase } from '../../lib/supabase';
-
-const DRAFT_STORAGE_KEY = 'admin-create-job-draft';
-
-const defaultForm = {
-  title: '',
-  company_name: '',
-  description: '',
-  location: '',
-  address: '',
-  job_type: 'Full-time',
-  salary_range: '',
-  apply_link: '',
-  application_deadline: '',
-  walk_in_date: '',
-  audience_tracks: ['fresher'],
-  job_tier: 'free',
-  allowed_plans: [],
-  show_on_landing: false,
-  status: 'open',
-  application_limit: '',
-};
+import { HiArrowLeft } from 'react-icons/hi2';
 
 const JOB_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
 const TRACK_OPTIONS = [
@@ -48,27 +28,23 @@ export default function CreateJobPage() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [form, setFormState] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem(DRAFT_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return { ...defaultForm, ...parsed };
-      }
-    } catch (_) {}
-    return defaultForm;
+  const [form, setForm] = useState({
+    title: '',
+    company_name: '',
+    description: '',
+    location: '',
+    address: '',
+    job_type: 'Full-time',
+    salary_range: '',
+    apply_link: '',
+    application_deadline: '',
+    walk_in_date: '',
+    audience_tracks: ['fresher'],
+    job_tier: 'free',
+    allowed_plans: [],
+    show_on_landing: false,
+    status: 'open',
   });
-
-  const setForm = useCallback((updater) => {
-    setFormState((prev) => {
-      const next = typeof updater === 'function' ? updater(prev) : updater;
-      try {
-        sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(next));
-      } catch (_) {}
-      return next;
-    });
-  }, []);
-
 
   const toggleTrack = (track) => {
     setForm((p) => {
@@ -114,12 +90,8 @@ export default function CreateJobPage() {
         allowed_plans: form.job_tier === 'premium' && form.allowed_plans.length ? form.allowed_plans : null,
         show_on_landing: form.show_on_landing,
         status: form.status,
-        application_limit: form.application_limit ? parseInt(form.application_limit, 10) : null,
       });
       if (error) throw error;
-      try {
-        sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-      } catch (_) {}
       setMessage({ type: 'success', text: 'Job created.' });
       navigate('/admin/jobs', { replace: true });
     } catch (err) {
@@ -135,28 +107,13 @@ export default function CreateJobPage() {
         onClick={() => navigate('/admin/jobs')}
         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm mb-6"
       >
+        <HiArrowLeft className="w-4 h-4" />
         Back to jobs
       </button>
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Create job</h1>
-      <p className="text-slate-600 text-sm mb-4">
+      <p className="text-slate-600 text-sm mb-6">
         Select one or both tracks. Free = anyone in those tracks can apply. Premium = only users with one of the selected plans can apply.
       </p>
-      {sessionStorage.getItem(DRAFT_STORAGE_KEY) && (
-        <p className="text-xs text-slate-500 mb-2">
-          Draft restored. Your form data is saved while you work—switch tabs safely.
-          {' '}
-          <button
-            type="button"
-            onClick={() => {
-              try { sessionStorage.removeItem(DRAFT_STORAGE_KEY); } catch (_) {}
-              setFormState(defaultForm);
-            }}
-            className="text-indigo-600 hover:underline font-medium"
-          >
-            Discard draft
-          </button>
-        </p>
-      )}
 
       <form onSubmit={handleSubmit} className="max-w-md space-y-4">
         <div>
@@ -326,18 +283,6 @@ export default function CreateJobPage() {
           </label>
         </div>
         <p className="text-xs text-slate-500 -mt-2">Landing shows Free vs Premium tabs; free jobs can be applied to freely, premium require upgrade.</p>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Application limit</label>
-          <input
-            type="number"
-            min="1"
-            value={form.application_limit}
-            onChange={(e) => setForm((p) => ({ ...p, application_limit: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="e.g. 200 (optional)"
-          />
-          <p className="text-xs text-slate-500 mt-1">Leave blank for no limit.</p>
-        </div>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
           <select

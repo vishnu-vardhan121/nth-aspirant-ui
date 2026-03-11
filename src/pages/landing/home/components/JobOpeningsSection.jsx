@@ -18,13 +18,65 @@
  */
 
 import { Link, useLocation } from 'react-router-dom';
-import { HiMapPin, HiSparkles, HiLockClosed, HiBriefcase } from 'react-icons/hi2';
+import { HiMapPin, HiSparkles, HiArrowRight, HiLockClosed, HiBriefcase, HiBellAlert } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
 import { PageLoader } from '../../../../components/ui/Loader';
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../../store/hooks';
 import { supabase } from '../../../../lib/supabase';
 
+/** When there are no jobs, show this section instead of empty job cards. */
+function NoJobsConnectSection() {
+  const location = useLocation();
+  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
+
+  return (
+    <section
+      id="job-openings"
+      className="relative bg-gradient-to-b from-indigo-50/80 via-white to-slate-50/50 py-16 sm:py-20 md:py-24 overflow-hidden"
+    >
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, rgb(99 102 241 / 0.12) 1px, transparent 0)`,
+          backgroundSize: '28px 28px'
+        }} />
+      </div>
+      <SectionContainer>
+        <div className="flex flex-col lg:flex-row items-center justify-between gap-10 lg:gap-14">
+          <div className="flex-1 text-center lg:text-left order-2 lg:order-1">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-100/80 text-indigo-800 text-sm font-semibold mb-6">
+              <HiBellAlert className="w-4 h-4" />
+              New roles coming soon
+            </div>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 tracking-tight mb-4">
+              Connect directly with{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">hiring managers</span>
+            </h2>
+            <p className="text-lg text-slate-600 text-center  mb-8">
+              Skip the job portals. When we have openings, they’re vetted and shared here—so you apply to real companies and real people.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+              <Link
+                to={pricingTo}
+                className="nth-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-lg font-semibold hover:text-white"
+              >
+                Get Started Now
+                <HiArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-xl mx-auto lg:max-w-none order-1 lg:order-2">
+            <img
+              src="/hero-section/Gemini_Generated_Image_fmv3s7fmv3s7fmv3.png"
+              alt="Naveen Talent Hub—connect directly with hiring managers instead of the crowded job market"
+              className="w-full h-auto object-contain drop-shadow-lg rounded-lg"
+            />
+          </div>
+        </div>
+      </SectionContainer>
+    </section>
+  );
+}
 
 function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
   const isFree = job.isFree;
@@ -50,104 +102,145 @@ function JobCard({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
 
   return (
     <article
-      className={`relative group rounded-2xl overflow-hidden flex flex-col h-full bg-white border transition-all duration-300 ${
-        isFree ? 'border-indigo-100 hover:border-indigo-200' : 'border-violet-100 hover:border-violet-200'
-      } ${isHovered ? 'shadow-xl shadow-slate-200/50 -translate-y-0.5' : 'shadow-sm hover:shadow-lg'}`}
+      className={`relative group rounded-2xl overflow-hidden transition-shadow duration-300 flex flex-col h-full ${
+        isHovered
+          ? 'shadow-[0_20px_60px_-15px_rgba(0,0,0,0.15)]'
+          : 'shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] hover:shadow-[0_15px_45px_-12px_rgba(0,0,0,0.12)]'
+      }`}
       onMouseEnter={() => setHoveredId(job.id)}
       onMouseLeave={() => setHoveredId(null)}
     >
-      <div className="p-4 sm:p-5 lg:p-5 xl:p-5 flex flex-col h-full">
-        {/* Badges */}
-        <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
-          {isFree ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
-              <HiSparkles className="w-3.5 h-3.5" />
-              Free
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold">
-              <HiBriefcase className="w-3.5 h-3.5" />
-              Premium
-            </span>
-          )}
-          <span className="text-xs font-semibold text-slate-800">{job.experience}</span>
+      {/* Static gradient background - theme: indigo / violet / sky */}
+      <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-300 ${
+        isFree
+          ? 'from-indigo-50 via-white to-sky-50/30'
+          : 'from-violet-50 via-white to-indigo-50/30'
+      } ${isHovered ? 'opacity-100' : 'opacity-70'}`} />
+
+      {/* Border */}
+      <div className={`absolute inset-0 rounded-2xl transition-opacity duration-500 ${
+        isFree
+          ? 'ring-1 ring-indigo-200/60'
+          : 'ring-1 ring-violet-200/60'
+      } ${isHovered ? 'ring-2' : ''}`} />
+
+      <div className="relative z-10 p-5 sm:p-6 lg:p-7 flex flex-col h-full">
+        {/* Header with Badges */}
+        <div className="flex items-start justify-between gap-3 mb-4 sm:mb-5">
+          <div className="flex flex-wrap gap-2">
+            {isFree ? (
+              <span className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-sky-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-indigo-200/50">
+                <HiSparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden xs:inline">Free</span>
+                <span className="inline xs:hidden">F</span>
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 text-white text-xs font-bold uppercase tracking-wider shadow-md shadow-violet-200/50">
+                <HiBriefcase className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="hidden xs:inline">Premium</span>
+                <span className="inline xs:hidden">Pro</span>
+              </span>
+            )}
+          </div>
+          
+          <span className="inline-flex items-center px-2.5 sm:px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm text-slate-600 text-xs font-semibold shadow-sm border border-slate-200/60 shrink-0">
+            {job.experience}
+          </span>
         </div>
 
-        {/* Title */}
-        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2 leading-tight line-clamp-2">
+        {/* Job Title */}
+        <h3 className="text-lg sm:text-xl font-bold text-slate-900 mb-3 leading-tight transition-colors duration-300 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-slate-900 group-hover:to-slate-600">
           {job.title}
         </h3>
 
         {/* Company & Location */}
-        <div className="mb-3 sm:mb-4 space-y-1 sm:space-y-1.5">
+        <div className="mb-5 sm:mb-6 space-y-2.5">
           {canView ? (
-            <p className="text-xs sm:text-sm font-semibold text-indigo-700 truncate">{job.company}</p>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${
+                isFree ? 'bg-indigo-500' : 'bg-violet-500'
+              } shadow-sm shrink-0`} />
+              <p className="text-sm font-semibold text-slate-700 truncate">
+                {job.company}
+              </p>
+            </div>
           ) : (
-            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-100/60 border border-slate-200/60">
               <HiLockClosed className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              <p className="text-xs text-slate-600 font-medium">Premium Members Only</p>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium truncate">
+                Premium Members Only
+              </p>
             </div>
           )}
-          {job.city && job.city !== '—' && (
-            <p className="text-xs sm:text-sm text-slate-700 flex items-center gap-1.5">
-              <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
-              {job.city}
-            </p>
-          )}
+          
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
+            <span className="truncate">{job.city}</span>
+          </div>
           {job.applicationDeadline && (
-            <p className="text-xs text-slate-600">Apply by {job.applicationDeadline}</p>
+            <p className="text-xs text-slate-500">Apply by {job.applicationDeadline}</p>
+          )}
+          {job.walkInDate && (
+            <p className="text-xs text-slate-500">Walk-in: {job.walkInDate}</p>
+          )}
+          {job.address && canView && (
+            <p className="text-xs text-slate-500 truncate" title={job.address}>Address: {job.address}</p>
           )}
         </div>
 
-        {/* Skills - only if we have any */}
-        {job.requirements?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-auto mb-3 sm:mb-4">
-            {job.requirements.slice(0, 3).map((req) => (
-              <span
-                key={req}
-                className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 text-xs font-medium border border-slate-100"
-              >
-                {req}
-              </span>
-            ))}
-            {job.requirements.length > 3 && (
-              <span className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-medium">
-                +{job.requirements.length - 3}
-              </span>
-            )}
-          </div>
-        )}
+        {/* Skills Tags */}
+        <div className="flex flex-wrap gap-2 mt-auto">
+          {job.requirements.slice(0, 3).map((req) => (
+            <span
+              key={req}
+              className="inline-block px-3 py-1.5 rounded-lg bg-white/80 backdrop-blur-sm text-slate-700 text-xs font-medium border border-slate-200/60 shadow-sm hover:bg-slate-50 transition-colors"
+            >
+              {req}
+            </span>
+          ))}
+          {job.requirements.length > 3 && (
+            <span className="inline-flex items-center justify-center px-2.5 py-1.5 text-slate-500 text-xs font-semibold bg-slate-100/60 rounded-lg border border-slate-200/60">
+              +{job.requirements.length - 3}
+            </span>
+          )}
+        </div>
 
-        {/* CTA */}
-        <div className="mt-auto pt-3 sm:pt-4 border-t border-slate-100">
+        {/* CTA Button Section */}
+        <div className="mt-6 pt-6 border-t border-slate-200/60">
           {job.isExpired ? (
-            <div className="w-full text-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-100 cursor-not-allowed">
+            <div className="block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm text-slate-500 bg-slate-100 border border-slate-200 cursor-not-allowed">
               Application closed
             </div>
           ) : canView ? (
-            isFree ? (
-              <Link
-                to={`/jobs/${job.id}`}
-                className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+            <div>
+              <button
+                type="button"
+                onClick={handleApply}
+                disabled={applying}
+                className={`block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-70 ${
+                  isFree
+                    ? 'bg-gradient-to-r from-indigo-500 via-indigo-600 to-sky-600 hover:from-indigo-600 hover:via-indigo-700 hover:to-sky-700 text-white shadow-indigo-500/25 hover:shadow-indigo-600/40'
+                    : 'bg-gradient-to-r from-violet-500 via-violet-600 to-indigo-600 hover:from-violet-600 hover:via-violet-700 hover:to-indigo-700 text-white shadow-violet-500/25 hover:shadow-violet-600/40'
+                }`}
               >
-                Apply Now
-              </Link>
-            ) : (
+                <span className="flex items-center justify-center gap-2.5">
+                  <span>{applying ? 'Applying…' : 'Apply Now'}</span>
+                  <HiArrowRight className="w-4 h-4" />
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div>
               <Link
                 to={pricingTo}
-                className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+                className="block w-full text-center px-6 py-3.5 rounded-xl font-bold text-sm tracking-wide border-2 border-slate-300 text-slate-700 bg-white/90 backdrop-blur-sm hover:border-indigo-500 hover:text-indigo-700 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-violet-50 transition-all duration-300 shadow-sm hover:shadow-lg"
               >
-                View Plans to Apply
+                <span className="flex items-center justify-center gap-2.5">
+                  <HiLockClosed className="w-4 h-4" />
+                  <span>Unlock Position</span>
+                </span>
               </Link>
-            )
-          ) : (
-            <Link
-              to={pricingTo}
-              className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors"
-            >
-              <HiLockClosed className="w-4 h-4" />
-              Unlock Position
-            </Link>
+            </div>
           )}
         </div>
       </div>
@@ -216,136 +309,151 @@ export default function JobOpeningsSection() {
     fetch();
   }, []);
 
-  // If no fresher jobs, show only experienced. If no experienced jobs, show only fresher.
-  const hasFresherJobs = landingJobs.some((j) => j.experience === 'Fresher' || j.experience === 'Fresher & Experienced');
-  const hasExperiencedJobs = landingJobs.some((j) => j.experience === 'Experienced' || j.experience === 'Fresher & Experienced');
-  const experienceFilteredJobs = useMemo(() => {
-    if (!hasFresherJobs) return landingJobs.filter((j) => j.experience === 'Experienced');
-    if (!hasExperiencedJobs) return landingJobs.filter((j) => j.experience === 'Fresher' || j.experience === 'Fresher & Experienced');
-    return landingJobs;
-  }, [landingJobs, hasFresherJobs, hasExperiencedJobs]);
+  const filteredJobs = useMemo(() => landingJobs.filter(job =>
+    activeTab === 'free' ? job.isFree : !job.isFree
+  ), [landingJobs, activeTab]);
 
-  const hasFreeJobs = experienceFilteredJobs.some((j) => j.isFree);
-  const hasPremiumJobs = experienceFilteredJobs.some((j) => !j.isFree);
-  const showTabSelector = hasFreeJobs && hasPremiumJobs;
-
-  const filteredJobs = useMemo(() => {
-    if (!showTabSelector) return experienceFilteredJobs;
-    return experienceFilteredJobs.filter((job) => (activeTab === 'free' ? job.isFree : !job.isFree));
-  }, [experienceFilteredJobs, activeTab, showTabSelector]);
-
-  // Don't render section when there are no jobs
+  // When there are no jobs at all, show a different section (Connect + illustration) instead of empty white space
   if (!loading && landingJobs.length === 0) {
-    return null;
+    return <NoJobsConnectSection />;
   }
 
   return (
     <section
       id="job-openings"
-      className="relative bg-gradient-to-b from-indigo-50/60 via-white to-slate-50/60 py-10 sm:py-12 md:py-14 lg:py-12 xl:py-14 overflow-hidden"
+      className="relative bg-gradient-to-b from-slate-50 via-white to-slate-50/30 py-12 sm:py-14 md:py-16 overflow-hidden"
     >
-      {/* Subtle dot pattern - matches NTH Connect */}
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgb(99 102 241 / 0.1) 1px, transparent 0)`,
-            backgroundSize: '28px 28px',
-          }}
-        />
+      {/* Sophisticated Background Pattern */}
+      <div className="absolute inset-0 opacity-40 pointer-events-none">
+        <div className="absolute inset-0" style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, rgb(148 163 184 / 0.15) 1px, transparent 0)`,
+          backgroundSize: '32px 32px'
+        }} />
       </div>
 
-      <SectionContainer useGrid wider className="relative z-10">
-        {/* Header - synced with NTH Connect style */}
-        <div className="col-span-full text-center  px-4 sm:px-6">
-          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-indigo-100 text-indigo-900 text-xs sm:text-sm font-semibold mb-3">
-            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-indigo-500 animate-pulse" />
+      {/* Static ambient gradients - theme indigo/violet/sky */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-[20%] -right-[10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-violet-300/15 via-indigo-200/10 to-transparent blur-2xl" />
+        <div className="absolute -bottom-[20%] -left-[10%] w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-indigo-300/15 via-sky-200/10 to-transparent blur-2xl" />
+      </div>
+
+      <SectionContainer useGrid>
+        {/* Header Section */}
+        <div className="col-span-full text-center mb-10 px-4">
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/60 text-slate-700 text-xs sm:text-sm font-bold mb-4 sm:mb-5 shadow-lg shadow-slate-200/50">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
+            </span>
             Currently Hiring
           </div>
-          <h2 className="text-lg min-[375px]:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-4xl font-bold text-slate-900 tracking-tight mb-2 leading-tight">
-            Find your next{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+
+          {/* Main Heading */}
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight mb-3 sm:mb-4 leading-[1.1] px-4">
+            <span className="text-slate-900">Find your next</span>
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-600 via-indigo-600 to-violet-600">
               career opportunity
             </span>
           </h2>
-          <p className="text-slate-700 max-w-xl xl:max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
-            Hand-picked positions from innovative companies. Your perfect role is waiting.
+
+          {/* Subheading */}
+          <p className="text-base sm:text-lg md:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium px-4">
+            Hand-picked positions from innovative companies.
+            <br className="hidden sm:block" />
+            <span className="block sm:inline"> Your perfect role is waiting.</span>
           </p>
         </div>
 
-        {/* Tab Toggle - only when both free and premium jobs exist */}
-        {showTabSelector && (
-          <div className="col-span-full flex justify-center px-4 sm:px-6">
-            <div className="inline-flex p-1 rounded-xl bg-white/90 border border-slate-200/80 shadow-sm">
-              {['free', 'premium'].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative px-4 sm:px-5 lg:px-6 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 capitalize ${
-                    activeTab === tab
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'text-slate-800 hover:text-slate-900 hover:bg-slate-50'
-                  }`}
-                >
+        {/* Tab Toggle */}
+        <div className="col-span-full flex justify-center mb-8 px-4">
+          <div className="relative inline-flex p-1.5 sm:p-2 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-200/80 shadow-lg shadow-slate-200/50 w-full max-w-md sm:w-auto">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 via-transparent to-violet-50/50 rounded-2xl opacity-60" />
+            {['free', 'premium'].map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={`relative z-10 flex-1 sm:flex-initial px-6 sm:px-8 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-bold transition-colors duration-200 capitalize sm:min-w-[140px] ${
+                  activeTab === tab
+                    ? tab === 'free'
+                      ? 'text-indigo-700'
+                      : 'text-violet-700'
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {activeTab === tab && (
+                  <div
+                    className={`absolute inset-0 rounded-xl shadow-md ${
+                      tab === 'free'
+                        ? 'bg-gradient-to-br from-indigo-100 to-sky-100 border border-indigo-200/60'
+                        : 'bg-gradient-to-br from-violet-100 to-indigo-100 border border-violet-200/60'
+                    }`}
+                  />
+                )}
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   {tab === 'free' ? (
-                    <span className="flex items-center gap-2">
-                      <HiSparkles className="w-4 h-4" />
-                      {tab}
-                    </span>
+                    <HiSparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   ) : (
-                    <span className="flex items-center gap-2">
-                      <HiBriefcase className="w-4 h-4" />
-                      {tab}
-                    </span>
+                    <HiBriefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   )}
-                </button>
-              ))}
-            </div>
+                  <span className="whitespace-nowrap">{tab} Jobs</span>
+                </span>
+              </button>
+            ))}
           </div>
-        )}
+        </div>
 
         {/* Jobs Grid */}
-        <div className="col-span-full px-4 sm:px-6 lg:px-0">
+        <div className="col-span-full px-4 sm:px-0">
           {loading ? (
-            <div className="flex justify-center py-10 sm:py-12">
+            <div className="flex justify-center py-16">
               <PageLoader size="lg" label="Loading jobs…" variant="dots" />
             </div>
           ) : (
-            <div
-              key={activeTab}
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5 lg:gap-5 xl:gap-5"
-            >
-              {filteredJobs.length > 0 ? (
-                filteredJobs.map((job) => (
-                  <JobCard
-                    key={job.id}
-                    job={job}
-                    hoveredId={hoveredId}
-                    setHoveredId={setHoveredId}
-                    isAuthenticated={isAuthenticated}
-                    pricingTo={pricingTo}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-10 sm:py-12 px-4">
-                  <div className="inline-flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 max-w-md mx-auto shadow-sm">
-                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
-                      <HiBriefcase className="w-7 h-7 text-slate-500" />
-                    </div>
-                    <p className="text-slate-700 font-medium">
-                      {showTabSelector
-                        ? `No ${activeTab} positions available right now`
-                        : 'No positions available right now'}
-                    </p>
-                    <p className="text-slate-600 text-sm">
-                      Check back soon for new opportunities
-                    </p>
+          <div
+            key={activeTab}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6"
+          >
+            {filteredJobs.length > 0 ? (
+              filteredJobs.map((job) => (
+                <JobCard
+                  key={job.id}
+                  job={job}
+                  hoveredId={hoveredId}
+                  setHoveredId={setHoveredId}
+                  isAuthenticated={isAuthenticated}
+                  pricingTo={pricingTo}
+                />
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12 sm:py-16 px-4">
+                <div className="inline-flex flex-col items-center gap-4 p-6 sm:p-8 rounded-2xl bg-white/60 backdrop-blur-sm border border-slate-200/60 max-w-md mx-auto">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-100 flex items-center justify-center">
+                    <HiBriefcase className="w-7 h-7 sm:w-8 sm:h-8 text-slate-400" />
                   </div>
+                  <p className="text-slate-600 text-base sm:text-lg font-medium">
+                    No {activeTab} positions available right now
+                  </p>
+                  <p className="text-slate-500 text-sm">
+                    Check back soon for new opportunities
+                  </p>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
           )}
+        </div>
+
+        {/* View All Link */}
+        <div className="col-span-full text-center mt-8 px-4">
+          <Link
+            to="/dashboard/jobs"
+            className="inline-flex items-center gap-2.5 text-slate-600 hover:text-indigo-600 font-semibold text-sm sm:text-base transition-colors duration-200 px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl hover:bg-indigo-50/50"
+          >
+            <span>Explore all positions</span>
+            <HiArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+          </Link>
         </div>
       </SectionContainer>
     </section>

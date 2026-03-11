@@ -1,133 +1,52 @@
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
-import { HiCheckCircle } from 'react-icons/hi';
 import SectionContainer from '../../../../components/SectionContainer';
-
-const HIGHLIGHTS = [
-  'Direct interviews with top companies',
-  'Skip the application queue',
-  'Mock interviews with IT professionals',
-  'Personalized career guidance',
-];
 
 export default function CTAStrip() {
   const location = useLocation();
   const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
 
   return (
-    <section id="cta-strip" className="relative py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden bg-[rgb(var(--nth-bg-hero-start))]">
-      {/* Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(79,70,229,0.25)_0%,transparent_50%)]" />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-950/90" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-indigo-500/10 blur-[100px] rounded-full" />
+    <section className="relative py-10 sm:py-12 overflow-hidden bg-white">
+      {/* Background decorations - theme indigo/sky */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-100 rounded-full blur-[100px]" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-sky-100 rounded-full blur-[80px]" />
       </div>
 
-      <SectionContainer className="relative z-10">
-        <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
-          {/* Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4 }}
-            className="inline-flex px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 text-indigo-200 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-6 sm:mb-8"
-          >
-            Get Started Today
-          </motion.div>
-
-          {/* Headline */}
+      <SectionContainer>
+        <div className="relative z-10 max-w-4xl mx-auto text-center">
           <motion.h2
-            initial={{ opacity: 0, y: 12 }}
+            className="text-2xl sm:text-3xl md:text-4xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-4 tracking-tight"
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-6xl font-bold text-white mb-4 sm:mb-5 tracking-tight leading-[1.1] px-4"
+            transition={{ duration: 0.6 }}
           >
-            Stop Applying,{' '}
-            <span className="block sm:inline mt-1 sm:mt-0">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400">
-                Start Interviewing
-              </span>
-            </span>
+            Ready to fast-track your career?
           </motion.h2>
-
-          {/* Subheadline */}
           <motion.p
-            initial={{ opacity: 0, y: 12 }}
+            className="text-base sm:text-lg text-[rgb(var(--nth-text-secondary-light))] mb-6 max-w-2xl mx-auto"
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-4"
+            transition={{ duration: 0.6, delay: 0.1 }}
           >
-            Join thousands of successful candidates who landed their dream jobs
-            without the endless application process.
+            Join thousands of aspirants connecting with top recruiters today.
           </motion.p>
-
-          {/* Highlights - compact grid */}
+          
           <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 w-full max-w-2xl mb-10 sm:mb-12 px-4"
-          >
-            {HIGHLIGHTS.map((item, idx) => (
-              <div
-                key={idx}
-                className="flex items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-200"
-              >
-                <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
-                  <HiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-300" />
-                </div>
-                <span className="text-left text-sm sm:text-base font-medium text-white">
-                  {item}
-                </span>
-              </div>
-            ))}
-          </motion.div>
-
-          {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 sm:gap-5 px-4"
           >
             <Link
               to={pricingTo}
-              className="cta-strip-primary inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              className="nth-btn-primary inline-flex items-center justify-center px-8 py-4 text-lg font-bold group hover:text-white"
             >
-              View Pricing Plans
+              Get Started Now
             </Link>
-            <Link
-              to="/contact"
-              className="cta-strip-secondary inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 font-bold text-base sm:text-lg text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
-            >
-              Contact Us
-            </Link>
-          </motion.div>
-
-          {/* Trust footer - compact */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-16 sm:mt-20 pt-8 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4"
-          >
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Trusted by 10,000+ candidates
-            </span>
-            <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-500" />
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              95% success rate
-            </span>
-            <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-500" />
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              500+ partner companies
-            </span>
           </motion.div>
         </div>
       </SectionContainer>

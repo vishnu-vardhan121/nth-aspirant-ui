@@ -87,7 +87,7 @@ export default function AdminJobsPage() {
                 <td className="px-4 py-3 flex flex-wrap gap-3">
                   <Link
                     to={`/admin/jobs/${j.id}/applicants`}
-                    className="text-[hsl(var(--nth-primary))] hover:underline font-medium"
+                    className="text-[rgb(var(--nth-primary))] hover:underline font-medium"
                   >
                     Applicants
                   </Link>

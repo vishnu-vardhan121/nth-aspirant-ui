@@ -130,7 +130,7 @@ export default function ChoiceScreen({ onSelect }) {
       {/* Animated Background Layers */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div 
-          className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[hsl(var(--nth-primary))/0.15] rounded-full blur-[120px]"
+          className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-[rgb(var(--nth-primary)/0.15)] rounded-full blur-[120px]"
           animate={{ 
             scale: [1, 1.1, 1],
             opacity: [0.3, 0.5, 0.3], 
@@ -138,7 +138,7 @@ export default function ChoiceScreen({ onSelect }) {
           transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
         />
         <motion.div 
-          className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[hsl(var(--nth-accent))/0.1] rounded-full blur-[100px]"
+          className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-[rgb(var(--nth-accent)/0.1)] rounded-full blur-[100px]"
           animate={{ 
             scale: [1, 1.2, 1],
             opacity: [0.2, 0.4, 0.2], 
@@ -202,10 +202,10 @@ export default function ChoiceScreen({ onSelect }) {
             onClick={() => onSelect('fresher')}
             className="px-10 py-4 rounded-xl font-semibold text-white text-lg min-w-[180px] transition-all relative overflow-hidden group"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
-              boxShadow: '0 4px 24px hsl(var(--nth-primary) / 0.35)',
+              background: 'linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)',
+              boxShadow: '0 4px 24px rgb(var(--nth-primary) / 0.35)',
             }}
-            whileHover={{ scale: 1.02, boxShadow: '0 8px 32px hsl(var(--nth-primary) / 0.45)' }}
+            whileHover={{ scale: 1.02, boxShadow: '0 8px 32px rgb(var(--nth-primary) / 0.45)' }}
             whileTap={{ scale: 0.98 }}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -219,7 +219,7 @@ export default function ChoiceScreen({ onSelect }) {
             onClick={() => onSelect('experienced')}
             className="px-10 py-4 rounded-xl font-semibold text-lg min-w-[180px] transition-all relative overflow-hidden group text-white"
             style={{
-              background: 'linear-gradient(135deg, hsl(var(--nth-violet)) 0%, hsl(var(--nth-primary)) 100%)', // Violet → Indigo
+              background: 'linear-gradient(135deg, rgb(var(--nth-violet)) 0%, rgb(79, 70, 229) 100%)', // Indigo-600 end
               boxShadow: '0 4px 24px rgba(124, 58, 237, 0.35)', // Violet shadow
             }}
             whileHover={{ scale: 1.02, boxShadow: '0 8px 32px rgba(124, 58, 237, 0.45)' }}

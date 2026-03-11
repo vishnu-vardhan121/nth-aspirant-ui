@@ -1,226 +1,106 @@
-import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users, Code, Calendar, Briefcase, Award } from 'lucide-react';
+import { HiBriefcase, HiUserGroup, HiSparkles } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
 
 const STEPS = [
   {
-    step: '1',
-    title: 'Profile Screening',
-    description: 'We review your profile and experience to match you with the right opportunities.',
-    icon: Search,
+    title: 'Recruiters Post',
+    description: 'Verified HR professionals and recruiters post genuine openings directly to the platform.',
+    icon: HiBriefcase,
+    color: 'from-indigo-500 to-sky-500',
+    shadow: 'shadow-indigo-500/30',
   },
   {
-    step: '2',
-    title: 'Mock Interviews',
-    description: 'Practice with industry experts to sharpen your interview skills.',
-    icon: Users,
+    title: 'Influencers Curate',
+    description: 'Trusted industry voices and hiring influencers vet and highlight the best opportunities.',
+    icon: HiUserGroup,
+    color: 'from-indigo-500 to-violet-600',
+    shadow: 'shadow-indigo-500/30',
   },
   {
-    step: '3',
-    title: 'Technical Support',
-    description: 'Get technical guidance and preparation tailored to your role.',
-    icon: Code,
-  },
-  {
-    step: '4',
-    title: 'Interview Scheduling',
-    description: 'We handle the logistics and seamlessly schedule your interviews.',
-    icon: Calendar,
-  },
-  {
-    step: '5',
-    title: 'Company Round',
-    description: 'Direct coordination with partner companies for technical rounds.',
-    icon: Briefcase,
-  },
-  {
-    step: '6',
-    title: 'Offer Letter',
-    description: 'Celebrate your success as you receive your official offer letter.',
-    icon: Award,
+    title: 'You Get Hired',
+    description: 'Apply to verified roles with confidence and track your application status in real-time.',
+    icon: HiSparkles,
+    color: 'from-violet-500 to-indigo-500',
+    shadow: 'shadow-violet-500/30',
   },
 ];
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.3 },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
 export default function HowItWorksSection() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-
-  useEffect(() => {
-    if (isHovered) return;
-    const interval = setInterval(() => {
-      setActiveIndex((current) => (current + 1) % STEPS.length);
-    }, 2000); // changes every 2 seconds
-    return () => clearInterval(interval);
-  }, [isHovered]);
-
   return (
-    <section id="how-it-works" className="py-5 lg:py-7 bg-white relative overflow-hidden border-t border-slate-100">
+    <section id="how-it-works" className="relative bg-[rgb(var(--nth-bg-soft))] py-12 sm:py-14 md:py-16 overflow-hidden">
       <SectionContainer>
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-6"
-          >
-            Our Direct Hiring Process
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-lg text-slate-600"
-          >
-            A clear, transparent, and proven path from your application to your offer letter.
-          </motion.p>
-        </div>
+        <motion.div
+          className="text-center max-w-3xl mx-auto mb-8 sm:mb-10"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-4">
+            Simplified Hiring Flow
+          </h2>
+          <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
+            We've removed the noise. Here's how certified jobs travel from the source directly to you.
+          </p>
+        </motion.div>
 
-        {/* Desktop: Horizontal single-line timeline */}
-        <div className="hidden lg:block relative w-full pt-4 pb-12">
-          {/* Base Connector Line */}
-          <div className="absolute top-[3.25rem] left-[8%] right-[8%] h-[2px] bg-slate-200" />
-          
-          {/* Animated Glow Line Container */}
-          <div className="absolute top-[3.25rem] left-[8%] right-[8%] h-[2px]">
-            {/* Animated Glow Line Fill */}
-            <div 
-              className={`absolute left-0 top-0 h-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] ${activeIndex === 0 ? 'transition-none' : 'transition-all ease-linear duration-[2000ms]'}`}
-              style={{ width: `${(activeIndex / (STEPS.length - 1)) * 100}%` }}
-            />
-          </div>
-          
-          <div className="flex justify-between items-start relative z-10 w-full"
-               onMouseEnter={() => setIsHovered(true)}
-               onMouseLeave={() => setIsHovered(false)}>
+        <div className="relative">
+          <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-slate-300 to-transparent dashed-line" />
+
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6"
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+          >
             {STEPS.map((step, index) => {
-              const isActive = index === activeIndex;
-              const isPast = index <= activeIndex;
+              const Icon = step.icon;
               return (
                 <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex-1 flex flex-col items-center px-4 cursor-pointer"
-                  onMouseEnter={() => setActiveIndex(index)}
+                  key={step.title}
+                  variants={itemVariants}
+                  className="relative flex flex-col items-center text-center group"
                 >
-                  {/* Step Node */}
-                  <div className={`w-[4.5rem] h-[4.5rem] bg-white rounded-full border-2 flex items-center justify-center mb-6 relative transition-all duration-500 ease-out
-                    ${isActive ? 'border-indigo-600 scale-110 shadow-[0_0_0_8px_white,0_10px_25px_-5px_rgba(79,70,229,0.3)]' : 
-                      isPast ? 'border-indigo-400 shadow-[0_0_0_8px_white]' : 'border-slate-200 shadow-[0_0_0_8px_white]'}`}>
-                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-500
-                      ${isPast ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                      {step.step}
+                  <div className="relative z-10 mb-5">
+                    <div
+                      className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br ${step.color} ${step.shadow} shadow-xl transform transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3`}
+                    >
+                      <Icon className="w-9 h-9" />
                     </div>
-                    <step.icon className={`w-6 h-6 transition-colors duration-500 ${isPast ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    <div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-white border-2 border-slate-100 flex items-center justify-center font-bold text-slate-400 shadow-sm text-sm">
+                      {index + 1}
+                    </div>
                   </div>
-                  
-                  {/* Content */}
-                  <h3 className={`text-base font-bold mb-2 text-center transition-colors duration-500 ${isActive ? 'text-indigo-600' : isPast ? 'text-slate-800' : 'text-slate-400'}`}>
+
+                  <h3 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] mb-3">
                     {step.title}
                   </h3>
-                  <p className={`text-sm text-center leading-relaxed transition-colors duration-500 ${isPast ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-xs mx-auto">
                     {step.description}
                   </p>
                 </motion.div>
               );
             })}
-          </div>
-        </div>
-
-        {/* Tablet: 3x2 Grid */}
-        <div className="hidden md:block lg:hidden"
-             onMouseEnter={() => setIsHovered(true)}
-             onMouseLeave={() => setIsHovered(false)}>
-          <div className="grid grid-cols-3 gap-y-12 gap-x-6">
-            {STEPS.map((step, index) => {
-              const isActive = index === activeIndex;
-              const isPast = index <= activeIndex;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex flex-col items-center px-4 cursor-pointer"
-                  onMouseEnter={() => setActiveIndex(index)}
-                >
-                  <div className={`w-16 h-16 bg-white rounded-full flex items-center justify-center mb-5 relative transition-all duration-500 ease-out border
-                    ${isActive ? 'border-indigo-600 scale-110 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.2)]' : 
-                      isPast ? 'border-indigo-400 shadow-sm' : 'border-slate-200 shadow-sm'}`}>
-                    <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-500
-                      ${isPast ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
-                      {step.step}
-                    </div>
-                    <step.icon className={`w-6 h-6 transition-colors duration-500 ${isPast ? 'text-indigo-600' : 'text-slate-400'}`} />
-                  </div>
-                  <h3 className={`text-center font-bold text-base mb-2 transition-colors duration-500 ${isActive ? 'text-indigo-600' : isPast ? 'text-slate-800' : 'text-slate-400'}`}>
-                    {step.title}
-                  </h3>
-                  <p className={`text-center text-sm leading-relaxed transition-colors duration-500 ${isPast ? 'text-slate-600' : 'text-slate-400'}`}>{step.description}</p>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Mobile: Vertical Timeline */}
-        <div className="md:hidden max-w-sm mx-auto"
-             onMouseEnter={() => setIsHovered(true)}
-             onMouseLeave={() => setIsHovered(false)}
-             onTouchStart={() => setIsHovered(true)}
-             onTouchEnd={() => setIsHovered(false)}>
-          <div className="relative border-l-2 border-slate-200 ml-4 py-2 space-y-10">
-            {/* Animated Glow Vertical Fill */}
-            <div 
-              className={`absolute left-[-2px] top-0 w-[2px] bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)] ${activeIndex === 0 ? 'transition-none' : 'transition-all ease-linear duration-[2000ms]'}`}
-              style={{ height: `${(activeIndex / (STEPS.length - 1)) * 100}%` }}
-            />
-            
-            {STEPS.map((step, index) => {
-              const isActive = index === activeIndex;
-              const isPast = index <= activeIndex;
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="relative pl-8 cursor-pointer"
-                  onClick={() => setActiveIndex(index)}
-                >
-                  {/* Node */}
-                  <span className={`absolute -left-[17px] top-1 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ease-out
-                    ${isActive ? 'bg-indigo-600 border-2 border-indigo-600 scale-125 shadow-md shadow-indigo-500/30' : 
-                      isPast ? 'bg-indigo-50 border-2 border-indigo-400' : 'bg-white border-2 border-slate-300'}`}>
-                    <span className={`font-bold text-xs transition-colors duration-500 ${isActive ? 'text-white' : isPast ? 'text-indigo-600' : 'text-slate-400'}`}>
-                      {step.step}
-                    </span>
-                  </span>
-                  
-                  {/* Content */}
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-500
-                        ${isActive ? 'bg-indigo-100' : isPast ? 'bg-indigo-50' : 'bg-slate-50'}`}>
-                        <step.icon className={`w-4 h-4 transition-colors duration-500 ${isActive ? 'text-indigo-600' : isPast ? 'text-indigo-500' : 'text-slate-400'}`} />
-                      </div>
-                      <h3 className={`font-bold text-base transition-colors duration-500 ${isActive ? 'text-indigo-600' : isPast ? 'text-slate-800' : 'text-slate-400'}`}>
-                        {step.title}
-                      </h3>
-                    </div>
-                    <p className={`text-sm leading-relaxed ml-11 transition-colors duration-500 ${isPast ? 'text-slate-600' : 'text-slate-400'}`}>{step.description}</p>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
+          </motion.div>
         </div>
       </SectionContainer>
     </section>

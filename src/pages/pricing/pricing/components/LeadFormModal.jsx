@@ -198,7 +198,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
           {/* Fixed header: logo left, title centered, close right */}
           <div className="relative flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-4 sm:py-5 border-b border-white/10">
             <img
-              src="/white-logo.png"
+              src="/lilogo.png"
               alt="NTH"
               className="h-7 w-auto object-contain shrink-0 sm:h-8"
             />
@@ -226,7 +226,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                   onClick={onClose}
                   className="w-full py-3 sm:py-2.5 rounded-xl font-semibold text-white text-sm sm:text-base touch-manipulation"
                   style={{
-                    background: 'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
+                    background: 'linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)',
                   }}
                 >
                   OK
@@ -249,7 +249,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                   clearFieldError('name');
                 }}
                 required
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                   fieldErrors.name ? 'border-red-400/60' : 'border-white/10'
                 }`}
                 placeholder="Your name"
@@ -267,7 +267,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                 onChange={handleEmailChange}
                 required
                 autoComplete="email"
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                   fieldErrors.email ? 'border-red-400/60' : 'border-white/10'
                 }`}
                 placeholder="you@example.com"
@@ -287,7 +287,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                 required
                 maxLength={10}
                 autoComplete="tel"
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                   fieldErrors.contact_number ? 'border-red-400/60' : 'border-white/10'
                 }`}
                 placeholder="10-digit mobile (e.g. 9876543210)"
@@ -307,7 +307,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                   clearFieldError('looking_for_role');
                 }}
                 required
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                   fieldErrors.looking_for_role ? 'border-red-400/60' : 'border-white/10'
                 }`}
                 placeholder="e.g. Frontend Developer, Data Analyst"
@@ -327,7 +327,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                   clearFieldError('graduation_pass');
                 }}
                 required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                   fieldErrors.graduation_pass ? 'border-red-400/60' : 'border-white/10'
                 }`}
                 placeholder="e.g. 2023"
@@ -348,7 +348,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                       clearFieldError('current_company');
                     }}
                     required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                       fieldErrors.current_company ? 'border-red-400/60' : 'border-white/10'
                     }`}
                     placeholder="Company name"
@@ -367,7 +367,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                       clearFieldError('experience_years');
                     }}
                     required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                       fieldErrors.experience_years ? 'border-red-400/60' : 'border-white/10'
                     }`}
                     placeholder="e.g. 3"
@@ -386,7 +386,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                       clearFieldError('current_ctc');
                     }}
                     required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
+                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
                       fieldErrors.current_ctc ? 'border-red-400/60' : 'border-white/10'
                     }`}
                     placeholder="e.g. 8 LPA"
@@ -403,7 +403,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                 value={form.message}
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 rows={3}
-                className="w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent resize-none text-base min-h-[80px] sm:min-h-0"
+                className="w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent resize-none text-base min-h-[80px] sm:min-h-0"
                 placeholder="Optional message…"
               />
             </div>
@@ -425,7 +425,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
                 disabled={submitting}
                 className="flex-1 py-3 sm:py-2.5 rounded-xl font-semibold text-white disabled:opacity-60 text-sm sm:text-base touch-manipulation"
                 style={{
-                  background: 'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
+                  background: 'linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)',
                 }}
               >
                 {submitting ? 'Submitting…' : 'Submit'}

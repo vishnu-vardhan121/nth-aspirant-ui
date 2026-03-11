@@ -13,7 +13,7 @@ import {
 } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
 
-export default function JobsList({ jobs, usage, appliedJobIds, applicationStatusByJobId = {}, onUsageChange }) {
+export default function JobsList({ jobs, usage, appliedJobIds, onUsageChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All'); // All, Full-time, Contract, etc.
   
@@ -44,7 +44,7 @@ export default function JobsList({ jobs, usage, appliedJobIds, applicationStatus
           <input
             type="text"
             placeholder="Search by role or company..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--nth-bg-soft))] border-transparent focus:bg-white focus:border-[hsl(var(--nth-primary))] focus:ring-2 focus:ring-[hsl(var(--nth-primary))]/20 transition-all outline-none text-[rgb(var(--nth-text-primary-light))]"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--nth-bg-soft))] border-transparent focus:bg-white focus:border-[rgb(var(--nth-primary))] focus:ring-2 focus:ring-[rgb(var(--nth-primary))]/20 transition-all outline-none text-[rgb(var(--nth-text-primary-light))]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -56,7 +56,7 @@ export default function JobsList({ jobs, usage, appliedJobIds, applicationStatus
               onClick={() => setFilterType(type)}
               className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border ${
                 filterType === type
-                  ? 'bg-[hsl(var(--nth-primary))] text-white border-[hsl(var(--nth-primary))]'
+                  ? 'bg-[rgb(var(--nth-primary))] text-white border-[rgb(var(--nth-primary))]'
                   : 'bg-white text-[rgb(var(--nth-text-secondary-light))] border-[rgb(var(--nth-border-light))] hover:bg-[rgb(var(--nth-bg-soft))]'
               }`}
             >
@@ -76,7 +76,6 @@ export default function JobsList({ jobs, usage, appliedJobIds, applicationStatus
                 job={job}
                 usage={usage}
                 isApplied={appliedJobIds?.has(job.id)}
-                applicationStatus={applicationStatusByJobId?.[job.id]}
                 onApplicationRecorded={onUsageChange}
               />
             ))
@@ -95,7 +94,7 @@ export default function JobsList({ jobs, usage, appliedJobIds, applicationStatus
   );
 }
 
-function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecorded }) {
+function JobCard({ job, usage, isApplied, onApplicationRecorded }) {
   const [isSaved, setIsSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState(null);
@@ -134,7 +133,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
       whileHover={{ y: -2, transition: { duration: 0.2 } }}
-      className="group relative bg-white rounded-xl p-5 border border-[rgb(var(--nth-border-light))] hover:border-[hsl(var(--nth-primary))]/30 hover:shadow-lg hover:shadow-[hsl(var(--nth-primary))]/5 transition-all"
+      className="group relative bg-white rounded-xl p-5 border border-[rgb(var(--nth-border-light))] hover:border-[rgb(var(--nth-primary))]/30 hover:shadow-lg hover:shadow-[rgb(var(--nth-primary))]/5 transition-all"
     >
       <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
         {/* Logo Placeholder */}
@@ -146,7 +145,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h3 className="text-lg font-bold text-[rgb(var(--nth-text-primary-light))] group-hover:text-[hsl(var(--nth-primary))] transition-colors">
+              <h3 className="text-lg font-bold text-[rgb(var(--nth-text-primary-light))] group-hover:text-[rgb(var(--nth-primary))] transition-colors">
                 {job.title}
               </h3>
               <p className="text-sm font-medium text-[rgb(var(--nth-text-secondary-light))] mb-0.5">
@@ -160,7 +159,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
               className="p-1.5 rounded-full hover:bg-[rgb(var(--nth-bg-soft))] text-[rgb(var(--nth-text-muted-light))] transition-colors"
             >
               {isSaved ? (
-                <HiBookmark className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+                <HiBookmark className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
               ) : (
                 <HiOutlineBookmark className="w-5 h-5" />
               )}
@@ -168,19 +167,10 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
           </div>
 
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-[rgb(var(--nth-text-secondary-light))]">
-            {job.location && job.location !== '—' && (
-              <div className="flex items-center gap-1.5">
-                <HiMapPin className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
-                {job.location}
-              </div>
-            )}
-            {job.experience && (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                  {job.experience}
-                </span>
-              </div>
-            )}
+            <div className="flex items-center gap-1.5">
+              <HiMapPin className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
+              {job.location}
+            </div>
             <div className="flex items-center gap-1.5">
               <HiBriefcase className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
               {job.type}
@@ -214,7 +204,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
             <p className="text-sm text-red-600 max-w-[200px] text-right">
               {applyError}
               {applyError.includes('Upgrade') && (
-                <Link to="/pricing" className="block mt-1 text-[hsl(var(--nth-primary))] font-medium">
+                <Link to="/pricing" className="block mt-1 text-[rgb(var(--nth-primary))] font-medium">
                   Upgrade plan
                 </Link>
               )}
@@ -225,12 +215,8 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
               Application closed
             </span>
           ) : isApplied ? (
-            <span className={`inline-block px-5 py-2.5 rounded-lg font-medium text-sm ${
-              applicationStatus === 'shortlisted'
-                ? 'bg-indigo-100 text-indigo-700'
-                : 'bg-emerald-100 text-emerald-700'
-            }`}>
-              {applicationStatus === 'shortlisted' ? 'Shortlisted' : 'Applied'}
+            <span className="inline-block px-5 py-2.5 rounded-lg bg-emerald-100 text-emerald-700 font-medium text-sm">
+              Applied
             </span>
           ) : atLimit ? (
             <Link

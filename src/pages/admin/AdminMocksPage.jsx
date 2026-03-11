@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, ButtonLoader, Loader } from '../../components/ui/Loader';
-import { HiCalendarDays, HiLink, HiCheckCircle, HiUserGroup, HiClock, HiCalendar, HiClipboardDocumentList } from 'react-icons/hi2';
+import { HiCalendarDays, HiLink, HiCheckCircle } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -15,20 +15,6 @@ function formatDateTime(createdAt) {
   return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-const SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-function StatCard({ label, value, icon: Icon }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
-        {Icon && <Icon className="w-4 h-4" />}
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-bold text-slate-900">{value}</p>
-    </div>
-  );
-}
-
 export default function AdminMocksPage() {
   const [registrations, setRegistrations] = useState([]);
   const [byAspirant, setByAspirant] = useState({});
@@ -38,18 +24,23 @@ export default function AdminMocksPage() {
   const [reportSortBy, setReportSortBy] = useState('');
   const [reportOrder, setReportOrder] = useState('desc');
   const [loading, setLoading] = useState(true);
+  const [completingId, setCompletingId] = useState(null);
   const [scheduleModal, setScheduleModal] = useState(null);
   const [scheduleSaving, setScheduleSaving] = useState(false);
   const [scheduleForm, setScheduleForm] = useState({ scheduledAt: '', meetLink: '', adminNotes: '', notify: true });
   const [flash, setFlash] = useState({ type: '', text: '' });
   const [interviewers, setInterviewers] = useState([]);
-  const [createSlotsForm, setCreateSlotsForm] = useState({ interviewerId: '', date: '', startTime: '14:00', numSlots: 4, durationPreset: '25', durationCustom: 25, meetLink: '' });
+  const [createSlotsForm, setCreateSlotsForm] = useState({ interviewerId: '', date: '', startTime: '14:00', endTime: '16:00', duration: 25, meetLink: '' });
   const [createSlotsSaving, setCreateSlotsSaving] = useState(false);
   const [slots, setSlots] = useState([]);
-  const [slotsFrom, setSlotsFrom] = useState(() => new Date().toISOString().slice(0, 10));
+  const [slotsFrom, setSlotsFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 7);
+    return d.toISOString().slice(0, 10);
+  });
   const [slotsTo, setSlotsTo] = useState(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 14);
+    d.setDate(d.getDate() + 30);
     return d.toISOString().slice(0, 10);
   });
   const [slotsInterviewerId, setSlotsInterviewerId] = useState('');
@@ -60,37 +51,6 @@ export default function AdminMocksPage() {
   const [cancelSlotAdmin, setCancelSlotAdmin] = useState(null);
   const [cancelReasonAdmin, setCancelReasonAdmin] = useState('');
   const [cancelSavingAdmin, setCancelSavingAdmin] = useState(false);
-  const [rescheduleRequests, setRescheduleRequests] = useState([]);
-  const [rejectRescheduleModal, setRejectRescheduleModal] = useState(null);
-  const [rejectRescheduleMessage, setRejectRescheduleMessage] = useState('');
-  const [rejectRescheduleSaving, setRejectRescheduleSaving] = useState(false);
-  const [completeModal, setCompleteModal] = useState(null);
-  const [completeForm, setCompleteForm] = useState({ technical_score: 5, communication_score: 5, problem_solving_score: 5, overall_score: 5, notes: '' });
-  const [completeSaving, setCompleteSaving] = useState(false);
-  const [registrationDetailModal, setRegistrationDetailModal] = useState(null);
-  const [registrationsPage, setRegistrationsPage] = useState(0);
-  const [registrationsSearch, setRegistrationsSearch] = useState('');
-  const [registrationsStatusFilter, setRegistrationsStatusFilter] = useState('');
-  const [createSlotsModalOpen, setCreateSlotsModalOpen] = useState(false);
-
-  const REGISTRATIONS_PAGE_SIZE = 50;
-  const sortedRegistrations = [...registrations].sort((a, b) => {
-    const order = { requested: 0, scheduled: 1, completed: 2, no_show: 3, cancelled: 4 };
-    return (order[a.status] ?? 5) - (order[b.status] ?? 5);
-  });
-  const searchLower = registrationsSearch.trim().toLowerCase();
-  const filteredRegistrations = sortedRegistrations.filter((r) => {
-    const matchSearch = !searchLower ||
-      (r.aspirant_name ?? '').toLowerCase().includes(searchLower) ||
-      (r.aspirant_email ?? '').toLowerCase().includes(searchLower);
-    const matchStatus = !registrationsStatusFilter || r.status === registrationsStatusFilter;
-    return matchSearch && matchStatus;
-  });
-  const paginatedRegistrations = filteredRegistrations.slice(
-    registrationsPage * REGISTRATIONS_PAGE_SIZE,
-    (registrationsPage + 1) * REGISTRATIONS_PAGE_SIZE
-  );
-  const totalRegistrationPages = Math.max(1, Math.ceil(filteredRegistrations.length / REGISTRATIONS_PAGE_SIZE));
 
   const setFlashMsg = (type, text) => {
     setFlash({ type, text });
@@ -145,42 +105,30 @@ export default function AdminMocksPage() {
     fetchSlots();
   }, [slotsFrom, slotsTo, slotsInterviewerId]);
 
-  const fetchRescheduleRequests = () => {
-    supabase.rpc('get_admin_mock_reschedule_requests').then(({ data }) => setRescheduleRequests(Array.isArray(data) ? data : []));
-  };
-
-  useEffect(() => {
-    fetchRescheduleRequests();
-  }, []);
-
   const handleCreateSlots = async (e) => {
     e.preventDefault();
-    if (!createSlotsForm.interviewerId || !createSlotsForm.date || !createSlotsForm.startTime || !createSlotsForm.numSlots || createSlotsForm.numSlots < 1) {
-      setFlashMsg('error', 'Select interviewer, date, start time, and number of slots.');
-      return;
-    }
-    const durationMins = createSlotsForm.durationPreset === 'custom'
-      ? Math.min(60, Math.max(15, Number(createSlotsForm.durationCustom) || 25))
-      : Number(createSlotsForm.durationPreset);
-    if (durationMins < 15 || durationMins > 60) {
-      setFlashMsg('error', 'Slot duration must be between 15 and 60 minutes.');
+    if (!createSlotsForm.interviewerId || !createSlotsForm.date || !createSlotsForm.startTime || !createSlotsForm.endTime) {
+      setFlashMsg('error', 'Select interviewer, date, start and end time.');
       return;
     }
     const startAt = new Date(`${createSlotsForm.date}T${createSlotsForm.startTime}:00`);
-    const endAt = new Date(startAt.getTime() + createSlotsForm.numSlots * durationMins * 60 * 1000);
+    const endAt = new Date(`${createSlotsForm.date}T${createSlotsForm.endTime}:00`);
+    if (endAt <= startAt) {
+      setFlashMsg('error', 'End time must be after start time.');
+      return;
+    }
     setCreateSlotsSaving(true);
     const { data } = await supabase.rpc('create_mock_slots', {
       p_interviewer_id: createSlotsForm.interviewerId,
       p_start_at: startAt.toISOString(),
       p_end_at: endAt.toISOString(),
-      p_slot_duration_mins: durationMins,
+      p_slot_duration_mins: createSlotsForm.duration,
       p_meet_link: createSlotsForm.meetLink?.trim() || null,
     });
     setCreateSlotsSaving(false);
     if (data?.ok) {
       setFlashMsg('success', 'Slots created. Aspirants can book them from the Mocks page.');
       setCreateSlotsForm((f) => ({ ...f, interviewerId: '', date: '', meetLink: '' }));
-      setCreateSlotsModalOpen(false);
       fetchSlots();
       fetchMocks();
     } else {
@@ -188,30 +136,24 @@ export default function AdminMocksPage() {
     }
   };
 
-  const openCompleteModal = (r) => {
-    setCompleteModal(r);
-    setCompleteForm({ technical_score: 5, communication_score: 5, problem_solving_score: 5, overall_score: 5, notes: '' });
-  };
-
-  const handleCompleteSubmit = async (e) => {
-    e.preventDefault();
-    if (!completeModal) return;
-    setCompleteSaving(true);
-    const { data } = await supabase.rpc('submit_mock_feedback', {
-      p_registration_id: completeModal.id,
-      p_technical_score: completeForm.technical_score,
-      p_communication_score: completeForm.communication_score,
-      p_problem_solving_score: completeForm.problem_solving_score,
-      p_overall_score: completeForm.overall_score,
-      p_notes: completeForm.notes?.trim() || null,
-    });
-    setCompleteSaving(false);
+  const handleMarkCompleted = async (r, notify = true) => {
+    setCompletingId(r.id);
+    const { data } = await supabase.rpc('mark_mock_completed', { p_registration_id: r.id });
+    setCompletingId(null);
     if (data?.ok) {
-      setCompleteModal(null);
+      if (notify && r.aspirant_id) {
+        await supabase.rpc('send_message', {
+          p_to_aspirant_id: r.aspirant_id,
+          p_subject: null,
+          p_body: `Your mock interview has been marked as completed. Thank you for participating!`,
+          p_job_id: null,
+          p_mock_registration_id: r.id,
+        });
+      }
       fetchMocks();
       fetchSlots();
       fetchCompletedReport();
-      setFlashMsg('success', 'Mock completed with feedback. Student was notified.');
+      setFlashMsg('success', 'Mock marked as completed.');
     } else {
       setFlashMsg('error', data?.error ?? 'Failed.');
     }
@@ -350,55 +292,19 @@ export default function AdminMocksPage() {
     }
   };
 
-  const handleApproveRescheduleRequest = async (req) => {
-    const { data } = await supabase.rpc('admin_approve_mock_reschedule', { p_request_id: req.id });
-    if (data?.ok) {
-      setRescheduleRequests((prev) => prev.filter((x) => x.id !== req.id));
-      setFlashMsg('success', 'Request approved. Set new schedule below.');
-      const reg = registrations.find((r) => r.id === req.mock_registration_id);
-      if (reg) openScheduleModal(reg);
-      fetchRescheduleRequests();
-    } else {
-      setFlashMsg('error', data?.error ?? 'Failed to approve.');
-    }
-  };
-
-  const handleRejectRescheduleSubmit = async (e) => {
-    e.preventDefault();
-    if (!rejectRescheduleModal) return;
-    setRejectRescheduleSaving(true);
-    const { data } = await supabase.rpc('admin_reject_mock_reschedule', {
-      p_request_id: rejectRescheduleModal.id,
-      p_message_to_aspirant: rejectRescheduleMessage.trim() || 'Your reschedule request could not be approved.',
-    });
-    setRejectRescheduleSaving(false);
-    if (data?.ok) {
-      setRejectRescheduleModal(null);
-      setRejectRescheduleMessage('');
-      setFlashMsg('success', 'Request rejected. Aspirant will see your message in Messages.');
-      fetchRescheduleRequests();
-    } else {
-      setFlashMsg('error', data?.error ?? 'Failed to reject.');
-    }
-  };
-
   if (loading) {
     return <PageLoader size="md" label="Loading mock registrations…" className="py-12" />;
   }
 
-  const slotsAvailable = slots.filter((s) => s.status === 'available').length;
-  const slotsBooked = slots.filter((s) => s.status === 'booked').length;
-  const slotsCancelled = slots.filter((s) => s.status === 'cancelled').length;
-  const pendingRequests = registrations.filter((r) => r.status === 'requested').length;
-
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Mock interviews</h1>
-          <p className="text-slate-600 text-sm mt-0.5">Create slots, assign times, and manage reschedules.</p>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Mock interviews</h1>
+      <p className="text-slate-600 mb-2">
+        New requests start as <strong>Requested</strong>. Set schedule (date, Meet link) to move to Scheduled. If the user doesn’t join, mark <strong>No-show</strong> to free the slot so they can request again.
+      </p>
+      <p className="text-slate-500 text-sm mb-6">
+        Mock-related messages go to aspirant’s Messages and Mocks page. They need to open the dashboard to see the Meet link unless you share it separately.
+      </p>
 
       {flash.text && (
         <div className={`rounded-lg px-4 py-2 text-sm ${flash.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'}`}>
@@ -406,32 +312,95 @@ export default function AdminMocksPage() {
         </div>
       )}
 
-      {/* Dashboard stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        <StatCard label="Waiting for slot" value={pendingRequests} icon={HiUserGroup} />
-        <StatCard label="Reschedule requests" value={rescheduleRequests.length} icon={HiClock} />
-        <StatCard label="Available slots" value={slotsAvailable} icon={HiCalendar} />
-        <StatCard label="Booked slots" value={slotsBooked} icon={HiClipboardDocumentList} />
-        <StatCard label="Completed (report range)" value={completedReport.length} icon={HiCheckCircle} />
-      </div>
-
-      {/* Your slots — full width */}
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/80 flex flex-wrap items-center justify-between gap-4">
+      {/* Create slots (interviewer availability) */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Create mock slots</h2>
+        <p className="text-sm text-slate-600 mb-4">
+          Pick an interviewer and a time window. Slots (e.g. 25 min each) will be created for aspirants to book.
+        </p>
+        <form onSubmit={handleCreateSlots} className="flex flex-wrap items-end gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900">Your slots</h2>
-            <p className="text-sm text-slate-600 mt-0.5">Filter by date and interviewer. Reschedule or cancel from the row; students are notified if booked.</p>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Interviewer</label>
+            <select
+              value={createSlotsForm.interviewerId}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, interviewerId: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm min-w-[180px]"
+              required
+            >
+              <option value="">Select</option>
+              {interviewers.map((i) => (
+                <option key={i.id} value={i.id}>{i.name} ({i.email})</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+            <input
+              type="date"
+              value={createSlotsForm.date}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, date: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Start time</label>
+            <input
+              type="time"
+              value={createSlotsForm.startTime}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, startTime: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">End time</label>
+            <input
+              type="time"
+              value={createSlotsForm.endTime}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, endTime: e.target.value }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Slot duration (min)</label>
+            <select
+              value={createSlotsForm.duration}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, duration: Number(e.target.value) }))}
+              className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            >
+              <option value={25}>25</option>
+              <option value={30}>30</option>
+            </select>
+          </div>
+          <div className="min-w-[200px]">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Meet link (optional)</label>
+            <input
+              type="url"
+              value={createSlotsForm.meetLink}
+              onChange={(e) => setCreateSlotsForm((f) => ({ ...f, meetLink: e.target.value }))}
+              placeholder="https://meet.google.com/..."
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            />
           </div>
           <button
-            type="button"
-            onClick={() => setCreateSlotsModalOpen(true)}
-            disabled={interviewers.length === 0}
-            className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            type="submit"
+            disabled={createSlotsSaving || interviewers.length === 0}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
           >
-            Create new slots
+            {createSlotsSaving ? 'Creating…' : 'Create slots'}
           </button>
-        </div>
-        <div className="p-5">
+        </form>
+        {interviewers.length === 0 && (
+          <p className="mt-2 text-sm text-amber-700">Mark at least one admin as Interviewer on the Admins page to create slots.</p>
+        )}
+      </div>
+
+      {/* Scheduled slots: view, reschedule, cancel */}
+      <div className="rounded-xl border border-slate-200 bg-white p-6 mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-2">Scheduled slots (view / edit / cancel)</h2>
+        <p className="text-sm text-slate-600 mb-4">
+          All slots you created. Filter by date range and interviewer. Reschedule or cancel a slot; the aspirant will be notified if the slot was booked.
+        </p>
         <div className="flex flex-wrap items-end gap-4 mb-4">
           <div>
             <label className="block text-xs font-medium text-slate-500 mb-1">From date</label>
@@ -471,148 +440,51 @@ export default function AdminMocksPage() {
         {slotsLoading ? (
           <p className="text-sm text-slate-500 py-4">Loading slots…</p>
         ) : slots.length === 0 ? (
-          <div className="rounded-lg bg-slate-50 border border-slate-200 p-6 text-center">
-            <p className="text-slate-600 font-medium">No slots in this date range</p>
-            <p className="text-sm text-slate-500 mt-1">Click <strong>Create new slots</strong> or try a wider date range.</p>
-          </div>
+          <p className="text-sm text-slate-500 py-4">No slots in this range. Create slots above to see them here.</p>
         ) : (
-          <>
-            <p className="text-sm text-slate-700 mb-3">
-              <strong>{slots.length}</strong> slot{slots.length !== 1 ? 's' : ''} in range
-              {slotsAvailable + slotsBooked + slotsCancelled > 0 && (
-                <span className="text-slate-500 font-normal ml-2">
-                  — {slotsAvailable} available, {slotsBooked} booked, {slotsCancelled} cancelled
-                </span>
-              )}
-            </p>
-            <div className="overflow-auto max-h-[400px] rounded-lg border border-slate-200">
-              <table className="w-full text-left text-sm min-w-[640px]">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Time</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Interviewer</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Status</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Booked by</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Meet</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Action</th>
+          <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+            <table className="w-full text-left text-sm min-w-[640px]">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Date & time</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Interviewer</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Status</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Meet</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {slots.map((s) => (
+                  <tr key={s.id} className="hover:bg-slate-50">
+                    <td className="px-3 py-2 text-slate-900 whitespace-nowrap">{formatDateTime(s.start_at)} – {formatDateTime(s.end_at)}</td>
+                    <td className="px-3 py-2 text-slate-700">{s.interviewer_name ?? '—'}</td>
+                    <td className="px-3 py-2">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s.status === 'booked' ? 'bg-green-100 text-green-800' : s.status === 'cancelled' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}`}>
+                        {s.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-700">
+                      {s.aspirant_name ? <>{s.aspirant_name}{s.aspirant_email && <span className="block text-xs text-slate-500">{s.aspirant_email}</span>}</> : '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {s.meet_link ? <a href={s.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Join</a> : '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {s.status !== 'cancelled' && (
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => openRescheduleSlotAdmin(s)} className="text-sm font-medium text-indigo-600 hover:underline">Reschedule</button>
+                          <button type="button" onClick={() => { setCancelSlotAdmin(s); setCancelReasonAdmin(''); }} className="text-sm font-medium text-red-600 hover:underline">Cancel</button>
+                        </div>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {slots.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 text-slate-900 whitespace-nowrap">
-                        {formatDate(s.start_at)} · {new Date(s.start_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })} – {new Date(s.end_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })}
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-700">{s.interviewer_name ?? '—'}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${s.status === 'booked' ? 'bg-green-100 text-green-800' : s.status === 'cancelled' ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-800'}`}>
-                          {s.status === 'available' ? 'Available' : s.status === 'booked' ? 'Booked' : 'Cancelled'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-slate-700">
-                        {s.aspirant_name ? <>{s.aspirant_name}{s.aspirant_email && <span className="block text-xs text-slate-500">{s.aspirant_email}</span>}</> : '—'}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {s.meet_link ? <a href={s.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Join</a> : '—'}
-                      </td>
-                      <td className="px-4 py-2.5">
-                        {s.status !== 'cancelled' && (
-                          <div className="flex flex-wrap gap-2">
-                            <button type="button" onClick={() => openRescheduleSlotAdmin(s)} className="text-sm font-medium text-indigo-600 hover:underline">Reschedule</button>
-                            <button type="button" onClick={() => { setCancelSlotAdmin(s); setCancelReasonAdmin(''); }} className="text-sm font-medium text-red-600 hover:underline">Cancel</button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
-        )}
-        </div>
-      </section>
-
-      {/* Create new slots modal */}
-      {createSlotsModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => !createSlotsSaving && setCreateSlotsModalOpen(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg border border-slate-200" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50/80">
-              <h3 className="text-lg font-semibold text-slate-900">Create new slots</h3>
-              <button type="button" onClick={() => !createSlotsSaving && setCreateSlotsModalOpen(false)} className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-800" aria-label="Close">×</button>
-            </div>
-            <div className="p-5">
-              {createSlotsForm.date && createSlotsForm.startTime && createSlotsForm.numSlots >= 1 && (() => {
-                const durationMins = createSlotsForm.durationPreset === 'custom'
-                  ? Math.min(60, Math.max(15, Number(createSlotsForm.durationCustom) || 25))
-                  : Number(createSlotsForm.durationPreset);
-                const startAt = new Date(`${createSlotsForm.date}T${createSlotsForm.startTime}:00`);
-                const endAt = new Date(startAt.getTime() + createSlotsForm.numSlots * durationMins * 60 * 1000);
-                const fmt = (d) => d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
-                return (
-                  <p className="text-sm text-slate-600 mb-4">End time: <strong className="text-slate-900">{fmt(endAt)}</strong> (slots from {fmt(startAt)} to {fmt(endAt)})</p>
-                );
-              })()}
-              <form onSubmit={handleCreateSlots} className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Interviewer</label>
-                    <select
-                      value={createSlotsForm.interviewerId}
-                      onChange={(e) => setCreateSlotsForm((f) => ({ ...f, interviewerId: e.target.value }))}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
-                      required
-                    >
-                      <option value="">Select</option>
-                      {interviewers.map((i) => (
-                        <option key={i.id} value={i.id}>{i.name} ({i.email})</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
-                    <input type="date" value={createSlotsForm.date} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, date: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Start time</label>
-                    <input type="time" value={createSlotsForm.startTime} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, startTime: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Number of slots</label>
-                    <input type="number" min={1} max={24} value={createSlotsForm.numSlots} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, numSlots: Math.max(1, Math.min(24, parseInt(e.target.value, 10) || 1)) }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Slot duration</label>
-                    <select value={createSlotsForm.durationPreset} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, durationPreset: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white">
-                      <option value="15">15 min</option>
-                      <option value="20">20 min</option>
-                      <option value="25">25 min</option>
-                      <option value="30">30 min</option>
-                      <option value="40">40 min</option>
-                      <option value="custom">Custom</option>
-                    </select>
-                  </div>
-                  {createSlotsForm.durationPreset === 'custom' && (
-                    <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1">Custom (minutes)</label>
-                      <input type="number" min={15} max={60} value={createSlotsForm.durationCustom} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, durationCustom: Math.min(60, Math.max(15, parseInt(e.target.value, 10) || 15)) }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Meet link (optional)</label>
-                  <input type="url" value={createSlotsForm.meetLink} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, meetLink: e.target.value }))} placeholder="https://meet.google.com/..." className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-                </div>
-                {interviewers.length === 0 && <p className="text-sm text-amber-700">Mark at least one admin as Interviewer on the Admins page to create slots.</p>}
-                <div className="flex gap-2 pt-2">
-                  <button type="button" onClick={() => setCreateSlotsModalOpen(false)} disabled={createSlotsSaving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-                  <button type="submit" disabled={createSlotsSaving || interviewers.length === 0} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{createSlotsSaving ? 'Creating…' : 'Create slots'}</button>
-                </div>
-              </form>
-            </div>
+                ))}
+              </tbody>
+            </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Reschedule slot modal (admin) */}
       {rescheduleSlotAdmin && (
@@ -652,8 +524,8 @@ export default function AdminMocksPage() {
             </p>
             <form onSubmit={handleCancelSlotAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason / message to aspirant (optional)</label>
-                <input type="text" value={cancelReasonAdmin} onChange={(e) => setCancelReasonAdmin(e.target.value)} placeholder="e.g. Slot no longer available" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason (optional)</label>
+                <input type="text" value={cancelReasonAdmin} onChange={(e) => setCancelReasonAdmin(e.target.value)} placeholder="Optional" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="submit" disabled={cancelSavingAdmin} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{cancelSavingAdmin ? 'Cancelling…' : 'Cancel slot'}</button>
@@ -664,191 +536,110 @@ export default function AdminMocksPage() {
         </div>
       )}
 
-      {/* Complete mock – must enter scores (admin cannot mark completed without feedback) */}
-      {completeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Complete mock & add feedback</h3>
-            <p className="text-sm text-slate-600 mb-4">For {completeModal.aspirant_name ?? completeModal.aspirant_email}. You must enter scores (0–10) to mark as completed. The student will see them.</p>
-            <form onSubmit={handleCompleteSubmit} className="space-y-4">
-              {['technical_score', 'communication_score', 'problem_solving_score', 'overall_score'].map((key) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} (0–10)</label>
-                  <select
-                    value={completeForm[key]}
-                    onChange={(e) => setCompleteForm((f) => ({ ...f, [key]: Number(e.target.value) }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    required
-                  >
-                    {SCORE_OPTIONS.map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Feedback notes (optional)</label>
-                <textarea
-                  value={completeForm.notes}
-                  onChange={(e) => setCompleteForm((f) => ({ ...f, notes: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={completeSaving} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">{completeSaving ? 'Saving…' : 'Complete & notify student'}</button>
-                <button type="button" onClick={() => setCompleteModal(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reject reschedule request modal */}
-      {rejectRescheduleModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Reject reschedule request</h3>
-            <p className="text-sm text-slate-600 mb-4">
-              {rejectRescheduleModal.aspirant_name ?? rejectRescheduleModal.aspirant_email} – {formatDateTime(rejectRescheduleModal.scheduled_at)}. Your message will be sent to the aspirant via Messages.
-            </p>
-            <form onSubmit={handleRejectRescheduleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Message to aspirant</label>
-                <textarea value={rejectRescheduleMessage} onChange={(e) => setRejectRescheduleMessage(e.target.value)} placeholder="e.g. We couldn’t accommodate a new slot. Please join at the scheduled time." rows={3} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={rejectRescheduleSaving} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{rejectRescheduleSaving ? 'Sending…' : 'Reject & send message'}</button>
-                <button type="button" onClick={() => { setRejectRescheduleModal(null); setRejectRescheduleMessage(''); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Reschedule requests */}
-      {rescheduleRequests.length > 0 && (
-        <section className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-1">Reschedule requests</h2>
-          <p className="text-sm text-slate-600 mb-4">Approve and set a new time, or reject with a message (they see it in Messages).</p>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-100 border-b border-slate-200">
-                <tr>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Scheduled</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Reason</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {rescheduleRequests.map((req) => (
-                  <tr key={req.id} className="bg-white hover:bg-slate-50">
-                    <td className="px-3 py-2 text-slate-900">
-                      {req.aspirant_name ?? '—'}
-                      {req.aspirant_email && <span className="block text-xs text-slate-500">{req.aspirant_email}</span>}
-                    </td>
-                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(req.scheduled_at)}</td>
-                    <td className="px-3 py-2 text-slate-600 max-w-[240px]">{req.reason ?? '—'}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => handleApproveRescheduleRequest(req)} className="text-sm font-medium text-indigo-600 hover:underline">Approve</button>
-                        <button type="button" onClick={() => { setRejectRescheduleModal(req); setRejectRescheduleMessage(''); }} className="text-sm font-medium text-red-600 hover:underline">Reject</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      )}
-
-      {/* Students waiting for a slot */}
-      {pendingRequests > 0 && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm text-amber-800">
-            <strong>{pendingRequests}</strong> student{pendingRequests !== 1 ? 's' : ''} waiting for a slot — set date, time, and Meet link in <strong>All mock registrations</strong> (click “Set schedule”).
+      {/* Pending requests – easy to spot */}
+      {registrations.filter((r) => r.status === 'requested').length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 mb-6">
+          <h2 className="font-semibold text-amber-900 mb-1">
+            Pending requests: {registrations.filter((r) => r.status === 'requested').length}
+          </h2>
+          <p className="text-sm text-amber-800 mb-3">
+            Set date, time, and Meet link for each so the aspirant gets the link in Messages and on their Mocks page.
           </p>
-        </section>
+        </div>
       )}
 
-      {/* All mock registrations: search + filter + compact table, click row → detail modal */}
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <h2 className="text-lg font-semibold text-slate-900 px-4 pt-4 pb-1">All mock registrations</h2>
-        <p className="text-sm text-slate-600 px-4 pb-2">Search or filter, then click a row to view details and actions.</p>
-        <div className="px-4 pb-4 flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search by name or email..."
-            value={registrationsSearch}
-            onChange={(e) => { setRegistrationsSearch(e.target.value); setRegistrationsPage(0); }}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm w-56 placeholder:text-slate-400"
-          />
-          <select
-            value={registrationsStatusFilter}
-            onChange={(e) => { setRegistrationsStatusFilter(e.target.value); setRegistrationsPage(0); }}
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
-          >
-            <option value="">All statuses</option>
-            <option value="requested">Requested</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="no_show">No-show</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          <span className="text-sm text-slate-500">
-            {filteredRegistrations.length === registrations.length
-              ? `${registrations.length} total`
-              : `${filteredRegistrations.length} of ${registrations.length}`}
-          </span>
-        </div>
-        <div className="overflow-auto max-h-[420px] border-t border-slate-200">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0 z-10">
+      {/* All registrations (history) */}
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-8">
+        <h2 className="text-lg font-semibold text-slate-900 px-4 pt-4 pb-2">All registrations (history)</h2>
+        <p className="text-sm text-slate-600 px-4 pb-4">All mock requests and bookings. Requested, scheduled, completed, no-show, and cancelled.</p>
+        {/* Desktop: scrollable table, Action column sticky right */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full text-left min-w-[900px]">
+            <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-4 py-2.5 font-semibold text-slate-700">Student</th>
-                <th className="px-4 py-2.5 font-semibold text-slate-700">Status</th>
-                <th className="px-4 py-2.5 font-semibold text-slate-700">Registered</th>
-                <th className="px-4 py-2.5 font-semibold text-slate-700">Scheduled</th>
-                <th className="px-4 py-2.5 font-semibold text-slate-700 w-8" aria-label="View" />
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Student</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Email</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Availability</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Registered</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Interviewer</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Scheduled at</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Meet link</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Scores</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Completed at</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Status</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700">Conducted</th>
+                <th className="px-4 py-3 text-sm font-semibold text-slate-700 bg-white sticky right-0 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] min-w-[180px]">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredRegistrations.length === 0 ? (
+              {registrations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                    {registrations.length === 0 ? 'No mock registrations yet.' : 'No matches. Try a different search or filter.'}
+                  <td colSpan={12} className="px-4 py-8 text-center text-slate-500 text-sm">
+                    No mock registrations yet.
                   </td>
                 </tr>
               ) : (
-                paginatedRegistrations.map((r) => (
-                  <tr
-                    key={r.id}
-                    onClick={() => setRegistrationDetailModal(r)}
-                    className="hover:bg-indigo-50/50 cursor-pointer group"
-                  >
-                    <td className="px-4 py-2.5">
-                      <span className="font-medium text-slate-900">{r.aspirant_name ?? '—'}</span>
-                      {r.aspirant_email && <span className="block text-xs text-slate-500 truncate max-w-[200px]">{r.aspirant_email}</span>}
+                [...registrations]
+                .sort((a, b) => {
+                  const order = { requested: 0, scheduled: 1, completed: 2, no_show: 3, cancelled: 4 };
+                  return (order[a.status] ?? 5) - (order[b.status] ?? 5);
+                })
+                .map((r) => (
+                  <tr key={r.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 text-sm text-slate-900">{r.aspirant_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{r.aspirant_email ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600 max-w-[180px] truncate" title={r.availability_notes ?? ''}>{r.availability_notes ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{formatDate(r.created_at)}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600">{r.interviewer_name ?? '—'}</td>
+                    <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {r.meet_link ? (
+                        <a href={r.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline inline-flex items-center gap-1">
+                          <HiLink className="w-4 h-4 shrink-0" /> Join
+                        </a>
+                      ) : (
+                        '—'
+                      )}
                     </td>
-                    <td className="px-4 py-2.5">
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      {r.status === 'completed' && [r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
+                        ? `T:${r.technical_score} C:${r.communication_score} P:${r.problem_solving_score} O:${r.overall_score}`
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
+                    <td className="px-4 py-3">
                       <span
                         className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
-                          r.status === 'completed' ? 'bg-emerald-100 text-emerald-700'
-                            : r.status === 'requested' ? 'bg-amber-100 text-amber-700'
-                            : r.status === 'scheduled' ? 'bg-blue-100 text-blue-700'
-                            : r.status === 'no_show' ? 'bg-red-100 text-red-700'
-                            : 'bg-slate-100 text-slate-600'
+                          r.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : r.status === 'requested'
+                              ? 'bg-amber-100 text-amber-700'
+                              : r.status === 'scheduled'
+                                ? 'bg-blue-100 text-blue-700'
+                                : r.status === 'no_show'
+                                  ? 'bg-red-100 text-red-700'
+                                  : 'bg-slate-100 text-slate-600'
                         }`}
                       >
                         {r.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDate(r.created_at)}</td>
-                    <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{r.scheduled_at ? formatDateTime(r.scheduled_at) : '—'}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 group-hover:bg-indigo-100 transition-colors">View details</span>
+                    <td className="px-4 py-3 text-sm text-slate-600">{byAspirant[r.aspirant_id] ?? 0}</td>
+                    <td className="px-4 py-3 bg-white sticky right-0 shadow-[-4px_0_8px_rgba(0,0,0,0.06)] min-w-[200px]">
+                      {r.status === 'requested' && (
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => openScheduleModal(r)} className="text-sm font-medium text-indigo-600 hover:underline whitespace-nowrap">Set schedule</button>
+                          <button type="button" onClick={() => handleCancelSlot(r)} className="text-sm font-medium text-slate-600 hover:underline whitespace-nowrap">Cancel slot</button>
+                        </div>
+                      )}
+                      {r.status === 'scheduled' && (
+                        <div className="flex flex-wrap gap-2">
+                          <button type="button" onClick={() => openScheduleModal(r)} className="text-sm font-medium text-indigo-600 hover:underline whitespace-nowrap">Edit schedule</button>
+                          <button type="button" onClick={() => handleMarkCompleted(r)} disabled={completingId === r.id} className="text-sm font-medium text-emerald-600 hover:underline whitespace-nowrap disabled:opacity-50">{completingId === r.id ? '…' : 'Mark completed'}</button>
+                          <button type="button" onClick={() => handleMarkNoShow(r)} className="text-sm font-medium text-red-600 hover:underline whitespace-nowrap">No-show</button>
+                        </div>
+                      )}
+                      {(r.status === 'completed' || r.status === 'no_show' || r.status === 'cancelled') && '—'}
                     </td>
                   </tr>
                 ))
@@ -856,127 +647,65 @@ export default function AdminMocksPage() {
             </tbody>
           </table>
         </div>
-        {filteredRegistrations.length > REGISTRATIONS_PAGE_SIZE && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200 bg-slate-50">
-            <span className="text-xs text-slate-500">
-              Page {registrationsPage + 1} of {totalRegistrationPages} ({filteredRegistrations.length} shown)
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setRegistrationsPage((p) => Math.max(0, p - 1))}
-                disabled={registrationsPage === 0}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => setRegistrationsPage((p) => Math.min(totalRegistrationPages - 1, p + 1))}
-                disabled={registrationsPage >= totalRegistrationPages - 1}
-                className="px-3 py-1.5 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
-      </section>
 
-      {/* Registration detail modal: wide, no scroll, content in grid */}
-      {registrationDetailModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={() => setRegistrationDetailModal(null)}>
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl border border-slate-200" onClick={(e) => e.stopPropagation()}>
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/80">
-              <h3 className="text-lg font-semibold text-slate-900">Registration details</h3>
-              <button type="button" onClick={() => setRegistrationDetailModal(null)} className="flex items-center justify-center w-8 h-8 rounded-lg text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors" aria-label="Close">
-                ×
-              </button>
-            </div>
-            {/* Body: two columns, no scroll */}
-            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-5">
-              {/* Left column */}
-              <div className="space-y-4">
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Student</p>
-                  <p className="font-semibold text-slate-900">{registrationDetailModal.aspirant_name ?? '—'}</p>
-                  <p className="text-slate-600 text-sm mt-0.5">{registrationDetailModal.aspirant_email ?? '—'}</p>
+        {/* Mobile / small: cards with actions always visible */}
+        <div className="md:hidden divide-y divide-slate-200">
+          {registrations.length === 0 ? (
+            <div className="px-4 py-8 text-center text-slate-500 text-sm">No mock registrations yet.</div>
+          ) : (
+            registrations.map((r) => (
+              <div key={r.id} className="p-4">
+                <div className="flex flex-wrap items-start justify-between gap-2 mb-2">
+                  <div>
+                    <p className="font-medium text-slate-900">{r.aspirant_name ?? '—'}</p>
+                    <p className="text-sm text-slate-600 truncate">{r.aspirant_email ?? '—'}</p>
+                  </div>
                   <span
-                    className={`inline-flex mt-2 px-2.5 py-1 rounded-lg text-xs font-medium ${
-                      registrationDetailModal.status === 'completed' ? 'bg-emerald-100 text-emerald-800'
-                        : registrationDetailModal.status === 'requested' ? 'bg-amber-100 text-amber-800'
-                        : registrationDetailModal.status === 'scheduled' ? 'bg-blue-100 text-blue-800'
-                        : registrationDetailModal.status === 'no_show' ? 'bg-red-100 text-red-800'
-                        : 'bg-slate-200 text-slate-700'
+                    className={`inline-flex px-2 py-0.5 rounded text-xs font-medium shrink-0 ${
+                      r.status === 'completed'
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : r.status === 'requested'
+                          ? 'bg-amber-100 text-amber-700'
+                          : r.status === 'scheduled'
+                            ? 'bg-blue-100 text-blue-700'
+                            : r.status === 'no_show'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-slate-100 text-slate-600'
                     }`}
                   >
-                    {registrationDetailModal.status}
+                    {r.status}
                   </span>
                 </div>
-                {registrationDetailModal.availability_notes ? (
-                  <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Preferred date, time & notes</p>
-                    <p className="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap">{registrationDetailModal.availability_notes}</p>
-                  </div>
-                ) : null}
-              </div>
-              {/* Right column */}
-              <div className="space-y-4">
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Schedule</p>
-                  <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div><dt className="text-slate-500">Registered on</dt><dd className="font-medium text-slate-900">{formatDate(registrationDetailModal.created_at)}</dd></div>
-                    <div><dt className="text-slate-500">Scheduled at</dt><dd className="font-medium text-slate-900">{registrationDetailModal.scheduled_at ? formatDateTime(registrationDetailModal.scheduled_at) : '—'}</dd></div>
-                    <div><dt className="text-slate-500">Interviewer</dt><dd className="font-medium text-slate-900">{registrationDetailModal.interviewer_name ?? '—'}</dd></div>
-                    <div><dt className="text-slate-500">Mocks conducted</dt><dd className="font-medium text-slate-900">{byAspirant[registrationDetailModal.aspirant_id] ?? 0}</dd></div>
-                  </dl>
-                </div>
-                {registrationDetailModal.meet_link ? (
-                  <div className="rounded-xl bg-indigo-50/80 border border-indigo-200 p-4">
-                    <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1">Meeting link</p>
-                    <a href={registrationDetailModal.meet_link} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-indigo-700 font-medium hover:underline">
-                      <HiLink className="w-4 h-4 shrink-0" /> Open meeting link
+                {r.availability_notes && (
+                  <p className="text-sm text-slate-600 mb-1 truncate" title={r.availability_notes}>Availability: {r.availability_notes}</p>
+                )}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500 mb-3">
+                  <span>Reg: {formatDate(r.created_at)}</span>
+                  {r.scheduled_at && <span>Scheduled: {formatDateTime(r.scheduled_at)}</span>}
+                  {r.meet_link && (
+                    <a href={r.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 inline-flex items-center gap-1">
+                      <HiLink className="w-3.5 h-3.5" /> Join Meet
                     </a>
+                  )}
+                </div>
+                {r.status === 'requested' && (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onClick={() => openScheduleModal(r)} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Set schedule</button>
+                    <button type="button" onClick={() => handleCancelSlot(r)} className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium">Cancel slot</button>
                   </div>
-                ) : null}
-                {registrationDetailModal.status === 'completed' && [registrationDetailModal.technical_score, registrationDetailModal.communication_score, registrationDetailModal.problem_solving_score, registrationDetailModal.overall_score].every((n) => n != null) && (
-                  <div className="rounded-xl bg-emerald-50/80 border border-emerald-200 p-4">
-                    <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-2">Scores & feedback</p>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      <div><dt className="text-slate-600">Technical</dt><dd className="font-medium text-slate-900">{registrationDetailModal.technical_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Communication</dt><dd className="font-medium text-slate-900">{registrationDetailModal.communication_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Problem solving</dt><dd className="font-medium text-slate-900">{registrationDetailModal.problem_solving_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Overall</dt><dd className="font-medium text-slate-900">{registrationDetailModal.overall_score} / 10</dd></div>
-                    </dl>
-                    {registrationDetailModal.completed_at && <p className="text-slate-600 text-xs mt-2">Completed {formatDateTime(registrationDetailModal.completed_at)}</p>}
-                    {registrationDetailModal.feedback_notes && <p className="text-slate-800 text-sm mt-2 whitespace-pre-wrap border-t border-emerald-200/60 pt-2">{registrationDetailModal.feedback_notes}</p>}
+                )}
+                {r.status === 'scheduled' && (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onClick={() => openScheduleModal(r)} className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium">Edit schedule</button>
+                    <button type="button" onClick={() => handleMarkCompleted(r)} disabled={completingId === r.id} className="px-3 py-2 rounded-lg border border-emerald-600 text-emerald-700 text-sm font-medium disabled:opacity-50">{completingId === r.id ? <ButtonLoader label="Updating…" /> : 'Mark completed'}</button>
+                    <button type="button" onClick={() => handleMarkNoShow(r)} className="px-3 py-2 rounded-lg border border-red-600 text-red-700 text-sm font-medium">No-show</button>
                   </div>
                 )}
               </div>
-            </div>
-            {/* Footer: actions */}
-            <div className="border-t border-slate-200 px-6 py-4 bg-slate-50/80 space-y-2">
-              {registrationDetailModal.status === 'requested' && (
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <button type="button" onClick={() => { openScheduleModal(registrationDetailModal); setRegistrationDetailModal(null); }} className="flex-1 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors">Set schedule</button>
-                  <button type="button" onClick={() => { handleCancelSlot(registrationDetailModal); setRegistrationDetailModal(null); }} className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-50 transition-colors">Cancel slot</button>
-                </div>
-              )}
-              {registrationDetailModal.status === 'scheduled' && (
-                <div className="flex flex-col gap-2">
-                  <button type="button" onClick={() => { openCompleteModal(registrationDetailModal); setRegistrationDetailModal(null); }} className="w-full rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-700 transition-colors">Complete & add feedback</button>
-                  <div className="flex gap-2">
-                    <button type="button" onClick={() => { openScheduleModal(registrationDetailModal); setRegistrationDetailModal(null); }} className="flex-1 rounded-xl border border-indigo-600 px-4 py-2.5 text-sm font-medium text-indigo-700 bg-white hover:bg-indigo-50 transition-colors">Edit schedule</button>
-                    <button type="button" onClick={() => { handleMarkNoShow(registrationDetailModal); setRegistrationDetailModal(null); }} className="flex-1 rounded-xl border border-red-600 px-4 py-2.5 text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">No-show</button>
-                  </div>
-                </div>
-              )}
-              <button type="button" onClick={() => setRegistrationDetailModal(null)} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 transition-colors">Close</button>
-            </div>
-          </div>
+            ))
+          )}
         </div>
-      )}
+      </div>
 
       {/* Schedule modal */}
       {scheduleModal && (
@@ -1036,122 +765,129 @@ export default function AdminMocksPage() {
         </div>
       )}
 
-      {/* Completed mocks by date — top */}
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/80">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <HiCalendarDays className="w-5 h-5 text-slate-600" />
-            Completed mocks by date
-          </h2>
-          <p className="text-slate-600 text-sm mt-1">Filter by date range and sort by score or name.</p>
+      {/* Completed by date (report) */}
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <HiCalendarDays className="w-5 h-5" />
+          Completed mocks by date
+        </h2>
+        <p className="text-slate-600 text-sm mb-4">
+          Who took the mock, scheduled time, completed time. Filter by date range.
+        </p>
+        <div className="flex flex-wrap gap-4 mb-4">
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">From</label>
+            <input
+              type="date"
+              value={reportFrom}
+              onChange={(e) => setReportFrom(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">To</label>
+            <input
+              type="date"
+              value={reportTo}
+              onChange={(e) => setReportTo(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Sort by</label>
+            <select
+              value={reportSortBy}
+              onChange={(e) => setReportSortBy(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            >
+              <option value="">Default (date)</option>
+              <option value="technical_score">Technical score</option>
+              <option value="communication_score">Communication score</option>
+              <option value="problem_solving_score">Problem solving score</option>
+              <option value="overall_score">Overall score</option>
+              <option value="completed_at">Completed at</option>
+              <option value="scheduled_at">Scheduled at</option>
+              <option value="aspirant_name">Aspirant name</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-slate-500 mb-1">Order</label>
+            <select
+              value={reportOrder}
+              onChange={(e) => setReportOrder(e.target.value)}
+              className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
+            >
+              <option value="desc">Descending</option>
+              <option value="asc">Ascending</option>
+            </select>
+          </div>
         </div>
-        <div className="p-5">
-          <div className="flex flex-wrap items-end gap-4 mb-4">
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">From</label>
-              <input type="date" value={reportFrom} onChange={(e) => setReportFrom(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">To</label>
-              <input type="date" value={reportTo} onChange={(e) => setReportTo(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Sort by</label>
-              <select value={reportSortBy} onChange={(e) => setReportSortBy(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white min-w-[160px]">
-                <option value="">Default (date)</option>
-                <option value="technical_score">Technical score</option>
-                <option value="communication_score">Communication score</option>
-                <option value="problem_solving_score">Problem solving score</option>
-                <option value="overall_score">Overall score</option>
-                <option value="completed_at">Completed at</option>
-                <option value="scheduled_at">Scheduled at</option>
-                <option value="aspirant_name">Aspirant name</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-slate-500 mb-1">Order</label>
-              <select value={reportOrder} onChange={(e) => setReportOrder(e.target.value)} className="rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white">
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
-              </select>
-            </div>
-          </div>
-          <div className="overflow-auto max-h-[360px] rounded-lg border border-slate-200">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+        <div className="overflow-x-auto -mx-6 px-6 sm:mx-0 sm:px-0">
+          <table className="w-full text-left text-sm min-w-[500px]">
+            <thead className="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th className="px-3 py-2 font-semibold text-slate-700">Completed date</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Interviewer</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Scheduled at</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Completed at</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Scores (T/C/P/O)</th>
+                <th className="px-3 py-2 font-semibold text-slate-700">Meet link</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {completedReport.length === 0 ? (
                 <tr>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Date</th>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Aspirant</th>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Interviewer</th>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Scheduled</th>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Completed at</th>
-                  <th className="px-4 py-2.5 font-semibold text-slate-700">Scores</th>
+                  <td colSpan={7} className="px-3 py-6 text-center text-slate-500">No completed mocks in this range.</td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 bg-white">
-                {completedReport.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-slate-500">No completed mocks in this range.</td>
+              ) : (
+                completedReport.map((r) => (
+                  <tr key={r.id}>
+                    <td className="px-3 py-2 text-slate-700 whitespace-nowrap">{formatDate(r.completed_at ?? r.scheduled_at ?? r.created_at)}</td>
+                    <td className="px-3 py-2 text-slate-900">{r.aspirant_name ?? r.aspirant_email ?? '—'}</td>
+                    <td className="px-3 py-2 text-slate-600">{r.interviewer_name ?? '—'}</td>
+                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
+                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
+                    <td className="px-3 py-2 text-slate-600">
+                      {[r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
+                        ? `T:${r.technical_score} C:${r.communication_score} P:${r.problem_solving_score} O:${r.overall_score}`
+                        : '—'}
+                    </td>
+                    <td className="px-3 py-2">
+                      {r.meet_link ? (
+                        <a href={r.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">Join</a>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                   </tr>
-                ) : (
-                  completedReport.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-50/50">
-                      <td className="px-4 py-2.5 text-slate-700 whitespace-nowrap">{formatDate(r.completed_at ?? r.scheduled_at ?? r.created_at)}</td>
-                      <td className="px-4 py-2.5 font-medium text-slate-900">{r.aspirant_name ?? r.aspirant_email ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-slate-600">{r.interviewer_name ?? '—'}</td>
-                      <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
-                      <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
-                      <td className="px-4 py-2.5 text-slate-600">
-                        {[r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
-                          ? `${r.technical_score} / ${r.communication_score} / ${r.problem_solving_score} / ${r.overall_score}`
-                          : '—'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </section>
 
-      {/* Mocks conducted per student — bottom */}
-      <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-        <div className="px-5 py-4 border-b border-slate-200 bg-slate-50/80">
-          <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
-            <HiCheckCircle className="w-5 h-5 text-slate-600" />
-            Mocks conducted per student
-          </h2>
-          <p className="text-slate-600 text-sm mt-1">Total completed mocks per aspirant.</p>
-        </div>
-        <div className="p-5">
-          {Object.keys(byAspirant).length === 0 ? (
-            <p className="text-slate-500 text-sm py-4">No completed mocks yet.</p>
-          ) : (
-            <div className="overflow-auto max-h-[320px] rounded-lg border border-slate-200">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
-                  <tr>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700">Student</th>
-                    <th className="px-4 py-2.5 font-semibold text-slate-700 text-right w-28">Completed</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {registrations
-                    .filter((r, i, arr) => arr.findIndex((x) => x.aspirant_id === r.aspirant_id) === i)
-                    .map((r) => (
-                      <tr key={r.aspirant_id} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-2.5 font-medium text-slate-900">{r.aspirant_name ?? r.aspirant_email ?? '—'}</td>
-                        <td className="px-4 py-2.5 text-slate-700 text-right">
-                          <span className="inline-flex items-center justify-center min-w-8 rounded-lg bg-emerald-100 text-emerald-800 font-semibold px-2 py-0.5">{byAspirant[r.aspirant_id] ?? 0}</span>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      {/* Conducted per student */}
+      <section className="rounded-xl border border-slate-200 bg-white p-6">
+        <h2 className="text-lg font-semibold text-slate-900 mb-3 flex items-center gap-2">
+          <HiCheckCircle className="w-5 h-5" />
+          Mocks conducted per student
+        </h2>
+        {Object.keys(byAspirant).length === 0 ? (
+          <p className="text-slate-500 text-sm">No completed mocks yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {registrations
+              .filter((r, i, arr) => arr.findIndex((x) => x.aspirant_id === r.aspirant_id) === i)
+              .map((r) => (
+                <li key={r.aspirant_id} className="flex justify-between text-sm">
+                  <span className="text-slate-700">{r.aspirant_name ?? r.aspirant_email ?? r.aspirant_id}</span>
+                  <span className="font-medium text-slate-900">{byAspirant[r.aspirant_id] ?? 0} conducted</span>
+                </li>
+              ))}
+          </ul>
+        )}
       </section>
     </div>
   );

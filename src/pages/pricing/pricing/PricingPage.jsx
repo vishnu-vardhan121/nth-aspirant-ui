@@ -6,7 +6,6 @@ import ChoiceScreen from './components/ChoiceScreen';
 import PricingCards from './components/PricingCards';
 import LeadFormModal from './components/LeadFormModal';
 import { getSafeReturnPath } from '../../../lib/authUtils';
-import Seo from '../../../components/Seo';
 
 function BackBar({ isFirstSection, returnTo, onBackToFirst }) {
   if (isFirstSection) {
@@ -60,18 +59,12 @@ export default function PricingPage() {
       className="h-screen flex flex-col overflow-hidden"
       style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
     >
-      <Seo
-        title="Pricing | NTH interview guarantee plans"
-        description="Choose Base, Silver, or Gold to get mock interviews, direct interview slots, and 100% refund protection when milestones are met."
-        canonicalPath="/pricing"
-        ogImage="/hero-section/hero-image.jpg"
-      />
       <main className="flex-1 flex flex-col min-h-0 relative">
-          <BackBar
-            isFirstSection={pricingType === null}
-            returnTo={returnTo}
-            onBackToFirst={() => setPricingType(null)}
-          />
+        <BackBar
+          isFirstSection={pricingType === null}
+          returnTo={returnTo}
+          onBackToFirst={() => setPricingType(null)}
+        />
         {pricingType === null ? (
           <div className="flex-1 flex flex-col pt-12 sm:pt-14">
             <ChoiceScreen onSelect={setPricingType} />
