@@ -1,63 +1,58 @@
 /**
- * Institute / training platform ad modal for the landing page.
- * Modal is ~80% of viewport; poster fits inside with object-contain.
+ * Institute ad modal: image only at ~80% viewport, no white card.
+ * X is fixed on the overlay so it stays visible on any image size.
  */
 export default function InstituteAdModal({ open, onClose, ad }) {
   if (!open || !ad) return null;
 
-  const { imageUrl, linkUrl, sponsorLabel } = ad;
+  const { imageUrl, linkUrl } = ad;
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/70"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Sponsored"
+      aria-label="Close advertisement"
     >
+      {/* X: fixed to viewport corner so always visible; not inside image box */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="fixed top-4 right-4 z-[201] w-11 h-11 flex items-center justify-center rounded-full bg-black/55 text-white text-2xl leading-none shadow-lg hover:bg-black/75 transition-colors border border-white/20"
+        aria-label="Close"
+      >
+        ×
+      </button>
+
+      {/* Image only — no white/slate background; different aspect ratios show as-is on dark overlay */}
       <div
-        className="relative bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col w-[80vw] max-w-[80vw] h-[80vh] max-h-[80vh]"
+        className="relative flex items-center justify-center max-w-[80vw] max-h-[80vh] w-full h-full min-h-0 pointer-events-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {sponsorLabel && (
-          <div className="shrink-0 px-4 py-2 border-b border-slate-100 flex items-center justify-center">
-            <span className="text-xs font-medium uppercase tracking-wider text-slate-500">
-              {sponsorLabel}
-            </span>
-          </div>
-        )}
-
-        <div className="flex flex-1 min-h-0 items-center justify-center bg-slate-50 p-3 sm:p-4">
-          {linkUrl ? (
-            <a
-              href={linkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full h-full min-h-0 items-center justify-center"
-            >
-              <img
-                src={imageUrl}
-                alt=""
-                className="max-w-full max-h-full w-auto h-auto object-contain"
-              />
-            </a>
-          ) : (
+        {linkUrl ? (
+          <a
+            href={linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex max-w-full max-h-full items-center justify-center"
+          >
             <img
               src={imageUrl}
               alt=""
-              className="max-w-full max-h-full w-auto h-auto object-contain"
+              className="max-w-[80vw] max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
             />
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute top-2 right-2 w-9 h-9 flex items-center justify-center rounded-lg bg-white/90 shadow-sm text-slate-600 hover:bg-white hover:text-slate-900 transition-colors"
-          aria-label="Close"
-        >
-          ×
-        </button>
+          </a>
+        ) : (
+          <img
+            src={imageUrl}
+            alt=""
+            className="max-w-[80vw] max-h-[80vh] w-auto h-auto object-contain rounded-lg shadow-2xl"
+          />
+        )}
       </div>
     </div>
   );

@@ -183,7 +183,7 @@ export default function AdminInstituteAdsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Institute ads</h1>
           <p className="text-slate-600 text-sm mt-1">
-            One active ad is shown in the landing page modal (after 500px scroll + 5s). Only one can be active.
+            One active ad is shown in the landing page modal ~5s after each page load/refresh. Only one can be active.
           </p>
         </div>
         <button
