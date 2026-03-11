@@ -50,11 +50,11 @@ export default function NTHConnectSection() {
               </Link>
             </div>
           </div>
-          <div className="flex-1 w-full max-w-md mx-auto lg:max-w-none order-1 lg:order-2">
+          <div className="flex-1 w-full max-w-2xl mx-auto lg:max-w-none order-1 lg:order-2">
             <img
               src="/hero-section/Gemini_Generated_Image_fmv3s7fmv3s7fmv3.png"
               alt="Naveen Talent Hub—connect directly with hiring managers instead of the crowded job market"
-              className="w-full h-auto object-contain drop-shadow-lg rounded-lg"
+              className="w-full h-auto object-contain drop-shadow-lg rounded-lg transform lg:scale-110"
             />
           </div>
         </div>

@@ -13,7 +13,7 @@ import {
 } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
 
-export default function JobsList({ jobs, usage, appliedJobIds, onUsageChange }) {
+export default function JobsList({ jobs, usage, appliedJobIds, applicationStatusByJobId = {}, onUsageChange }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('All'); // All, Full-time, Contract, etc.
   
@@ -76,6 +76,7 @@ export default function JobsList({ jobs, usage, appliedJobIds, onUsageChange }) 
                 job={job}
                 usage={usage}
                 isApplied={appliedJobIds?.has(job.id)}
+                applicationStatus={applicationStatusByJobId?.[job.id]}
                 onApplicationRecorded={onUsageChange}
               />
             ))
@@ -94,7 +95,7 @@ export default function JobsList({ jobs, usage, appliedJobIds, onUsageChange }) 
   );
 }
 
-function JobCard({ job, usage, isApplied, onApplicationRecorded }) {
+function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecorded }) {
   const [isSaved, setIsSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState(null);
@@ -224,8 +225,12 @@ function JobCard({ job, usage, isApplied, onApplicationRecorded }) {
               Application closed
             </span>
           ) : isApplied ? (
-            <span className="inline-block px-5 py-2.5 rounded-lg bg-emerald-100 text-emerald-700 font-medium text-sm">
-              Applied
+            <span className={`inline-block px-5 py-2.5 rounded-lg font-medium text-sm ${
+              applicationStatus === 'shortlisted'
+                ? 'bg-indigo-100 text-indigo-700'
+                : 'bg-emerald-100 text-emerald-700'
+            }`}>
+              {applicationStatus === 'shortlisted' ? 'Shortlisted' : 'Applied'}
             </span>
           ) : atLimit ? (
             <Link

@@ -57,10 +57,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const authLinks = isAuthenticated
-    ? [
-        { label: 'Dashboard', to: '/dashboard' },
-        { label: 'Sign out', isSignOut: true },
-      ]
+    ? [{ label: 'Dashboard', to: '/dashboard' }]
     : [{ label: 'Login', to: '/login' }];
   const navLinks = [...STATIC_LINKS, ...authLinks].map((link) =>
     link.to === '/pricing'
@@ -111,7 +108,7 @@ export default function Navbar() {
               onClick={() => setIsMobileMenuOpen(false)}
             >
               <img 
-                src={showLightStyle ? "/lologo.png" : "/lilogo.png"}
+                src={showLightStyle ? "/dark-logo.png" : "/white-logo.png"}
                 alt="Naveen Talent Hub"
                 className="h-10 md:h-12 w-auto object-contain transition-transform group-hover:scale-105"
               />

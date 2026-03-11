@@ -29,6 +29,7 @@ export default function JobsPage() {
   const [loading, setLoading] = useState(true);
   const [usage, setUsage] = useState(null); // { used, limit, active }
   const [appliedJobIds, setAppliedJobIds] = useState(new Set());
+  const [applicationStatusByJobId, setApplicationStatusByJobId] = useState({});
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -53,8 +54,13 @@ export default function JobsPage() {
 
   useEffect(() => {
     const fetchApplied = async () => {
-      const { data, error } = await supabase.from('applications').select('job_id');
-      if (!error && data) setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+      const { data, error } = await supabase.from('applications').select('job_id, status').neq('status', 'rejected');
+      if (!error && data) {
+        setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+        const byJob = {};
+        data.forEach((r) => { byJob[r.job_id] = r.status || 'applied'; });
+        setApplicationStatusByJobId(byJob);
+      }
     };
     fetchApplied();
   }, []);
@@ -107,12 +113,18 @@ export default function JobsPage() {
           jobs={jobsForList}
           usage={usage}
           appliedJobIds={appliedJobIds}
+          applicationStatusByJobId={applicationStatusByJobId}
           onUsageChange={() => {
             supabase.rpc('get_application_usage').then(({ data }) => {
               if (data) setUsage(data);
             });
-            supabase.from('applications').select('job_id').then(({ data }) => {
-              if (data) setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+            supabase.from('applications').select('job_id, status').neq('status', 'rejected').then(({ data }) => {
+              if (data) {
+                setAppliedJobIds(new Set(data.map((r) => r.job_id)));
+                const byJob = {};
+                data.forEach((r) => { byJob[r.job_id] = r.status || 'applied'; });
+                setApplicationStatusByJobId(byJob);
+              }
             });
           }}
         />

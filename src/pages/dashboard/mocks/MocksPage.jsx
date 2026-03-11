@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
-import { HiAcademicCap, HiCalendarDays, HiCheckCircle, HiClock, HiMegaphone, HiLink } from 'react-icons/hi2';
+import { HiCalendarDays, HiCheckCircle, HiClock, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -40,11 +41,23 @@ export default function MocksPage() {
   const [bookingSlotId, setBookingSlotId] = useState(null);
   const [slotMessage, setSlotMessage] = useState({ type: '', text: '' });
   const [requestWithoutSlot, setRequestWithoutSlot] = useState(false);
+  const [requestPreferredDate, setRequestPreferredDate] = useState('');
+  const [requestPreferredTime, setRequestPreferredTime] = useState('');
   const [requestNotes, setRequestNotes] = useState('');
   const [requestSaving, setRequestSaving] = useState(false);
   const [requestMessage, setRequestMessage] = useState({ type: '', text: '' });
+  const [pendingRescheduleIds, setPendingRescheduleIds] = useState([]);
+  const [rescheduleModal, setRescheduleModal] = useState(null);
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [rescheduleSaving, setRescheduleSaving] = useState(false);
+  const [rescheduleMessage, setRescheduleMessage] = useState({ type: '', text: '' });
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [noticesModalOpen, setNoticesModalOpen] = useState(false);
+  const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const infoRef = useRef(null);
 
   const canBook = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
+  const NOTICES_PREVIEW = 5;
 
   const fetchUsage = () => {
     supabase.rpc('get_mock_usage').then(({ data }) => {
@@ -64,6 +77,12 @@ export default function MocksPage() {
     supabase.rpc('get_my_mock_notices').then(({ data }) => setMockNotices(Array.isArray(data) ? data : []));
   };
 
+  const fetchPendingRescheduleIds = () => {
+    supabase.rpc('get_my_pending_reschedule_registration_ids').then(({ data }) => {
+      setPendingRescheduleIds(Array.isArray(data) ? data : []);
+    });
+  };
+
   const fetchAvailableSlots = async () => {
     setSlotsLoading(true);
     const { data } = await supabase.rpc('get_available_mock_slots', {
@@ -78,6 +97,7 @@ export default function MocksPage() {
     fetchUsage();
     fetchMyRegistrations();
     fetchMockNotices();
+    fetchPendingRescheduleIds();
     setLoading(false);
   }, []);
 
@@ -105,12 +125,23 @@ export default function MocksPage() {
   const handleRequestWithoutSlot = async (e) => {
     e.preventDefault();
     setRequestMessage({ type: '', text: '' });
+    if (!requestPreferredDate || !requestPreferredTime) {
+      setRequestMessage({ type: 'error', text: 'Please select date and time.' });
+      return;
+    }
     setRequestSaving(true);
-    const { data } = await supabase.rpc('register_mock', { p_availability_notes: requestNotes.trim() || null });
+    const dateStr = new Date(requestPreferredDate + 'T' + requestPreferredTime).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const parts = ['Preferred: ' + dateStr];
+    if (requestNotes.trim()) parts.push(requestNotes.trim());
+    const availabilityNotes = parts.join('. ');
+    const { data } = await supabase.rpc('register_mock', { p_availability_notes: availabilityNotes });
     setRequestSaving(false);
     if (data?.ok) {
-      setRequestMessage({ type: 'success', text: 'Request submitted. Admin may assign a slot and notify you via Messages.' });
+      setRequestMessage({ type: 'success', text: 'Request submitted. Admin will assign a slot and notify you via Messages.' });
       setRequestWithoutSlot(false);
+      setRequestModalOpen(false);
+      setRequestPreferredDate('');
+      setRequestPreferredTime('');
       setRequestNotes('');
       fetchUsage();
       fetchMyRegistrations();
@@ -119,88 +150,150 @@ export default function MocksPage() {
     }
   };
 
+  const handleRequestReschedule = async (e) => {
+    e.preventDefault();
+    if (!rescheduleModal || !rescheduleReason.trim()) return;
+    setRescheduleMessage({ type: '', text: '' });
+    setRescheduleSaving(true);
+    const { data } = await supabase.rpc('request_mock_reschedule', {
+      p_registration_id: rescheduleModal.id,
+      p_reason: rescheduleReason.trim(),
+    });
+    setRescheduleSaving(false);
+    if (data?.ok) {
+      setRescheduleModal(null);
+      setRescheduleReason('');
+      setRescheduleMessage({ type: '', text: '' });
+      fetchMyRegistrations();
+      fetchPendingRescheduleIds();
+      setSlotMessage({ type: 'success', text: 'Reschedule request submitted. Admin will review and notify you via Messages.' });
+    } else {
+      setRescheduleMessage({ type: 'error', text: data?.error ?? 'Could not submit request.' });
+    }
+  };
+
 
   if (loading) {
     return <PageLoader size="md" label="Loading…" className="py-8" />;
   }
 
+  const showRequestForm = requestWithoutSlot || requestModalOpen;
+  const openRequestForm = () => { setRequestModalOpen(true); setRequestWithoutSlot(true); };
+  const closeRequestForm = () => {
+    setRequestModalOpen(false);
+    setRequestWithoutSlot(false);
+    setRequestPreferredDate('');
+    setRequestPreferredTime('');
+    setRequestNotes('');
+    setRequestMessage({ type: '', text: '' });
+  };
+
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Mock Interviews</h1>
+    <div className="space-y-6">
+      {/* Header: title, info, usage, actions */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Mock Interviews</h1>
+          <div className="relative" ref={infoRef}>
+            <button
+              type="button"
+              onClick={() => setInfoOpen((o) => !o)}
+              className="p-1 rounded-full text-[rgb(var(--nth-text-muted-light))] hover:text-[hsl(var(--nth-primary))] hover:bg-[hsl(var(--nth-primary))]/10"
+              aria-label="How mocks work"
+            >
+              <HiInformationCircle className="w-5 h-5" />
+            </button>
+            {infoOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setInfoOpen(false)} aria-hidden="true" />
+                <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left">
+                  <p className="text-xs font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">How mocks work</p>
+                  <ul className="text-xs text-[rgb(var(--nth-text-secondary-light))] space-y-1.5">
+                    <li><strong>Book a slot</strong> — Pick date/time; get Meet link.</li>
+                    <li><strong>Request a slot</strong> — Admin assigns; you get notified.</li>
+                    <li><strong>Reschedule</strong> — Click Request reschedule; admin approves or rejects.</li>
+                    <li><strong>Join</strong> — Use Meet link in My registrations.</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {usage?.active && (
+            <span className="text-sm text-[rgb(var(--nth-text-muted-light))]">
+              {usage.used}{usage.limit >= 0 ? ` / ${usage.limit}` : ''} mocks
+            </span>
+          )}
+          {usage?.active && (usage.limit < 0 || usage.used < usage.limit) && (
+            <button type="button" onClick={openRequestForm} className="nth-btn-primary px-4 py-2 text-sm font-medium">
+              Request for mock
+            </button>
+          )}
+        </div>
+      </div>
 
-      {/* Process explanation */}
-      <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
-          <HiAcademicCap className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
-          How it works
-        </h2>
-        <ol className="space-y-3 text-[rgb(var(--nth-text-secondary-light))] text-sm">
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">1</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Book a slot</strong> — Choose an available date and time below. You can book mocks within your plan limit.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">2</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Join at your time</strong> — Use the Meet link in My mock registrations to join the interview. You’ll get the link as soon as you book.</span>
-          </li>
-          <li className="flex gap-3">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))]/10 text-[hsl(var(--nth-primary))] font-semibold text-xs">3</span>
-            <span><strong className="text-[rgb(var(--nth-text-primary-light))]">Get feedback</strong> — After the mock, your interviewer will submit scores and notes. View them here once the mock is marked completed.</span>
-          </li>
-        </ol>
-      </section>
-
-      {/* Mock notices (reschedule/cancel messages from admin or interviewer) */}
+      {/* Notices: compact preview + View all */}
       {mockNotices.length > 0 && (
-        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
-            <HiMegaphone className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
-            Mock updates & notices
-          </h2>
-          <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-            Reschedule or cancellation notices appear here and in Messages. Check before your slot.
-          </p>
-          <ul className="space-y-3">
-            {mockNotices.map((n) => (
-              <li
-                key={n.id}
-                className={`rounded-lg border p-4 ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}
+        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-semibold text-[rgb(var(--nth-text-primary-light))] flex items-center gap-2">
+              <HiMegaphone className="w-4 h-4" /> Notices
+            </h2>
+            {mockNotices.length > NOTICES_PREVIEW && (
+              <button
+                type="button"
+                onClick={() => setNoticesModalOpen(true)}
+                className="text-xs font-medium text-[hsl(var(--nth-primary))] hover:underline"
               >
-                <p className="text-sm text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap">{n.body}</p>
-                <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-2">{formatDateTime(n.created_at)}</p>
-              </li>
+                View all ({mockNotices.length})
+              </button>
+            )}
+          </div>
+          <div className="max-h-[180px] overflow-y-auto space-y-2">
+            {mockNotices.slice(0, NOTICES_PREVIEW).map((n) => (
+              <div
+                key={n.id}
+                className={`rounded-lg border p-3 text-sm ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}
+              >
+                <p className="text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap line-clamp-2">{n.body}</p>
+                <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-1">{formatDateTime(n.created_at)}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </section>
       )}
 
-      {/* Usage */}
-      {usage?.active && (
-        <p className="text-sm text-[rgb(var(--nth-text-secondary-light))]">
-          Mocks completed this period: <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">{usage.used}</span>
-          {usage.limit >= 0 && <> of {usage.limit}</>}
-        </p>
-      )}
-
-      {/* Request without slot (backward compatibility) */}
-      {usage?.active && (
-        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3">Request without choosing a slot</h2>
-          <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-            If you prefer not to pick a slot, you can submit a request with your availability notes. Admin may assign a slot and notify you.
-          </p>
-          {!requestWithoutSlot ? (
-            <button
-              type="button"
-              onClick={() => setRequestWithoutSlot(true)}
-              className="nth-btn-secondary px-3 py-2 text-sm font-medium"
-            >
-              Request mock (no slot)
-            </button>
-          ) : (
-            <form onSubmit={handleRequestWithoutSlot} className="space-y-3 max-w-md">
+      {/* Request modal */}
+      {showRequestForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !requestSaving && closeRequestForm()}>
+          <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">Request for mock</h3>
+            <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">Choose your preferred date and time. Admin will assign a slot and notify you.</p>
+            <form onSubmit={handleRequestWithoutSlot} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Preferred date</label>
+                  <input
+                    type="date"
+                    value={requestPreferredDate}
+                    onChange={(e) => setRequestPreferredDate(e.target.value)}
+                    min={new Date().toISOString().slice(0, 10)}
+                    className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Preferred time</label>
+                  <input
+                    type="time"
+                    value={requestPreferredTime}
+                    onChange={(e) => setRequestPreferredTime(e.target.value)}
+                    className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                  />
+                </div>
+              </div>
               <div>
-                <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Availability notes (optional)</label>
+                <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Additional notes (optional)</label>
                 <textarea
                   value={requestNotes}
                   onChange={(e) => setRequestNotes(e.target.value)}
@@ -212,26 +305,42 @@ export default function MocksPage() {
               {requestMessage.text && (
                 <p className={`text-sm ${requestMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{requestMessage.text}</p>
               )}
-              <div className="flex gap-2">
-                <button type="submit" disabled={requestSaving} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">
-                  {requestSaving ? 'Submitting…' : 'Submit request'}
-                </button>
-                <button type="button" onClick={() => { setRequestWithoutSlot(false); setRequestNotes(''); setRequestMessage({ type: '', text: '' }); }} className="nth-btn-secondary px-3 py-2 text-sm font-medium">
-                  Cancel
-                </button>
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={closeRequestForm} disabled={requestSaving} className="nth-btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={requestSaving} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">{requestSaving ? 'Submitting…' : 'Submit'}</button>
               </div>
             </form>
-          )}
-        </section>
+          </div>
+        </div>
+      )}
+
+      {/* View all notices modal */}
+      {noticesModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setNoticesModalOpen(false)}>
+          <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-lg w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-[rgb(var(--nth-border-light))]">
+              <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">All notices</h3>
+              <button type="button" onClick={() => setNoticesModalOpen(false)} className="text-[rgb(var(--nth-text-muted-light))] hover:text-[rgb(var(--nth-text-primary-light))]">×</button>
+            </div>
+            <div className="overflow-y-auto p-4 space-y-3">
+              {mockNotices.map((n) => (
+                <div key={n.id} className={`rounded-lg border p-3 text-sm ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}>
+                  <p className="text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap">{n.body}</p>
+                  <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-2">{formatDateTime(n.created_at)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="p-4 border-t border-[rgb(var(--nth-border-light))]">
+              <Link to="/dashboard/messages" className="text-sm font-medium text-[hsl(var(--nth-primary))] hover:underline">Open Messages</Link>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Book a slot */}
       {usage?.active && (
         <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3">Book a slot</h2>
-          <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-            Pick an available slot (date, time, interviewer). After booking, the Meet link and time appear in My mock registrations below.
-          </p>
+          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-4">Book a slot</h2>
           <div className="flex flex-wrap items-end gap-3 mb-4">
             <div>
               <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">From date</label>
@@ -273,14 +382,18 @@ export default function MocksPage() {
                     <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
                     <span>{slot.interviewer_name ?? 'Interviewer'}</span>
                   </div>
-                  <button
-                    type="button"
-                    disabled={!canBook || bookingSlotId !== null}
-                    onClick={() => handleBookSlot(slot.id)}
-                    className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {bookingSlotId === slot.id ? 'Booking…' : canBook ? 'Book' : 'Limit reached'}
-                  </button>
+                  {slot.booked_by_me ? (
+                    <span className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-lg">Your slot</span>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={!canBook || bookingSlotId !== null}
+                      onClick={() => handleBookSlot(slot.id)}
+                      className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {bookingSlotId === slot.id ? 'Booking…' : canBook ? 'Book' : 'Limit reached'}
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
@@ -342,22 +455,70 @@ export default function MocksPage() {
                       </p>
                     )}
                   </div>
-                  {r.status === 'scheduled' && r.meet_link && (
-                    <a
-                      href={r.meet_link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[hsl(var(--nth-primary))] text-white text-sm font-medium hover:opacity-90 shrink-0"
-                    >
-                      <HiLink className="w-4 h-4" /> Join Meet
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {r.status === 'scheduled' && r.meet_link && (
+                      <a
+                        href={r.meet_link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[hsl(var(--nth-primary))] text-white text-sm font-medium hover:opacity-90"
+                      >
+                        <HiLink className="w-4 h-4" /> Join Meet
+                      </a>
+                    )}
+                    {r.status === 'scheduled' && (
+                      <button
+                        type="button"
+                        disabled={pendingRescheduleIds.includes(r.id)}
+                        onClick={() => { setRescheduleModal(r); setRescheduleReason(''); setRescheduleMessage({ type: '', text: '' }); }}
+                        className="nth-btn-secondary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {pendingRescheduleIds.includes(r.id) ? 'Reschedule requested' : 'Request reschedule'}
+                      </button>
+                    )}
+                  </div>
                 </li>
               ))
             )}
           </ul>
         </div>
       </section>
+
+      {/* Request reschedule modal */}
+      {rescheduleModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => !rescheduleSaving && setRescheduleModal(null)}>
+          <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">Request reschedule</h3>
+            <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
+              You can’t change the time yourself. Admin will review your request and, if approved, reschedule your mock and notify you.
+            </p>
+            <form onSubmit={handleRequestReschedule} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Reason (required)</label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g. Conflict with another commitment"
+                  rows={3}
+                  className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                  required
+                />
+              </div>
+              {rescheduleMessage.text && (
+                <p className={`text-sm ${rescheduleMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{rescheduleMessage.text}</p>
+              )}
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => { setRescheduleModal(null); setRescheduleReason(''); setRescheduleMessage({ type: '', text: '' }); }} disabled={rescheduleSaving} className="nth-btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-50">
+                  Cancel
+                </button>
+                <button type="submit" disabled={rescheduleSaving || !rescheduleReason.trim()} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">
+                  {rescheduleSaving ? 'Submitting…' : 'Submit request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
