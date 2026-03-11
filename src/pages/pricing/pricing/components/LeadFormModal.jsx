@@ -198,7 +198,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
           {/* Fixed header: logo left, title centered, close right */}
           <div className="relative flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-4 sm:py-5 border-b border-white/10">
             <img
-              src="/lilogo.png"
+              src="/white-logo.png"
               alt="NTH"
               className="h-7 w-auto object-contain shrink-0 sm:h-8"
             />

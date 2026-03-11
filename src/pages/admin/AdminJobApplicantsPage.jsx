@@ -11,6 +11,7 @@ import {
   HiAcademicCap,
   HiTag,
   HiDocumentArrowDown,
+  HiChatBubbleLeftRight,
 } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -288,6 +289,16 @@ export default function AdminJobApplicantsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
+                      {a.status === 'shortlisted' && (
+                        <Link
+                          to="/admin/messages"
+                          state={{ openAspirantId: a.aspirant_id, openAspirantName: a.aspirant_name }}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 transition-colors"
+                        >
+                          <HiChatBubbleLeftRight className="w-3.5 h-3.5" />
+                          Send message
+                        </Link>
+                      )}
                       <button
                         type="button"
                         onClick={() => setProfileApplicant(a)}
