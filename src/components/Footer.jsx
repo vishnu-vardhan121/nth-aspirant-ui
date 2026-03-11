@@ -3,6 +3,7 @@ import SectionContainer from './SectionContainer';
 
 const FOOTER_LINKS = [
   { label: 'Pricing', to: '/pricing' },
+  { label: 'Guarantee', to: '/guarantee' },
   { label: 'Login', to: '/login' },
   { label: 'How it works', to: '/#how-it-works' },
   { label: 'Contact', to: 'mailto:contact@nth.example.com' },
@@ -20,7 +21,7 @@ export default function Footer() {
       <SectionContainer useGrid>
         <div className="col-span-full flex flex-col gap-6 sm:gap-8 md:flex-row md:items-center md:justify-between">
           <Link to="/" className="flex items-center">
-            <img src="/lilogo.png" alt="NTH" className="h-8 sm:h-9 w-auto object-contain" />
+            <img src="/white-logo.png" alt="NTH" className="h-8 sm:h-9 w-auto object-contain" />
           </Link>
           <nav className="flex flex-wrap items-center gap-4 sm:gap-6">
             {FOOTER_LINKS.map((link) => {
