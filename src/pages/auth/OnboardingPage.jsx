@@ -8,7 +8,7 @@ import { ButtonLoader } from '../../components/ui/Loader';
 import { HiXMark } from 'react-icons/hi2';
 
 const inputClass =
-  'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent';
+  'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-transparent';
 const labelClass = 'block text-sm font-medium text-slate-300 mb-2';
 
 const defaultEducation = {

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loader, PageLoader } from '../../components/ui/Loader';
 import {
+  HiArrowLeft,
   HiXMark,
   HiUser,
   HiEnvelope,
@@ -11,7 +12,6 @@ import {
   HiAcademicCap,
   HiTag,
   HiDocumentArrowDown,
-  HiChatBubbleLeftRight,
 } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -243,6 +243,7 @@ export default function AdminJobApplicantsPage() {
         to="/admin/jobs"
         className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm mb-4"
       >
+        <HiArrowLeft className="w-4 h-4" />
         Back to jobs
       </Link>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Applicants</h1>
@@ -289,16 +290,6 @@ export default function AdminJobApplicantsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
-                      {a.status === 'shortlisted' && (
-                        <Link
-                          to="/admin/messages"
-                          state={{ openAspirantId: a.aspirant_id, openAspirantName: a.aspirant_name }}
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-medium hover:bg-indigo-100 transition-colors"
-                        >
-                          <HiChatBubbleLeftRight className="w-3.5 h-3.5" />
-                          Send message
-                        </Link>
-                      )}
                       <button
                         type="button"
                         onClick={() => setProfileApplicant(a)}

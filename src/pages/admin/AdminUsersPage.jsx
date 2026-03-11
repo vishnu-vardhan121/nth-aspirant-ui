@@ -187,84 +187,6 @@ const PLANS = [
   { value: 'gold', label: 'Gold' },
 ];
 
-function EditExtraLimitsModal({ user, onClose, onSuccess }) {
-  const [extraMock, setExtraMock] = useState(user?.extra_mock_limit ?? 0);
-  const [extraInterview, setExtraInterview] = useState(user?.extra_interview_limit ?? 0);
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage({ type: '', text: '' });
-    const mock = Math.max(0, parseInt(extraMock, 10) || 0);
-    const interview = Math.max(0, parseInt(extraInterview, 10) || 0);
-    setSubmitting(true);
-    const { data, error } = await supabase.rpc('admin_set_aspirant_extra_limits', {
-      p_aspirant_id: user.id,
-      p_extra_mock_limit: mock,
-      p_extra_interview_limit: interview,
-    });
-    setSubmitting(false);
-    const result = typeof data === 'string' ? JSON.parse(data) : data;
-    if (error || !result?.ok) {
-      setMessage({ type: 'error', text: result?.error || error?.message || 'Failed to update.' });
-      return;
-    }
-    onSuccess?.();
-    onClose?.();
-  };
-
-  if (!user) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-xl bg-white border border-slate-200 shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Extra limits — {user.full_name ?? user.email}</h2>
-          <button type="button" onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close">
-            <HiXMark className="w-5 h-5" />
-          </button>
-        </div>
-        <p className="text-sm text-slate-600 mb-4">Grant extra mock or interview chances beyond plan limits.</p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {message.text && (
-            <p className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>{message.text}</p>
-          )}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Extra mocks</label>
-            <input
-              type="number"
-              min={0}
-              value={extraMock}
-              onChange={(e) => setExtraMock(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
-            />
-            <p className="text-xs text-slate-500 mt-1">Added to plan limit for this period.</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Extra interviews</label>
-            <input
-              type="number"
-              min={0}
-              value={extraInterview}
-              onChange={(e) => setExtraInterview(e.target.value)}
-              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
-            />
-            <p className="text-xs text-slate-500 mt-1">Added to plan limit for this month.</p>
-          </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={onClose} className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">
-              Cancel
-            </button>
-            <button type="submit" disabled={submitting} className="flex-1 px-3 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50">
-              {submitting ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 function EditPlanModal({ user, onClose, onSuccess }) {
   const [plan, setPlan] = useState(user?.plan || 'base');
   const [planStartedAt, setPlanStartedAt] = useState('');
@@ -351,7 +273,6 @@ export default function AdminUsersPage() {
   const [profileUserId, setProfileUserId] = useState(null);
   const [showCreateAspirant, setShowCreateAspirant] = useState(false);
   const [editPlanUser, setEditPlanUser] = useState(null);
-  const [extraLimitsUser, setExtraLimitsUser] = useState(null);
 
   const loadSummary = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_admin_users_summary');
@@ -535,13 +456,6 @@ export default function AdminUsersPage() {
                       >
                         Edit plan
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setExtraLimitsUser({ id: u.id, full_name: u.full_name, email: u.email, extra_mock_limit: u.extra_mock_limit ?? 0, extra_interview_limit: u.extra_interview_limit ?? 0 })}
-                        className="text-slate-600 hover:underline text-xs font-medium"
-                      >
-                        Extra limits
-                      </button>
                     </td>
                   </tr>
                 ))
@@ -588,14 +502,6 @@ export default function AdminUsersPage() {
           user={editPlanUser}
           onClose={() => setEditPlanUser(null)}
           onSuccess={() => { setEditPlanUser(null); loadSummary(); loadUsers(); }}
-        />
-      )}
-
-      {extraLimitsUser && (
-        <EditExtraLimitsModal
-          user={extraLimitsUser}
-          onClose={() => setExtraLimitsUser(null)}
-          onSuccess={() => { setExtraLimitsUser(null); loadSummary(); loadUsers(); }}
         />
       )}
     </div>

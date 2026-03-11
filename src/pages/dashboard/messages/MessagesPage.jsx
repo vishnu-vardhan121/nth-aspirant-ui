@@ -188,17 +188,17 @@ export default function MessagesPage() {
                       type="button"
                       onClick={() => setSelectedChatKey(chat.key)}
                       className={`w-full text-left px-3 py-3 flex items-start gap-3 hover:bg-white/80 transition-colors border-b border-[rgb(var(--nth-border-light))]/50 ${
-                        isSelected ? 'bg-white border-l-2 border-l-[hsl(var(--nth-primary))]' : ''
+                        isSelected ? 'bg-white border-l-2 border-l-[rgb(var(--nth-primary))]' : ''
                       }`}
                     >
-                      <span className="w-10 h-10 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+                      <span className="w-10 h-10 rounded-full bg-[rgb(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
+                        <Icon className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
                       </span>
                       <span className="flex-1 min-w-0">
                         <p className="font-medium text-[rgb(var(--nth-text-primary-light))] truncate flex items-center gap-2">
                           {chat.label}
                           {chat.unreadCount > 0 && (
-                            <span className="bg-[hsl(var(--nth-primary))] text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
+                            <span className="bg-[rgb(var(--nth-primary))] text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
                               {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
                             </span>
                           )}
@@ -230,11 +230,11 @@ export default function MessagesPage() {
             ) : (
               <>
                 <header className="shrink-0 px-4 py-3 bg-white border-b border-[rgb(var(--nth-border-light))] flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center">
+                  <span className="w-9 h-9 rounded-full bg-[rgb(var(--nth-primary))]/15 flex items-center justify-center">
                     {selectedChat.key === NTH_TEAM_KEY ? (
-                      <HiChatBubbleLeftRight className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+                      <HiChatBubbleLeftRight className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
                     ) : (
-                      <HiUserGroup className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+                      <HiUserGroup className="w-5 h-5 text-[rgb(var(--nth-primary))]" />
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
@@ -256,7 +256,7 @@ export default function MessagesPage() {
                         <div
                           className={
                             m.from_me
-                              ? 'rounded-lg rounded-tr-none bg-[hsl(var(--nth-primary))] text-white shadow-sm px-3 py-2.5 inline-block'
+                              ? 'rounded-lg rounded-tr-none bg-[rgb(var(--nth-primary))] text-white shadow-sm px-3 py-2.5 inline-block'
                               : 'rounded-lg rounded-tl-none bg-white shadow-sm border border-[rgb(var(--nth-border-light))]/60 px-3 py-2.5 inline-block'
                           }
                         >
@@ -295,7 +295,7 @@ export default function MessagesPage() {
                       placeholder={canReply ? 'Type a reply...' : messageUsage.active ? 'Daily limit reached. Try again tomorrow.' : 'Active plan required to reply.'}
                       rows={2}
                       disabled={!canReply || sending}
-                      className="flex-1 min-w-0 px-3 py-2 border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))] resize-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-[hsl(var(--nth-primary))]"
+                      className="flex-1 min-w-0 px-3 py-2 border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))] resize-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-[rgb(var(--nth-primary))] focus:border-[rgb(var(--nth-primary))]"
                     />
                     <button
                       type="submit"

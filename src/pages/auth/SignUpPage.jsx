@@ -58,7 +58,7 @@ export default function SignUpPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -74,7 +74,7 @@ export default function SignUpPage() {
                 minLength={6}
                 autoComplete="new-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
               <p className="mt-1 text-xs text-slate-500">At least 6 characters</p>
             </div>
@@ -103,7 +103,7 @@ export default function SignUpPage() {
 
           <p className="mt-8 text-center text-sm text-slate-400">
             Already have an account?{' '}
-            <Link to="/login" className="text-[hsl(var(--nth-primary-light))] hover:underline font-medium">
+            <Link to="/login" className="text-[rgb(var(--nth-primary-light))] hover:underline font-medium">
               Sign in
             </Link>
           </p>

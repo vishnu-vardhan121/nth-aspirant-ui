@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 import { useAppDispatch } from '../../store/hooks';
 import { signIn as signInThunk } from '../../store/slices/authSlice';
 import { getSafeReturnPath } from '../../lib/authUtils';
@@ -55,21 +56,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-slate-950 overflow-hidden">
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute top-[-20%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/10 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-20%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-violet-600/10 blur-[120px] pointer-events-none" />
-
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12">
-        <Link to="/" className="mb-8">
-          <img src="/white-logo.png" alt="NTH Logo" className="h-15 w-auto" />
-        </Link>
-        <div className="w-full max-w-[400px] bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-white mb-2 tracking-tight">Welcome back</h1>
-            <p className="text-slate-400 text-sm">Sign in to your account to continue</p>
-          </div>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
+    >
+      <Navbar />
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-24 pb-12">
+        <div className="w-full max-w-md">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Sign in</h1>
+          <p className="text-slate-400 text-sm mb-8">Use your email and password to sign in.</p>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -84,7 +79,7 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
             </div>
             <div className="space-y-2">
@@ -92,7 +87,7 @@ export default function LoginPage() {
                 <Label htmlFor="password" className="text-slate-300">
                   Password
                 </Label>
-                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[hsl(var(--nth-primary))] transition-colors">
+                <Link to="/forgot-password" className="text-xs text-slate-400 hover:text-[rgb(var(--nth-primary))] transition-colors">
                   Forgot password?
                 </Link>
               </div>
@@ -105,7 +100,7 @@ export default function LoginPage() {
                 minLength={6}
                 autoComplete="current-password"
                 placeholder="••••••••"
-                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[hsl(var(--nth-primary))]"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus-visible:ring-[rgb(var(--nth-primary))]"
               />
             </div>
 
@@ -130,19 +125,18 @@ export default function LoginPage() {
               type="submit"
               disabled={submitting}
               aria-label="Sign in"
-              className="w-full h-11 text-base font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors"
+              className="w-full h-11 text-base"
             >
-              {submitting ? 'Signing in...' : 'Sign in'}
+              {submitting ? 'Please wait…' : 'Sign in'}
             </Button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-slate-400">
-            Don't have an account?{' '}
+          <p className="mt-8 text-center">
             <Link
-              to="/pricing"
-              className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+              to="/"
+              className="text-sm text-slate-500 hover:text-slate-400 transition-colors"
             >
-              View Plans
+              ← Back to home
             </Link>
           </p>
         </div>

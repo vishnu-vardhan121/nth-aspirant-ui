@@ -51,9 +51,8 @@ function PlanCard({ plan, index, onSelectPlan }) {
         style={
           !plan.ctaDisabled
             ? {
-                background:
-                  'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
-                boxShadow: '0 4px 20px hsl(var(--nth-primary) / 0.4)',
+                background: 'linear-gradient(135deg, rgb(var(--nth-primary)) 0%, rgb(var(--nth-primary-light)) 100%)',
+                boxShadow: '0 4px 20px rgb(var(--nth-primary) / 0.4)',
               }
             : undefined
         }

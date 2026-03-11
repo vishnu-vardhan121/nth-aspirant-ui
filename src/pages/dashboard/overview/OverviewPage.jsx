@@ -25,6 +25,8 @@ export default function OverviewPage() {
   const [recentJobs, setRecentJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [mockRegistering, setMockRegistering] = useState(false);
+  const [mockMessage, setMockMessage] = useState({ type: '', text: '' });
 
   const fetchData = async () => {
     const [usageRes, mockRes, jobsCountRes, jobsRes, appsRes] = await Promise.all([
@@ -60,6 +62,19 @@ export default function OverviewPage() {
     fetchData();
   }, []);
 
+  const handleRegisterMock = async () => {
+    setMockMessage({ type: '', text: '' });
+    setMockRegistering(true);
+    const { data } = await supabase.rpc('register_mock', { p_availability_notes: null });
+    setMockRegistering(false);
+    if (data?.ok) {
+      setMockMessage({ type: 'success', text: 'Registered for a mock interview.' });
+      supabase.rpc('get_mock_usage').then(({ data: d }) => { if (d) setMockUsage(d); });
+    } else {
+      setMockMessage({ type: 'error', text: data?.error ?? 'Could not register.' });
+    }
+  };
+
   const recentJobsForList = useMemo(() => recentJobs.map((j) => ({
     id: j.id,
     title: j.title,
@@ -77,10 +92,11 @@ export default function OverviewPage() {
     ? `${applicationUsage.used} / ${applicationUsage.limit}`
     : (applicationUsage?.used ?? '—');
 
-  const mocksLabel = 'Mocks this period';
+  const mocksLabel = 'Mocks completed this period';
   const mocksValue = mockUsage?.active
     ? (mockUsage.limit >= 0 ? `${mockUsage.used} / ${mockUsage.limit}` : mockUsage.used)
     : '—';
+  const canRegisterMock = mockUsage?.active && (mockUsage.limit < 0 || mockUsage.used < mockUsage.limit);
 
   return (
     <div className="space-y-8">
@@ -95,6 +111,28 @@ export default function OverviewPage() {
             <StatCard label="Jobs open" value={jobsOpenCount ?? '—'} />
             <StatCard label={mocksLabel} value={mocksValue} />
           </div>
+
+          {mockUsage?.active && (
+            <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">Mock interviews</h2>
+              <p className="text-sm text-slate-600 mb-3">
+                You can register for mock interviews within your plan limit. Admin will schedule and mark them as conducted.
+              </p>
+              {mockMessage.text && (
+                <p className={`text-sm mb-3 ${mockMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
+                  {mockMessage.text}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={handleRegisterMock}
+                disabled={!canRegisterMock || mockRegistering}
+                className="nth-btn-primary px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              >
+                {mockRegistering ? 'Registering…' : canRegisterMock ? 'Register for a mock' : 'Mock limit reached'}
+              </button>
+            </section>
+          )}
 
           <section>
             <div className="flex items-center justify-between mb-4">

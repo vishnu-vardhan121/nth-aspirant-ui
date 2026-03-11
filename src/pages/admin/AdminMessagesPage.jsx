@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Loader, LoaderDots } from '../../components/ui/Loader';
 import { HiUserGroup, HiMegaphone, HiChatBubbleLeftRight } from 'react-icons/hi2';
@@ -15,8 +14,6 @@ function formatTime(createdAt) {
 }
 
 export default function AdminMessagesPage() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [drives, setDrives] = useState([]);
   const [aspirants, setAspirants] = useState([]);
   const [selected, setSelected] = useState({ type: null, id: null, label: '', drive: null });
@@ -36,17 +33,6 @@ export default function AdminMessagesPage() {
       supabase.rpc('get_aspirants_for_admin').then(({ data }) => setAspirants(Array.isArray(data) ? data : [])),
     ]).then(() => setLoading(false));
   }, []);
-
-  // Open individual chat when navigated with state (e.g. from Job Applicants "Send message")
-  useEffect(() => {
-    const openId = location.state?.openAspirantId;
-    if (!openId || !aspirants.length) return;
-    const aspirant = aspirants.find((a) => a.id === openId);
-    if (aspirant) {
-      setSelected({ type: 'individual', id: aspirant.id, label: aspirant.full_name || aspirant.email || 'Chat', drive: null });
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [aspirants, location.state?.openAspirantId, location.pathname, navigate]);
 
   useEffect(() => {
     if (!selected.type || !selected.id) {
