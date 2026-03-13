@@ -7,6 +7,7 @@ import JobOpeningsSection from './components/JobOpeningsSection';
 import NTHConnectSection from './components/NTHConnectSection';
 import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseNTHSection from './components/WhyChooseNTHSection';
+import BestInstituteHyderabadSection from './components/BestInstituteHyderabadSection';
 import MoneyBackGuaranteeSection from './components/MoneyBackGuaranteeSection';
 import ApplicationSection from './components/ApplicationSection';
 import CTAStrip from './components/CTAStrip';
@@ -14,13 +15,17 @@ import InstituteAdModal from './components/InstituteAdModal';
 import Seo from '../../../components/Seo';
 
 const LANDING_CLASS = 'nth-landing-page';
-/** Delay after page load before fetching/showing ad (every refresh = new mount = new timer). */
+/** Delay after page load before showing the ad. */
 const AD_DELAY_MS = 5000;
+const AD_SCROLL_THRESHOLD_PX = 500;
 
 export default function LandingPage() {
   const [activeAd, setActiveAd] = useState(null);
   const [instituteAdOpen, setInstituteAdOpen] = useState(false);
+  const [adDelayPassed, setAdDelayPassed] = useState(false);
+  const [adScrollPassed, setAdScrollPassed] = useState(false);
   const adTimerRef = useRef(null);
+  const adHasOpenedRef = useRef(false);
 
   useEffect(() => {
     document.documentElement.classList.add(LANDING_CLASS);
@@ -32,24 +37,44 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    const fetchPromise = supabase
-      .from('institute_ads')
-      .select('id, institute_name, image_url, link_url')
-      .eq('is_active', true)
-      .maybeSingle();
+    let cancelled = false;
 
-    adTimerRef.current = window.setTimeout(async () => {
-      const { data } = await fetchPromise;
-      if (data) {
-        setActiveAd(data);
-        setInstituteAdOpen(true);
-      }
+    (async () => {
+      const { data } = await supabase
+        .from('institute_ads')
+        .select('id, institute_name, image_url, link_url')
+        .eq('is_active', true)
+        .maybeSingle();
+      if (!cancelled) setActiveAd(data ?? null);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY >= AD_SCROLL_THRESHOLD_PX) setAdScrollPassed(true);
+    };
+
+    handleScroll();
+    adTimerRef.current = window.setTimeout(() => {
+      setAdDelayPassed(true);
     }, AD_DELAY_MS);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
       if (adTimerRef.current) window.clearTimeout(adTimerRef.current);
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (adHasOpenedRef.current || !activeAd || !adDelayPassed || !adScrollPassed) return;
+    adHasOpenedRef.current = true;
+    setInstituteAdOpen(true);
+  }, [activeAd, adDelayPassed, adScrollPassed]);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
@@ -77,6 +102,7 @@ export default function LandingPage() {
         <NTHConnectSection />
         <HowItWorksSection />
         <WhyChooseNTHSection />
+        <BestInstituteHyderabadSection />
         <MoneyBackGuaranteeSection />
         <ApplicationSection />
         <CTAStrip />

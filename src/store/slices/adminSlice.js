@@ -47,7 +47,7 @@ const adminSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchAdminProfile.pending, (state) => {
-        state.loading = true;
+        if (state.profile === null) state.loading = true;
       });
   },
 });

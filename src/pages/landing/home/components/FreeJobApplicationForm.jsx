@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HiXMark, HiDocumentArrowUp } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
 
@@ -6,6 +6,22 @@ const RESUME_ACCEPT = '.pdf,.doc,.docx';
 const RESUME_MAX_SIZE_MB = 5;
 
 export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
+  // Lock body scroll when modal is open so the page behind doesn't scroll
+  useEffect(() => {
+    const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    // Avoid layout shift when scrollbar disappears
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
+    };
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -155,8 +171,16 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
 
   if (success) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-xl">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden overscroll-none">
+        <div
+          className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+          aria-hidden
+          onClick={onClose}
+        />
+        <div
+          className="relative z-10 bg-white rounded-2xl max-w-md w-full p-8 text-center shadow-xl"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mx-auto mb-6">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -178,8 +202,18 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm overflow-y-auto">
-      <div className="bg-white rounded-2xl max-w-2xl w-full my-auto shadow-xl relative mt-16 mb-4 sm:my-8 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-hidden overscroll-none">
+      {/* Backdrop: fixed full viewport, never scrolls */}
+      <div
+        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+        aria-hidden
+        onClick={onClose}
+      />
+      {/* Modal panel: only this area scrolls; min-h-0 lets flex child shrink for overflow-y-auto */}
+      <div
+        className="relative z-10 bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
           <div>
@@ -194,8 +228,8 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, onClose }) {
           </button>
         </div>
 
-        {/* Form Body */}
-        <div className="p-6 overflow-y-auto flex-1">
+        {/* Form Body — sole scroll region; overscroll-contain prevents scroll chaining to body */}
+        <div className="p-6 overflow-y-auto flex-1 min-h-0 overscroll-contain">
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-50 text-red-600 text-sm font-medium border border-red-100">
               {error}

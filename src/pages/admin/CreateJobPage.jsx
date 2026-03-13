@@ -92,6 +92,25 @@ export default function CreateJobPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ type: '', text: '' });
+    const titleT = form.title.trim();
+    const companyT = form.company_name.trim();
+    if (!titleT || titleT.length < 2) {
+      setMessage({ type: 'error', text: 'Job title is required (at least 2 characters).' });
+      return;
+    }
+    if (!companyT || companyT.length < 2) {
+      setMessage({ type: 'error', text: 'Company name is required (at least 2 characters).' });
+      return;
+    }
+    const applyT = form.apply_link.trim();
+    if (applyT) {
+      try {
+        new URL(applyT.startsWith('http') ? applyT : `https://${applyT}`);
+      } catch {
+        setMessage({ type: 'error', text: 'Apply link must be a valid URL (e.g. https://…).' });
+        return;
+      }
+    }
     if (form.job_tier === 'premium' && !form.allowed_plans.length) {
       setMessage({ type: 'error', text: 'Select at least one plan for Premium jobs.' });
       return;
@@ -100,14 +119,14 @@ export default function CreateJobPage() {
     try {
       const { error } = await supabase.from('jobs').insert({
         created_by: currentAdmin?.id ?? null,
-        title: form.title.trim(),
-        company_name: form.company_name.trim(),
+        title: titleT,
+        company_name: companyT,
         description: form.description.trim() || null,
         location: form.location.trim() || null,
         address: form.address.trim() || null,
         job_type: form.job_type.trim() || null,
         salary_range: form.salary_range.trim() || null,
-        apply_link: form.apply_link.trim() || null,
+        apply_link: applyT ? (applyT.startsWith('http') ? applyT : `https://${applyT}`) : null,
         application_deadline: form.application_deadline || null,
         walk_in_date: form.walk_in_date || null,
         audience_tracks: form.audience_tracks,
@@ -166,6 +185,8 @@ export default function CreateJobPage() {
             value={form.title}
             onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
             required
+            minLength={2}
+            maxLength={200}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg"
             placeholder="e.g. Frontend Developer"
           />
@@ -177,6 +198,8 @@ export default function CreateJobPage() {
             value={form.company_name}
             onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
             required
+            minLength={2}
+            maxLength={150}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg"
             placeholder="Company name"
           />

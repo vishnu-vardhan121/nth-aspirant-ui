@@ -19,6 +19,10 @@ function AdFormModal({ ad, onClose, onSuccess }) {
     e.preventDefault();
     setMessage({ type: '', text: '' });
     const name = instituteName.trim();
+    if (!name || name.length < 2) {
+      setMessage({ type: 'error', text: 'Institute name is required (at least 2 characters).' });
+      return;
+    }
     let finalImageUrl = imageUrl.trim();
     if (imageFile) {
       const ext = imageFile.name.split('.').pop()?.toLowerCase() || 'jpg';
@@ -31,9 +35,24 @@ function AdFormModal({ ad, onClose, onSuccess }) {
       const { data: urlData } = supabase.storage.from(INSTITUTE_ADS_BUCKET).getPublicUrl(path);
       finalImageUrl = urlData.publicUrl;
     }
-    if (!name || !finalImageUrl) {
-      setMessage({ type: 'error', text: 'Institute name and poster image (upload or URL) are required.' });
+    if (!finalImageUrl) {
+      setMessage({ type: 'error', text: 'Poster image is required — upload a file or paste a direct image URL.' });
       return;
+    }
+    try {
+      if (/^https?:\/\//i.test(finalImageUrl)) new URL(finalImageUrl);
+    } catch {
+      setMessage({ type: 'error', text: 'Image URL must be a valid http(s) link (Google Drive links often won’t work as image src).' });
+      return;
+    }
+    const linkT = linkUrl.trim();
+    if (linkT) {
+      try {
+        new URL(linkT);
+      } catch {
+        setMessage({ type: 'error', text: 'Link URL must be a valid full URL (https://…).' });
+        return;
+      }
     }
     setSaving(true);
     if (isEdit) {
@@ -82,13 +101,17 @@ function AdFormModal({ ad, onClose, onSuccess }) {
             <p className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>{message.text}</p>
           )}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Institute name</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Institute name *</label>
             <input
               type="text"
+              name="ad_institute_name"
               value={instituteName}
               onChange={(e) => setInstituteName(e.target.value)}
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
               placeholder="e.g. ABC Training"
+              required
+              minLength={2}
+              maxLength={150}
             />
           </div>
           <div>

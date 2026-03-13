@@ -33,6 +33,7 @@ import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
 import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
+import AdminInstituteSpotlightPage from './pages/admin/AdminInstituteSpotlightPage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
@@ -85,6 +86,7 @@ function App() {
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
+          <Route path="institute-spotlight" element={<AdminInstituteSpotlightPage />} />
           <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />
         </Route>
         <Route

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
@@ -5,6 +6,8 @@ import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
 import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto } from 'react-icons/hi2';
+import SignOutConfirmModal from '../components/SignOutConfirmModal';
+import AdminNavbar from '../components/AdminNavbar';
 
 const navLinkClass = (isActive) =>
   `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors admin-sidebar-link ${
@@ -14,6 +17,7 @@ const navLinkClass = (isActive) =>
   }`;
 
 export default function AdminLayout() {
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -22,7 +26,7 @@ export default function AdminLayout() {
   const isActive = (path, exact) =>
     exact ? location.pathname === path : location.pathname === path || location.pathname.startsWith(path + '/');
 
-  const handleSignOut = () => {
+  const performSignOut = () => {
     dispatch(signOut());
     dispatch(clearAspirantProfile());
     dispatch(clearAdminProfile());
@@ -34,7 +38,13 @@ export default function AdminLayout() {
     <div className="h-screen flex overflow-hidden bg-slate-100">
       <aside className="admin-sidebar w-56 shrink-0 h-full flex flex-col border-r border-slate-200 bg-white overflow-hidden">
         <div className="p-4 border-b border-slate-200 shrink-0">
-          <span className="font-bold text-slate-900">NTH Admin</span>
+          <Link to="/admin" className="flex items-center gap-2">
+            <img
+              src="/dark-logo.png"
+              alt="Naveen Talent Hub"
+              className="h-12 md:h-14 w-auto object-contain"
+            />
+          </Link>
         </div>
         <nav className="p-2 flex-1 min-h-0 overflow-y-auto">
           <Link
@@ -94,6 +104,13 @@ export default function AdminLayout() {
             Institute ads
           </Link>
           <Link
+            to="/admin/institute-spotlight"
+            className={navLinkClass(isActive('/admin/institute-spotlight'))}
+          >
+            <HiAcademicCap className="w-5 h-5 shrink-0" />
+            Institute spotlight
+          </Link>
+          <Link
             to="/admin/todays-interviews"
             className={navLinkClass(isActive('/admin/todays-interviews'))}
           >
@@ -115,16 +132,26 @@ export default function AdminLayout() {
           <p className="text-xs text-slate-600 px-2 mt-0.5">{admin?.role ?? 'admin'}</p>
           <button
             type="button"
-            onClick={handleSignOut}
+            onClick={() => setSignOutConfirmOpen(true)}
             className="mt-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-900 hover:bg-slate-100"
           >
             Sign out
           </button>
         </div>
       </aside>
-      <main className="flex-1 min-w-0 min-h-0 overflow-auto p-6">
-        <Outlet />
+      <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
+        <AdminNavbar subtitle="Admin" />
+        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6">
+          <Outlet />
+        </div>
       </main>
+
+      <SignOutConfirmModal
+        open={signOutConfirmOpen}
+        onClose={() => setSignOutConfirmOpen(false)}
+        onConfirm={performSignOut}
+        title="Sign out of admin?"
+      />
     </div>
   );
 }

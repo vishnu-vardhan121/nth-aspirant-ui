@@ -3,9 +3,9 @@ alter table public.free_job_leads add column if not exists resume_url text;
 
 comment on column public.free_job_leads.resume_url is 'Storage path (e.g. free-leads/uuid_filename.pdf) for uploaded resume.';
 
--- Allow anon to upload to free-leads/ path in resumes bucket (for unauthenticated free job applications).
+-- Allow anon + authenticated to upload to free-leads/ (logged-in users POST as authenticated).
 create policy "resumes_insert_free_leads"
-  on storage.objects for insert to anon
+  on storage.objects for insert to anon, authenticated
   with check (
     bucket_id = 'resumes'
     and (storage.foldername(name))[1] = 'free-leads'
