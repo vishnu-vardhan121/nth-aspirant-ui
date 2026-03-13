@@ -5,6 +5,7 @@ import { PageLoader } from '../../../components/ui/Loader';
 import StatCard from '../components/StatCard';
 import RecentJobsList from './components/RecentJobsList';
 import RecentApplicationsList from './components/RecentApplicationsList';
+import { HiBriefcase, HiCheckCircle, HiClipboardDocumentCheck } from 'react-icons/hi2';
 
 function formatPostedAt(createdAt) {
   if (!createdAt) return '—';
@@ -22,21 +23,24 @@ export default function OverviewPage() {
   const [applicationUsage, setApplicationUsage] = useState(null);
   const [mockUsage, setMockUsage] = useState(null);
   const [jobsOpenCount, setJobsOpenCount] = useState(null);
+  const [completedMocksCount, setCompletedMocksCount] = useState(null);
   const [recentJobs, setRecentJobs] = useState([]);
   const [recentApplications, setRecentApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
-    const [usageRes, mockRes, jobsCountRes, jobsRes, appsRes] = await Promise.all([
+    const [usageRes, mockRes, jobsCountRes, completedMocksRes, jobsRes, appsRes] = await Promise.all([
       supabase.rpc('get_application_usage'),
       supabase.rpc('get_mock_usage'),
       supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'open'),
+      supabase.from('mock_registrations').select('id', { count: 'exact', head: true }).eq('status', 'completed'),
       supabase.from('jobs').select('id, title, company_name, location, job_type, description, created_at').eq('status', 'open').order('created_at', { ascending: false }).limit(5),
       supabase.from('applications').select('id, job_id, created_at').order('created_at', { ascending: false }).limit(5),
     ]);
     if (!usageRes.error && usageRes.data) setApplicationUsage(usageRes.data);
     if (!mockRes.error && mockRes.data) setMockUsage(mockRes.data);
     if (!jobsCountRes.error && jobsCountRes.count != null) setJobsOpenCount(jobsCountRes.count);
+    if (!completedMocksRes.error && completedMocksRes.count != null) setCompletedMocksCount(completedMocksRes.count);
     if (!jobsRes.error && jobsRes.data) setRecentJobs(jobsRes.data);
     if (!appsRes.error && appsRes.data?.length) {
       const jobIds = [...new Set(appsRes.data.map((a) => a.job_id))];
@@ -57,7 +61,10 @@ export default function OverviewPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   const recentJobsForList = useMemo(() => recentJobs.map((j) => ({
@@ -70,38 +77,64 @@ export default function OverviewPage() {
     snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
   })), [recentJobs]);
 
-  const applicationsLabel = applicationUsage?.active && applicationUsage.limit >= 0
-    ? `Applications this month`
-    : `Applications`;
-  const applicationsValue = applicationUsage?.active && applicationUsage.limit >= 0
-    ? `${applicationUsage.used} / ${applicationUsage.limit}`
-    : (applicationUsage?.used ?? '—');
+  const attemptsValue = applicationUsage?.used ?? '—';
+  const attemptsNote = applicationUsage?.active
+    ? (applicationUsage.limit >= 0
+      ? `${applicationUsage.used} of ${applicationUsage.limit} application slots used`
+      : `${applicationUsage.used} application attempts recorded`)
+    : 'Plan is inactive';
 
-  const mocksLabel = 'Mocks this period';
-  const mocksValue = mockUsage?.active
-    ? (mockUsage.limit >= 0 ? `${mockUsage.used} / ${mockUsage.limit}` : mockUsage.used)
-    : '—';
+  const completedMocksValue = completedMocksCount ?? '—';
+  const completedMocksNote = mockUsage?.active
+    ? (mockUsage.limit >= 0
+      ? `${mockUsage.used} of ${mockUsage.limit} mock slots used this period`
+      : `${mockUsage.used} mock slots used this period`)
+    : 'Plan is inactive';
+
+  const jobsOpenNote = jobsOpenCount != null
+    ? `${jobsOpenCount} jobs currently open`
+    : 'Open jobs are syncing';
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Overview</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
+        <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Overview</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Track your progress, monitor completions, and quickly jump to your latest activity.
+        </p>
+      </section>
 
       {loading ? (
         <PageLoader size="md" label="Loading…" className="py-8" variant="dots" />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label={applicationsLabel} value={applicationsValue} />
-            <StatCard label="Jobs open" value={jobsOpenCount ?? '—'} />
-            <StatCard label={mocksLabel} value={mocksValue} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            <StatCard
+              label="Completed Job Attempts"
+              value={attemptsValue}
+              note={attemptsNote}
+              icon={HiClipboardDocumentCheck}
+            />
+            <StatCard
+              label="Jobs Open"
+              value={jobsOpenCount ?? '—'}
+              note={jobsOpenNote}
+              icon={HiBriefcase}
+            />
+            <StatCard
+              label="Completed Mocks"
+              value={completedMocksValue}
+              note={completedMocksNote}
+              icon={HiCheckCircle}
+            />
           </div>
 
-          <section>
-            <div className="flex items-center justify-between mb-4">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 gap-3">
               <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">Recent jobs</h2>
               <Link
                 to="/dashboard/jobs"
-                className="text-sm font-medium text-indigo-600 hover:underline"
+                className="text-sm font-medium text-slate-700 hover:text-slate-900 hover:underline"
               >
                 View all
               </Link>
@@ -109,12 +142,12 @@ export default function OverviewPage() {
             <RecentJobsList jobs={recentJobsForList} />
           </section>
 
-          <section>
-            <div className="flex items-center justify-between mb-4">
+          <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-4 gap-3">
               <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">Recent applications</h2>
               <Link
                 to="/dashboard/applications"
-                className="text-sm font-medium text-indigo-600 hover:underline"
+                className="text-sm font-medium text-slate-700 hover:text-slate-900 hover:underline"
               >
                 View all
               </Link>

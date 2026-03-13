@@ -38,15 +38,19 @@ export default function AuthListener() {
         dispatch(clearInterviewerProfile());
       });
 
-      const result = supabase.auth.onAuthStateChange((_event, session) => {
+      const result = supabase.auth.onAuthStateChange((event, session) => {
         dispatch(setAuth({ session, user: session?.user ?? null }));
-        if (session?.user?.id) {
-          dispatch(fetchAspirantProfile(session.user.id));
-        } else {
+        if (!session?.user?.id) {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
           dispatch(clearInterviewerProfile());
+          return;
         }
+        // TOKEN_REFRESHED fires when tab regains focus / background refresh. Refetching
+        // profile sets aspirant/admin loading=true → Require* wrappers show full-page
+        // loader and feels like a reload. Session is already updated above; skip refetch.
+        if (event === 'TOKEN_REFRESHED') return;
+        dispatch(fetchAspirantProfile(session.user.id));
       });
       subscription = result?.data?.subscription;
     } catch (err) {

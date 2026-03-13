@@ -47,7 +47,8 @@ const aspirantSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchAspirantProfile.pending, (state) => {
-        state.loading = true;
+        // Avoid flashing loader on background refetch (e.g. same user re-dispatched)
+        if (state.profile === null) state.loading = true;
       });
   },
 });

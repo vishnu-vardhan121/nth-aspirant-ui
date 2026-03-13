@@ -12,6 +12,7 @@ import {
   HiTag,
   HiDocumentArrowDown,
   HiChatBubbleLeftRight,
+  HiGlobeAlt,
 } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -193,11 +194,73 @@ function ApplicantProfileModal({ applicant, onClose }) {
   );
 }
 
+/** Public apply from job page (no account) — stored in free_job_leads */
+function FreeLeadDetailModal({ lead, onClose }) {
+  const [resumeSignedUrl, setResumeSignedUrl] = useState(null);
+
+  useEffect(() => {
+    if (!lead?.resume_url) {
+      setResumeSignedUrl(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.storage
+        .from('resumes')
+        .createSignedUrl(lead.resume_url, 3600);
+      if (!cancelled && !error && data?.signedUrl) setResumeSignedUrl(data.signedUrl);
+      else if (!cancelled) setResumeSignedUrl(null);
+    })();
+    return () => { cancelled = true; };
+  }, [lead?.resume_url]);
+
+  if (!lead) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-slate-900/60" aria-hidden onClick={onClose} />
+      <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl">
+        <div className="sticky top-0 flex items-center justify-between border-b border-slate-200 bg-amber-50 px-6 py-4">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Public application</h2>
+            <p className="text-xs text-amber-800 mt-0.5">Applied from job page without logging in — not a platform user yet.</p>
+          </div>
+          <button type="button" onClick={onClose} className="p-2 rounded-lg text-slate-500 hover:bg-white/80" aria-label="Close">
+            <HiXMark className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4 text-sm">
+          <dl className="grid gap-2">
+            <div><dt className="text-slate-500">Name</dt><dd className="font-medium text-slate-900">{lead.name}</dd></div>
+            <div><dt className="text-slate-500">Email</dt><dd><a href={`mailto:${lead.email}`} className="text-indigo-600 hover:underline">{lead.email}</a></dd></div>
+            <div><dt className="text-slate-500">Phone</dt><dd>{lead.contact_number}</dd></div>
+            <div><dt className="text-slate-500">Track</dt><dd className="capitalize">{lead.track}</dd></div>
+            <div><dt className="text-slate-500">Skills</dt><dd>{lead.skills}</dd></div>
+            {lead.experience_years && <div><dt className="text-slate-500">Experience</dt><dd>{lead.experience_years}</dd></div>}
+            {lead.previous_company && <div><dt className="text-slate-500">Previous company</dt><dd>{lead.previous_company}</dd></div>}
+            {lead.extra_note && <div><dt className="text-slate-500">Note</dt><dd className="whitespace-pre-wrap">{lead.extra_note}</dd></div>}
+          </dl>
+          {resumeSignedUrl ? (
+            <a href={resumeSignedUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-600 text-white font-medium hover:bg-indigo-700">
+              <HiDocumentArrowDown className="w-4 h-4" /> Download resume
+            </a>
+          ) : lead.resume_url ? (
+            <span className="text-slate-500 text-xs">Loading resume link…</span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminJobApplicantsPage() {
   const { id: jobId } = useParams();
   const [job, setJob] = useState(null);
   const [applications, setApplications] = useState([]);
+  const [freeLeads, setFreeLeads] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [freeLeadsLoading, setFreeLeadsLoading] = useState(true);
+  const [freeLeadDetail, setFreeLeadDetail] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [profileApplicant, setProfileApplicant] = useState(null);
 
@@ -218,6 +281,22 @@ export default function AdminJobApplicantsPage() {
       setLoading(false);
     };
     fetchApplications();
+  }, [jobId]);
+
+  useEffect(() => {
+    if (!jobId) return;
+    const fetchFreeLeads = async () => {
+      setFreeLeadsLoading(true);
+      const { data, error } = await supabase
+        .from('free_job_leads')
+        .select('id, name, email, contact_number, skills, track, created_at, resume_url')
+        .eq('job_id', jobId)
+        .order('created_at', { ascending: false });
+      if (!error && data) setFreeLeads(data);
+      else setFreeLeads([]);
+      setFreeLeadsLoading(false);
+    };
+    fetchFreeLeads();
   }, [jobId]);
 
   const handleSetStatus = async (appId, status) => {
@@ -246,11 +325,23 @@ export default function AdminJobApplicantsPage() {
         Back to jobs
       </Link>
       <h1 className="text-2xl font-bold text-slate-900 mb-1">Applicants</h1>
-      <p className="text-slate-600 mb-6">
-        {job?.title} at {job?.company_name}. Shortlist or reject based on skills. Rejected applications refund the student’s monthly limit.
+      <p className="text-slate-600 mb-2">
+        {job?.title} at {job?.company_name}.
       </p>
+      <div className="rounded-lg border border-indigo-100 bg-indigo-50/50 px-4 py-3 mb-6 text-sm text-slate-700">
+        <p className="font-medium text-slate-900 mb-1">Where applications come from</p>
+        <ul className="list-disc list-inside space-y-0.5 text-slate-600">
+          <li><strong className="text-slate-800">Platform users</strong> — logged-in aspirants who applied from the dashboard. You can shortlist/reject and message them.</li>
+          <li><strong className="text-slate-800">Public (job page)</strong> — anyone who applied from the public job description page without an account. Shown below in a separate table; invite them to sign up if needed.</li>
+        </ul>
+      </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <h2 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+        <span className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-800">Platform</span>
+        Registered applicants
+      </h2>
+      <p className="text-slate-600 text-sm mb-3">Shortlist or reject based on skills. Rejected applications refund the student’s monthly limit.</p>
+      <div className="rounded-xl border border-slate-200 bg-white overflow-hidden mb-10">
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
@@ -346,11 +437,64 @@ export default function AdminJobApplicantsPage() {
         </table>
       </div>
 
+      <h2 className="text-lg font-semibold text-slate-900 mb-2 flex items-center gap-2">
+        <span className="inline-flex items-center gap-1 rounded-md bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+          <HiGlobeAlt className="w-3.5 h-3.5" /> Public
+        </span>
+        Job page applications (no account)
+      </h2>
+      <p className="text-slate-600 text-sm mb-3">
+        These leads applied via the free apply form on the public job page. They are not in your users list until they sign up.
+      </p>
+      <div className="rounded-xl border border-amber-200 bg-white overflow-hidden">
+        {freeLeadsLoading ? (
+          <div className="px-4 py-8 flex justify-center"><Loader size="sm" /></div>
+        ) : freeLeads.length === 0 ? (
+          <p className="px-4 py-8 text-center text-slate-500 text-sm">No public applications for this job yet.</p>
+        ) : (
+          <table className="w-full text-left text-sm">
+            <thead className="bg-amber-50/80 border-b border-amber-100">
+              <tr>
+                <th className="px-4 py-3 font-semibold text-slate-700">Name</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Phone</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Track</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Applied</th>
+                <th className="px-4 py-3 font-semibold text-slate-700">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {freeLeads.map((row) => (
+                <tr key={row.id} className="border-b border-slate-100 hover:bg-amber-50/30">
+                  <td className="px-4 py-3 font-medium text-slate-900">{row.name}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.email}</td>
+                  <td className="px-4 py-3 text-slate-600">{row.contact_number}</td>
+                  <td className="px-4 py-3 text-slate-600 capitalize">{row.track}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatDate(row.created_at)}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => setFreeLeadDetail(row)}
+                      className="text-indigo-600 hover:underline font-medium text-xs"
+                    >
+                      View details & resume
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
       {profileApplicant && (
         <ApplicantProfileModal
           applicant={profileApplicant}
           onClose={() => setProfileApplicant(null)}
         />
+      )}
+      {freeLeadDetail && (
+        <FreeLeadDetailModal lead={freeLeadDetail} onClose={() => setFreeLeadDetail(null)} />
       )}
     </div>
   );

@@ -50,7 +50,7 @@ const interviewerSlice = createSlice({
         state.loading = false;
       })
       .addCase(fetchInterviewerProfile.pending, (state) => {
-        state.loading = true;
+        if (state.profile === null) state.loading = true;
       });
   },
 });

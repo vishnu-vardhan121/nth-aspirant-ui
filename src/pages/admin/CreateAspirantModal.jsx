@@ -35,8 +35,22 @@ export default function CreateAspirantModal({ onClose, onSuccess, initialValues 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage({ type: '', text: '' });
-    if (!form.full_name?.trim() || !form.email?.trim() || !form.password) {
-      setMessage({ type: 'error', text: 'Name, email, and password are required.' });
+    const nameT = form.full_name?.trim() ?? '';
+    const emailT = form.email?.trim() ?? '';
+    if (!nameT || nameT.length < 2) {
+      setMessage({ type: 'error', text: 'Full name is required (at least 2 characters).' });
+      return;
+    }
+    if (!emailT) {
+      setMessage({ type: 'error', text: 'Email is required.' });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailT)) {
+      setMessage({ type: 'error', text: 'Please enter a valid email address.' });
+      return;
+    }
+    if (!form.password) {
+      setMessage({ type: 'error', text: 'Password is required.' });
       return;
     }
     if (form.password.length < 6) {
@@ -57,8 +71,8 @@ export default function CreateAspirantModal({ onClose, onSuccess, initialValues 
     }
     const { data, error } = await supabase.functions.invoke('create-aspirant', {
       body: {
-        full_name: form.full_name.trim(),
-        email: form.email.trim(),
+        full_name: nameT,
+        email: emailT,
         password: form.password,
         track: form.track || 'fresher',
         plan: form.plan || 'base',
@@ -118,6 +132,8 @@ export default function CreateAspirantModal({ onClose, onSuccess, initialValues 
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 placeholder="Full name"
                 required
+                minLength={2}
+                maxLength={120}
               />
             </div>
             <div>

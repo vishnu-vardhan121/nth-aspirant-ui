@@ -354,19 +354,36 @@ button:focus-visible {
 }
 
 /* Primary CTA – same gradient and shadow everywhere (buttons, links) */
-.nth-btn-primary {
+/* Global a/a:hover uses primary color — Links need explicit white or label turns purple */
+.nth-btn-primary,
+.nth-btn-primary:visited {
   background: linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%);
   box-shadow: 0 10px 30px -10px hsl(var(--nth-primary) / 0.4);
-  color: white;
+  color: #fff !important;
   font-weight: 600;
   border-radius: 1rem;
   padding: 0.875rem 1.75rem;
   transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
-.nth-btn-primary:hover {
+.nth-btn-primary:hover,
+.nth-btn-primary:focus-visible {
   box-shadow: 0 14px 36px -10px hsl(var(--nth-primary) / 0.5);
   transform: translateY(-2px);
-  color: white; /* Prevent global a:hover from overriding text color */
+  color: #fff !important;
+}
+
+/*
+ * Global a / a:hover forces primary color on all links.
+ * Gradient CTAs (spotlight, money-back) are <a>/<Link> with bg-gradient + text-white —
+ * without this, hover turns label purple and looks broken.
+ */
+.nth-cta-gradient,
+.nth-cta-gradient:visited {
+  color: #fff !important;
+}
+.nth-cta-gradient:hover,
+.nth-cta-gradient:focus-visible {
+  color: #fff !important;
 }
 
 /* Nav CTA button – Request mock: uses primary brand color, consistent shadow */
@@ -375,9 +392,11 @@ button:focus-visible {
   box-shadow: 0 4px 14px hsl(var(--nth-primary) / 0.35);
   color: white !important;
 }
-.nth-nav-cta:hover {
+.nth-nav-cta:hover,
+.nth-nav-cta:focus-visible {
   opacity: 0.92;
   box-shadow: 0 6px 18px hsl(var(--nth-primary) / 0.4);
+  color: #fff !important; /* global a:hover would recolor Link text */
 }
 
 /* Mobile nav: Login as a clear button (outline style) on the white menu */

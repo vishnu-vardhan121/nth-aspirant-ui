@@ -6,19 +6,30 @@ import DashboardNavbar from '../pages/dashboard/components/DashboardNavbar';
 import MessageNotification from '../components/MessageNotification';
 import { supabase } from '../lib/supabase';
 import { playMessageSound } from '../lib/messageSound';
-import { HiXMark } from 'react-icons/hi2';
+import {
+  HiXMark,
+  HiHome,
+  HiUserCircle,
+  HiBriefcase,
+  HiClipboardDocumentList,
+  HiAcademicCap,
+  HiChatBubbleLeftRight,
+  HiArrowRightOnRectangle,
+} from 'react-icons/hi2';
+import SignOutConfirmModal from '../components/SignOutConfirmModal';
 
 const SIDEBAR_LINKS = [
-  { label: 'Overview', to: '/dashboard' },
-  { label: 'Profile', to: '/dashboard/profile' },
-  { label: 'Jobs', to: '/dashboard/jobs' },
-  { label: 'My Applications', to: '/dashboard/applications' },
-  { label: 'Mock Interviews', to: '/dashboard/mocks' },
-  { label: 'Messages', to: '/dashboard/messages' },
+  { label: 'Overview', to: '/dashboard', icon: HiHome },
+  { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
+  { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
+  { label: 'Applications', to: '/dashboard/applications', icon: HiClipboardDocumentList },
+  { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
+  { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
 ];
 
-function SidebarContent({ user, onSignOut, onNavClick, showHeaderLink = true }) {
+function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true }) {
   const location = useLocation();
+  const userInitial = (user?.email || '?').trim().charAt(0).toUpperCase() || '?';
 
   return (
     <>
@@ -26,47 +37,72 @@ function SidebarContent({ user, onSignOut, onNavClick, showHeaderLink = true }) 
         <Link
           to="/dashboard"
           onClick={onNavClick}
-          className="p-4 border-b border-white/10 flex items-center gap-2 shrink-0"
+          className="px-4 py-4 border-b border-white/10 bg-white/[0.02] flex items-center gap-2 shrink-0"
         >
-          <span className="nth-brand-gradient-light text-xl font-extrabold tracking-tight">
-            NTH
-          </span>
-          <span className="text-slate-400 text-xs font-medium">Dashboard</span>
+          <img
+            src="/white-logo.png"
+            alt="Naveen Talent Hub"
+            className="h-10 md:h-11 w-auto object-contain"
+          />
         </Link>
       )}
-      <nav className="flex-1 p-3 space-y-1 overflow-auto min-h-0">
-        {SIDEBAR_LINKS.map((link) => {
-          const isActive =
-            link.to === '/dashboard'
-              ? location.pathname === '/dashboard'
-              : location.pathname.startsWith(link.to);
-          return (
+      <nav className="flex-1 p-3.5 overflow-auto min-h-0">
+        <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
+          Navigation
+        </p>
+        <div className="space-y-1">
+          {SIDEBAR_LINKS.map((link) => {
+            const Icon = link.icon;
+            const isActive =
+              link.to === '/dashboard'
+                ? location.pathname === '/dashboard'
+                : location.pathname.startsWith(link.to);
+            return (
             <Link
               key={link.to}
               to={link.to}
               onClick={onNavClick}
-              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
                 isActive
-                  ? 'bg-white/10 text-white'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                  ? 'bg-white/[0.08] border-white/20 !text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                  : 'border-transparent !text-slate-200 hover:bg-white/7 hover:!text-white hover:border-white/10'
               }`}
             >
-              {link.label}
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition-colors ${
+                  isActive
+                    ? 'bg-white/10 text-slate-100 border-white/25'
+                    : 'bg-white/[0.06] text-slate-300 border-white/15 group-hover:bg-white/12 group-hover:text-slate-100'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="truncate">{link.label}</span>
+              {isActive && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-slate-300" />}
             </Link>
           );
         })}
+        </div>
       </nav>
       <div className="p-3 border-t border-white/10 shrink-0">
-        <p className="text-xs text-slate-500 truncate px-3 py-1" title={user?.email}>
-          {user?.email}
-        </p>
-        <button
-          type="button"
-          onClick={onSignOut}
-          className="mt-2 w-full px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-white/10 hover:text-white transition-colors text-left"
-        >
-          Sign out
-        </button>
+        <div className="rounded-xl border border-white/10 bg-black/20 p-3">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-full bg-white/10 text-slate-100 text-xs font-semibold flex items-center justify-center">
+              {userInitial}
+            </div>
+            <p className="text-xs text-slate-300 truncate font-medium" title={user?.email}>
+              {user?.email}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onSignOutClick}
+            className="mt-3 w-full px-3 py-2 rounded-lg text-sm font-medium !text-slate-100 bg-white/6 hover:bg-white/12 hover:!text-white transition-colors text-left inline-flex items-center gap-2"
+          >
+            <HiArrowRightOnRectangle className="w-4 h-4 shrink-0" />
+            Sign out
+          </button>
+        </div>
       </div>
     </>
   );
@@ -82,13 +118,13 @@ function bodyPreview(body, maxLen = 60) {
 
 export default function DashboardLayout() {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [signOutConfirmOpen, setSignOutConfirmOpen] = useState(false);
   const [messageNotification, setMessageNotification] = useState({
     show: false,
     title: '',
     bodyPreview: '',
     link: MESSAGES_PATH,
   });
-  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
@@ -161,11 +197,13 @@ export default function DashboardLayout() {
     };
   }, [user?.id]);
 
-  const handleSignOut = () => {
+  const performSignOut = () => {
     dispatch(signOut());
     setMobileSidebarOpen(false);
     navigate('/');
   };
+
+  const openSignOutConfirm = () => setSignOutConfirmOpen(true);
 
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
@@ -173,10 +211,13 @@ export default function DashboardLayout() {
     <div className="h-screen flex overflow-hidden bg-[rgb(var(--nth-bg-soft))]">
       {/* Desktop sidebar - hidden on mobile */}
       <aside
-        className="hidden md:flex w-60 shrink-0 flex-col h-full overflow-hidden border-r border-[rgb(var(--nth-border-light))]"
-        style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
+        className="hidden md:flex w-64 shrink-0 flex-col h-full overflow-hidden border-r border-[rgb(var(--nth-border-light))]"
+        style={{
+          background:
+            'linear-gradient(180deg, #0b1220 0%, #101827 48%, #0f172a 100%)',
+        }}
       >
-        <SidebarContent user={user} onSignOut={handleSignOut} onNavClick={() => {}} />
+        <SidebarContent user={user} onSignOutClick={openSignOutConfirm} onNavClick={() => {}} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -188,13 +229,18 @@ export default function DashboardLayout() {
             aria-hidden
           />
           <aside
-            className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] flex flex-col h-full overflow-hidden border-r border-white/10 shadow-xl md:hidden"
-            style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
+            className="fixed inset-y-0 left-0 z-50 w-80 max-w-[88vw] flex flex-col h-full overflow-hidden border-r border-white/10 shadow-xl md:hidden"
+            style={{
+              background:
+                'linear-gradient(180deg, #0b1220 0%, #101827 48%, #0f172a 100%)',
+            }}
           >
             <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-              <span className="nth-brand-gradient-light text-lg font-extrabold tracking-tight">
-                NTH
-              </span>
+              <img
+                src="/white-logo.png"
+                alt="Naveen Talent Hub"
+                className="h-11 w-auto object-contain"
+              />
               <button
                 type="button"
                 onClick={closeMobileSidebar}
@@ -206,7 +252,7 @@ export default function DashboardLayout() {
             </div>
             <SidebarContent
               user={user}
-              onSignOut={handleSignOut}
+              onSignOutClick={openSignOutConfirm}
               onNavClick={closeMobileSidebar}
               showHeaderLink={false}
             />
@@ -223,6 +269,12 @@ export default function DashboardLayout() {
       </main>
 
       <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
+
+      <SignOutConfirmModal
+        open={signOutConfirmOpen}
+        onClose={() => setSignOutConfirmOpen(false)}
+        onConfirm={performSignOut}
+      />
     </div>
   );
 }
