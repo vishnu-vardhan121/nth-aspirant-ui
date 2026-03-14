@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { HiAcademicCap, HiMapPin } from 'react-icons/hi2';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay } from 'swiper/modules';
 import { supabase } from '../../../../lib/supabase';
 import SectionContainer from '../../../../components/SectionContainer';
+import 'swiper/css';
 
 function isExternalUrl(href) {
   if (!href || typeof href !== 'string') return false;
@@ -33,7 +36,7 @@ function CtaButton({ href, label }) {
 }
 
 export default function BestInstituteHyderabadSection() {
-  const [spotlight, setSpotlight] = useState(null);
+  const [spotlights, setSpotlights] = useState([]);
 
   useEffect(() => {
     const run = async () => {
@@ -41,17 +44,20 @@ export default function BestInstituteHyderabadSection() {
         .from('landing_institute_spotlight')
         .select('*')
         .eq('is_active', true)
-        .maybeSingle();
+        .order('sequence_no', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false });
       if (error) {
-        setSpotlight(null);
+        setSpotlights([]);
         return;
       }
-      setSpotlight(data ?? null);
+      setSpotlights(Array.isArray(data) ? data : []);
     };
     run();
   }, []);
 
-  if (!spotlight) return null;
+  if (spotlights.length === 0) return null;
+
+  const [mainSpotlight, ...secondarySpotlights] = spotlights;
 
   const {
     badge,
@@ -63,7 +69,45 @@ export default function BestInstituteHyderabadSection() {
     cta_label: ctaLabel,
     left_panel_label: leftPanelLabel,
     image_url: imageUrl,
-  } = spotlight;
+  } = mainSpotlight;
+
+  function renderSecondaryCard(item) {
+    const href = (item.cta_link || '').trim();
+    const card = (
+      <div className="group h-full rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-200 overflow-hidden">
+        <div className="grid grid-cols-[84px_1fr] sm:grid-cols-[100px_1fr] min-h-[96px]">
+          <div className="relative h-full bg-slate-100 border-r border-slate-200">
+            {item.image_url ? (
+              <img src={item.image_url} alt={`${item.institute_name} logo`} className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="absolute inset-0 inline-flex items-center justify-center">
+                <HiAcademicCap className="w-8 h-8 text-indigo-700" />
+              </div>
+            )}
+          </div>
+          <div className="min-w-0 px-4 py-3 flex flex-col justify-center">
+            <p className="text-sm font-extrabold text-slate-900 truncate">{item.institute_name}</p>
+            <p className="text-xs text-indigo-700 font-semibold">{item.badge || 'Partner institute'}</p>
+            <p className="text-xs text-slate-500 mt-1 line-clamp-2">{item.subtext || item.highlight || 'Career-focused partner track'}</p>
+          </div>
+        </div>
+      </div>
+    );
+
+    if (!href) return card;
+    if (isExternalUrl(href)) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="block h-full">
+          {card}
+        </a>
+      );
+    }
+    return (
+      <Link to={href.startsWith('/') ? href : `/${href}`} className="block h-full">
+        {card}
+      </Link>
+    );
+  }
 
   return (
     <section
@@ -120,6 +164,44 @@ export default function BestInstituteHyderabadSection() {
               <CtaButton href={ctaLink} label={ctaLabel} />
             </div>
           </div>
+        </motion.div>
+
+        <motion.div
+          className="mt-4 sm:mt-5"
+          initial={{ opacity: 0, y: 14 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+        >
+          {secondarySpotlights.length > 0 ? (
+            <>
+              {secondarySpotlights.length === 1 ? (
+                <div className="max-w-3xl">
+                  {renderSecondaryCard(secondarySpotlights[0])}
+                </div>
+              ) : (
+                <Swiper
+                  modules={[Autoplay]}
+                  loop={secondarySpotlights.length > 3}
+                  speed={700}
+                  autoplay={{ delay: 2600, disableOnInteraction: false, pauseOnMouseEnter: true }}
+                  spaceBetween={12}
+                  slidesPerView={1.12}
+                  breakpoints={{
+                    480: { slidesPerView: 1.35 },
+                    640: { slidesPerView: 2 },
+                    1024: { slidesPerView: 3 },
+                  }}
+                >
+                  {secondarySpotlights.map((item) => (
+                    <SwiperSlide key={item.id} className="h-auto pb-1">
+                      {renderSecondaryCard(item)}
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              )}
+            </>
+          ) : null}
         </motion.div>
       </SectionContainer>
     </section>
