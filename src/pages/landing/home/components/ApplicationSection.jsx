@@ -80,8 +80,8 @@ export default function ApplicationSection() {
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed mb-6">
-              NTH brings verified jobs and real recruiters into one seamless ecosystem—so you can
-              focus on growth, not guesswork.
+              Naveen Talent Hub brings verified jobs and real recruiters into one seamless
+              ecosystem, so you can focus on growth, not guesswork.
             </p>
             
             <Link

@@ -15,6 +15,12 @@ const formatDate = (dateStr) => {
   return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+const trimText = (value, max = 155) => {
+  const text = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!text) return '';
+  return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
+};
+
 const isJobExpired = (deadlineStr) => {
   if (!deadlineStr) return false;
   const today = new Date();
@@ -115,12 +121,17 @@ export default function JobDetailsPage() {
   }
 
   const isExpired = job.application_deadline && new Date() > new Date(job.application_deadline);
+  const seoDescription =
+    trimText(job.description, 155) ||
+    `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Seo 
-        title={`${job.title} at ${job.company_name} | NTH`}
-        description={`Apply for ${job.title} at ${job.company_name}. ${job.description?.slice(0, 150)}...`}
+        title={`${job.title} at ${job.company_name} | Naveen Talent Hub`}
+        description={seoDescription}
+        canonicalPath={`/jobs/${id}`}
+        ogImage="/hero-section/hero-image.jpg"
       />
       <Navbar />
 

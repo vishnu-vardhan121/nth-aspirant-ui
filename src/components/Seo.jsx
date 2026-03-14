@@ -24,12 +24,13 @@ export default function Seo({
     const setMeta = (attr, key, value) => {
       if (!value) return;
       let el = doc.head.querySelector(`[${attr}="${key}"][data-nth-seo="true"]`);
+      if (!el) el = doc.head.querySelector(`meta[${attr}="${key}"]`);
       if (!el) {
         el = doc.createElement('meta');
         el.setAttribute(attr, key);
-        el.setAttribute('data-nth-seo', 'true');
         doc.head.appendChild(el);
       }
+      el.setAttribute('data-nth-seo', 'true');
       el.setAttribute('content', value);
     };
 
@@ -52,29 +53,34 @@ export default function Seo({
     // Canonical link
     if (canonicalUrl) {
       let link = doc.head.querySelector('link[rel="canonical"][data-nth-seo="true"]');
+      if (!link) link = doc.head.querySelector('link[rel="canonical"]');
       if (!link) {
         link = doc.createElement('link');
         link.setAttribute('rel', 'canonical');
-        link.setAttribute('data-nth-seo', 'true');
         doc.head.appendChild(link);
       }
+      link.setAttribute('data-nth-seo', 'true');
       link.setAttribute('href', canonicalUrl);
     }
 
     // Robots
-    const robots = doc.head.querySelector('meta[name="robots"][data-nth-seo="true"]');
+    const robots =
+      doc.head.querySelector('meta[name="robots"][data-nth-seo="true"]') ||
+      doc.head.querySelector('meta[name="robots"]');
     if (noIndex) {
       if (!robots) {
         const el = doc.createElement('meta');
         el.setAttribute('name', 'robots');
-        el.setAttribute('data-nth-seo', 'true');
         el.setAttribute('content', 'noindex,nofollow');
+        el.setAttribute('data-nth-seo', 'true');
         doc.head.appendChild(el);
       } else {
+        robots.setAttribute('data-nth-seo', 'true');
         robots.setAttribute('content', 'noindex,nofollow');
       }
     } else if (robots) {
-      robots.remove();
+      robots.setAttribute('data-nth-seo', 'true');
+      robots.setAttribute('content', 'index,follow');
     }
 
     // JSON-LD

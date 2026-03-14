@@ -63,7 +63,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-12">
         <Link to="/" className="mb-8">
-          <img src="/white-logo.png" alt="NTH Logo" className="h-15 w-auto" />
+          <img src="/white-logo.png" alt="Naveen Talent Hub Logo" className="h-15 w-auto" />
         </Link>
         <div className="w-full max-w-[400px] bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl">
           <div className="text-center mb-8">

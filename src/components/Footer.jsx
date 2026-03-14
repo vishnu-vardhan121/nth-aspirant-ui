@@ -21,7 +21,7 @@ export default function Footer() {
       <SectionContainer useGrid>
         <div className="col-span-full flex flex-col gap-6 sm:gap-8 md:flex-row md:items-center md:justify-between">
           <Link to="/" className="flex items-center">
-            <img src="/white-logo.png" alt="NTH" className="h-8 sm:h-9 w-auto object-contain" />
+            <img src="/white-logo.png" alt="Naveen Talent Hub" className="h-8 sm:h-9 w-auto object-contain" />
           </Link>
           <nav className="flex flex-wrap items-center gap-4 sm:gap-6">
             {FOOTER_LINKS.map((link) => {
@@ -48,7 +48,7 @@ export default function Footer() {
         </div>
         <div className="col-span-full mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-white/10">
           <p className="text-xs sm:text-sm text-slate-500">
-            © {new Date().getFullYear()} NTH. All rights reserved.
+            © {new Date().getFullYear()} Naveen Talent Hub. All rights reserved.
           </p>
         </div>
       </SectionContainer>

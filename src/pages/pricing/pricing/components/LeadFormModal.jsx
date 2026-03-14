@@ -199,7 +199,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
           <div className="relative flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-4 sm:py-5 border-b border-white/10">
             <img
               src="/white-logo.png"
-              alt="NTH"
+              alt="Naveen Talent Hub"
               className="h-7 w-auto object-contain shrink-0 sm:h-8"
             />
             <h2 className="absolute left-1/2 -translate-x-1/2 text-lg sm:text-xl font-semibold text-white tracking-tight whitespace-nowrap">

@@ -15,6 +15,7 @@ import InstituteAdModal from './components/InstituteAdModal';
 import Seo from '../../../components/Seo';
 
 const LANDING_CLASS = 'nth-landing-page';
+const SITE_URL = 'https://naveentalenthub.in';
 /** Delay after page load before showing the ad. */
 const AD_DELAY_MS = 5000;
 const AD_SCROLL_THRESHOLD_PX = 500;
@@ -79,20 +80,16 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
       <Seo
-        title="NTH | Guaranteed interview support with mock interviews and direct slots"
-        description="Naveen Talent Hub (NTH) gives you mock interviews with industry pros, direct interview slots, and offer-negotiation help—backed by a 100% refund guarantee."
+        title="Naveen Talent Hub | Mock Interviews, Direct Slots, and Career Support"
+        description="Naveen Talent Hub gives you mock interviews with industry professionals, direct interview slots, and offer-negotiation support backed by a 100% refund guarantee."
         canonicalPath="/"
         ogImage="/hero-section/hero-image.jpg"
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
           name: 'Naveen Talent Hub',
-          url: typeof window !== 'undefined' ? window.location.origin : undefined,
-          logo: '/favicon.png',
-          sameAs: [
-            'https://www.linkedin.com/',
-            'https://twitter.com/'
-          ]
+          url: typeof window !== 'undefined' ? window.location.origin : SITE_URL,
+          logo: `${SITE_URL}/favicon.png`,
         }}
       />
       <Navbar />

@@ -61,8 +61,8 @@ export default function PricingPage() {
       style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
     >
       <Seo
-        title="Pricing | NTH interview guarantee plans"
-        description="Choose Base, Silver, or Gold to get mock interviews, direct interview slots, and 100% refund protection when milestones are met."
+        title="Pricing Plans | Naveen Talent Hub"
+        description="Choose Base, Silver, or Gold plans for mock interviews, direct interview slots, and 100% refund protection when milestones are met."
         canonicalPath="/pricing"
         ogImage="/hero-section/hero-image.jpg"
       />
