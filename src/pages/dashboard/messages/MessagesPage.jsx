@@ -35,7 +35,7 @@ function buildChats(messages) {
     if (!byKey.has(key)) {
       byKey.set(key, {
         key,
-        label: key === NTH_TEAM_KEY ? 'NTH Team' : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
+        label: key === NTH_TEAM_KEY ? 'Naveen Talent Hub Team' : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
         icon: key === NTH_TEAM_KEY ? HiChatBubbleLeftRight : HiUserGroup,
         messages: [],
       });
@@ -161,7 +161,7 @@ export default function MessagesPage() {
         </button>
       </div>
       <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-        Chats from NTH Team and job groups. Base 1 / Silver 3 / Gold 5 replies per day.
+        Chats from the Naveen Talent Hub team and job groups. Base 1 / Silver 3 / Gold 5 replies per day.
       </p>
 
       {messages.length === 0 ? (
