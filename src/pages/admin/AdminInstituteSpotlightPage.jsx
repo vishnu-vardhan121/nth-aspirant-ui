@@ -7,6 +7,7 @@ const INSTITUTE_ADS_BUCKET = 'institute-ads';
 
 function SpotlightFormModal({ row, onClose, onSuccess }) {
   const isEdit = !!row?.id;
+  const [sequenceNo, setSequenceNo] = useState(row?.sequence_no ?? 1);
   const [badge, setBadge] = useState(row?.badge ?? 'Partner spotlight');
   const [title, setTitle] = useState(row?.title ?? '');
   const [instituteName, setInstituteName] = useState(row?.institute_name ?? '');
@@ -22,6 +23,7 @@ function SpotlightFormModal({ row, onClose, onSuccess }) {
   const [message, setMessage] = useState({ type: '', text: '' });
 
   const buildPayload = (finalImageUrl) => ({
+    sequence_no: Number.isFinite(Number(sequenceNo)) && Number(sequenceNo) > 0 ? Number(sequenceNo) : 1,
     badge: badge.trim() || 'Partner spotlight',
     title: title.trim(),
     institute_name: instituteName.trim(),
@@ -40,6 +42,10 @@ function SpotlightFormModal({ row, onClose, onSuccess }) {
     const titleT = title.trim();
     const nameT = instituteName.trim();
     const subT = subtext.trim();
+    if (!Number.isFinite(Number(sequenceNo)) || Number(sequenceNo) < 1) {
+      setMessage({ type: 'error', text: 'Sequence must be a positive number (1, 2, 3...).' });
+      return;
+    }
     if (!titleT || titleT.length < 2) {
       setMessage({ type: 'error', text: 'Title is required (at least 2 characters).' });
       return;
@@ -101,6 +107,19 @@ function SpotlightFormModal({ row, onClose, onSuccess }) {
         </div>
         <form onSubmit={handleSubmit} className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
           {message.text && <p className={`text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>{message.text}</p>}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Sequence *</label>
+            <input
+              type="number"
+              min={1}
+              value={sequenceNo}
+              onChange={(e) => setSequenceNo(e.target.value)}
+              className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              placeholder="1"
+              required
+            />
+            <p className="text-xs text-slate-500 mt-1">`1` becomes the main card on landing. Others show in the bottom swipe row.</p>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Badge</label>
             <input value={badge} onChange={(e) => setBadge(e.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" maxLength={80} />
@@ -186,7 +205,7 @@ function SpotlightFormModal({ row, onClose, onSuccess }) {
           </div>
           <div className="flex items-center gap-2">
             <input type="checkbox" id="spot_active" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="rounded border-slate-300" />
-            <label htmlFor="spot_active" className="text-sm font-medium text-slate-700">Show on landing (only one active)</label>
+            <label htmlFor="spot_active" className="text-sm font-medium text-slate-700">Show on landing</label>
           </div>
           <div className="flex gap-2 pt-2">
             <button type="button" onClick={onClose} className="flex-1 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200">Cancel</button>
@@ -204,7 +223,11 @@ export default function AdminInstituteSpotlightPage() {
   const [formModal, setFormModal] = useState(null);
 
   const load = async () => {
-    const { data, error } = await supabase.from('landing_institute_spotlight').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('landing_institute_spotlight')
+      .select('*')
+      .order('sequence_no', { ascending: true, nullsFirst: false })
+      .order('created_at', { ascending: false });
     setRows(error ? [] : data ?? []);
     setLoading(false);
   };
@@ -229,7 +252,7 @@ export default function AdminInstituteSpotlightPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Institute spotlight</h1>
-          <p className="text-slate-600 text-sm mt-1">Landing block (best institute, etc.). One active at a time. CTA link optional.</p>
+          <p className="text-slate-600 text-sm mt-1">Landing spotlight list. Active rows are shown publicly, ordered by sequence.</p>
         </div>
         <button type="button" onClick={() => setFormModal({})} className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700">Add</button>
       </div>
@@ -237,6 +260,7 @@ export default function AdminInstituteSpotlightPage() {
         <table className="w-full text-left text-sm">
           <thead className="bg-slate-50 border-b border-slate-200">
             <tr>
+              <th className="px-4 py-3 font-semibold text-slate-700">Seq</th>
               <th className="px-4 py-3 font-semibold text-slate-700">Title</th>
               <th className="px-4 py-3 font-semibold text-slate-700">Institute</th>
               <th className="px-4 py-3 font-semibold text-slate-700">CTA</th>
@@ -246,10 +270,11 @@ export default function AdminInstituteSpotlightPage() {
           </thead>
           <tbody className="divide-y divide-slate-100">
             {rows.length === 0 ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-slate-500">No spotlights. Add one and set active to show on landing.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-slate-500">No spotlights. Add one and set active to show on landing.</td></tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id} className="border-b border-slate-100">
+                  <td className="px-4 py-3 text-slate-700 font-semibold">#{String(r.sequence_no ?? 1).padStart(2, '0')}</td>
                   <td className="px-4 py-3 font-medium text-slate-900 max-w-[180px] truncate" title={r.title}>{r.title}</td>
                   <td className="px-4 py-3 text-slate-600 max-w-[160px] truncate" title={r.institute_name}>{r.institute_name}</td>
                   <td className="px-4 py-3 text-slate-600 max-w-[200px] truncate" title={r.cta_link || ''}>{r.cta_link || '—'}</td>
