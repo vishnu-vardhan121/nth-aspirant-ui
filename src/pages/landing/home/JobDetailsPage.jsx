@@ -21,13 +21,30 @@ const trimText = (value, max = 155) => {
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
 };
 
+/** Calendar compare in Asia/Kolkata, aligned with public SQL guards (deadline &lt; today = closed). */
+const calendarTodayIST = () =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date());
+
 const isJobExpired = (deadlineStr) => {
   if (!deadlineStr) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadline = new Date(deadlineStr);
-  deadline.setHours(0, 0, 0, 0);
-  return today > deadline;
+  const d = String(deadlineStr).slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+    return d < calendarTodayIST();
+  }
+  const t = new Date(deadlineStr);
+  if (isNaN(t.getTime())) return false;
+  const onIST = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(t);
+  return onIST < calendarTodayIST();
 };
 
 export default function JobDetailsPage() {
@@ -36,6 +53,8 @@ export default function JobDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [otherJobs, setOtherJobs] = useState([]);
+  const [publicCapacity, setPublicCapacity] = useState(null);
+  const [publicCapacityLoading, setPublicCapacityLoading] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -52,6 +71,41 @@ export default function JobDetailsPage() {
     };
     fetchJob();
   }, [id]);
+
+  useEffect(() => {
+    if (!job) return;
+    const expired = isJobExpired(job.application_deadline);
+    const externalApply = job.apply_link && String(job.apply_link).trim();
+    const notOpen = job.status !== 'open';
+    if (expired || externalApply || notOpen) {
+      setPublicCapacity(null);
+      setPublicCapacityLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setPublicCapacityLoading(true);
+    setPublicCapacity(null);
+    (async () => {
+      const { data, error } = await supabase.rpc('get_public_job_lead_capacity', {
+        p_job_id: job.id,
+      });
+      if (cancelled) return;
+      setPublicCapacityLoading(false);
+      if (error || !data?.ok) {
+        setPublicCapacity({
+          accepts_applications: true,
+          application_limit: null,
+          filled: null,
+          remaining: null,
+        });
+        return;
+      }
+      setPublicCapacity(data);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [job]);
 
   useEffect(() => {
     if (!id) return;
@@ -120,7 +174,22 @@ export default function JobDetailsPage() {
     );
   }
 
-  const isExpired = job.application_deadline && new Date() > new Date(job.application_deadline);
+  const isExpired = isJobExpired(job.application_deadline);
+  const jobNotAccepting = job.status !== 'open';
+  const usesPublicForm = !(
+    (job.apply_link && job.apply_link.trim()) ||
+    isExpired ||
+    jobNotAccepting
+  );
+  const publicApplyFull =
+    usesPublicForm && publicCapacity && publicCapacity.accepts_applications === false;
+  const publicSpotsHint =
+    usesPublicForm &&
+    publicCapacity &&
+    publicCapacity.application_limit != null &&
+    publicCapacity.accepts_applications
+      ? `${publicCapacity.remaining ?? 0} public spot${(publicCapacity.remaining ?? 0) === 1 ? '' : 's'} left`
+      : null;
   const seoDescription =
     trimText(job.description, 155) ||
     `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
@@ -137,14 +206,6 @@ export default function JobDetailsPage() {
 
       <main className="py-12 md:py-16">
         <SectionContainer>
-          <div className="mb-8">
-            <Link 
-              to="/" 
-              className="inline-flex items-center gap-2 text-slate-500 hover:text-indigo-600 font-medium transition-colors"
-            >
-              Back to Jobs
-            </Link>
-          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left Column: Job Info */}
@@ -250,6 +311,10 @@ export default function JobDetailsPage() {
                     <div className="w-full text-center px-6 py-4 rounded-2xl bg-slate-100 text-slate-500 font-bold border border-slate-200 cursor-not-allowed">
                       Applications Closed
                     </div>
+                  ) : jobNotAccepting ? (
+                    <div className="w-full text-center px-6 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold border border-slate-200 cursor-not-allowed">
+                      Not accepting applications
+                    </div>
                   ) : (job.apply_link && job.apply_link.trim()) ? (
                     <a
                       href={job.apply_link.trim()}
@@ -259,13 +324,28 @@ export default function JobDetailsPage() {
                     >
                       Apply Now
                     </a>
+                  ) : publicCapacityLoading ? (
+                    <div className="w-full text-center px-6 py-4 rounded-2xl bg-slate-50 text-slate-500 font-bold border border-slate-200 animate-pulse">
+                      Loading…
+                    </div>
+                  ) : publicApplyFull ? (
+                    <div className="w-full text-center px-6 py-4 rounded-2xl bg-amber-50 text-amber-900 font-bold border border-amber-100 cursor-not-allowed">
+                      Applications full
+                    </div>
                   ) : (
                     <button
+                      type="button"
                       onClick={() => setShowApplyModal(true)}
                       className="w-full nth-btn-primary px-6 py-4 rounded-2xl font-bold text-lg shadow-lg shadow-indigo-200 hover:shadow-indigo-300 transition-all flex items-center justify-center gap-3 group"
                     >
                       Apply Now
                     </button>
+                  )}
+
+                  {publicSpotsHint && (
+                    <p className="mt-3 text-xs font-medium text-slate-500 text-center relative z-10">
+                      {publicSpotsHint}
+                    </p>
                   )}
 
                   <div className="mt-6 pt-6 border-t border-slate-50 flex flex-col gap-4 text-xs font-medium text-slate-500">
@@ -351,11 +431,12 @@ export default function JobDetailsPage() {
       <Footer />
 
       {/* Application Modal */}
-      {showApplyModal && (
-        <FreeJobApplicationForm 
-          jobId={job.id} 
-          jobTitle={job.title} 
-          onClose={() => setShowApplyModal(false)} 
+      {showApplyModal && !publicApplyFull && !isExpired && !jobNotAccepting && (
+        <FreeJobApplicationForm
+          jobId={job.id}
+          jobTitle={job.title}
+          jobCompany={job.company_name}
+          onClose={() => setShowApplyModal(false)}
         />
       )}
     </div>

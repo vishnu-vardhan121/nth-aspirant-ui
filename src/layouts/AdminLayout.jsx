@@ -115,7 +115,7 @@ export default function AdminLayout() {
             className={navLinkClass(isActive('/admin/todays-interviews'))}
           >
             <HiCalendarDays className="w-5 h-5 shrink-0" />
-            Today&apos;s Interviews
+            Hero interviews
           </Link>
           <Link
             to="/admin/settings"
