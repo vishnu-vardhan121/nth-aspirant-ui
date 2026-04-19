@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { HiBellAlert } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
@@ -13,50 +14,59 @@ export default function NTHConnectSection() {
   return (
     <section
       id="nth-connect"
-      className="relative bg-gradient-to-b from-indigo-50/80 via-white to-slate-50/50 py-10 sm:py-12 md:py-14 overflow-hidden"
+      className="relative min-h-[400px] sm:min-h-[500px] lg:min-h-[600px] flex items-center overflow-hidden py-12 lg:py-20"
     >
-      <div className="absolute inset-0 opacity-30 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 2px 2px, rgb(99 102 241 / 0.12) 1px, transparent 0)`,
-            backgroundSize: '28px 28px',
-          }}
+      {/* High-Impact Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/hero-section/Gemini_Generated_Image_fmv3s7fmv3s7fmv3.png"
+          alt="Direct Path to Hiring"
+          className="w-full h-full object-cover object-[85%_center] lg:object-center"
         />
+        {/* Multistage Gradient for Professional Text Readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-950/70 to-transparent lg:via-slate-950/30" />
       </div>
-      <SectionContainer>
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
-          <div className="flex-1 text-center lg:text-left order-2 lg:order-1">
-            <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-indigo-100 text-indigo-900 text-xs sm:text-sm font-semibold mb-3 sm:mb-4">
-              <HiBellAlert className="w-4 h-4 shrink-0" />
-              New roles coming soon
-            </div>
-            <h2 className="text-lg min-[375px]:text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-slate-900 tracking-tight mb-2 sm:mb-3 leading-tight">
-              Connect directly with{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
-                hiring managers
+
+      <SectionContainer className="relative z-10 w-full px-4 sm:px-6 lg:px-8">
+        <div className="max-w-xl lg:max-w-3xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            {/* Minimalist Badge */}
+            <div className="inline-flex items-center gap-2 mb-6">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_10px_rgba(99,102,241,1)]" />
+              <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-indigo-400">
+                Direct hiring track
               </span>
+            </div>
+
+            <h2 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[0.95] tracking-tighter mb-6">
+              Connect <br className="hidden sm:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-300 via-indigo-400 to-indigo-300">
+                directly
+              </span> with <br className="hidden sm:block" />
+              <span className="font-display italic text-indigo-100 font-normal">hiring managers</span>
             </h2>
-            <p className="text-sm sm:text-base md:text-lg text-slate-700 text-center lg:text-left mb-5 sm:mb-6 leading-relaxed">
-              Skip the job portals. When we have openings, they're vetted and shared here—so you apply to real
-              companies and real people.
+
+            <p className="text-base sm:text-lg md:text-xl text-indigo-50/70 mb-10 max-w-lg leading-relaxed font-medium">
+              We&apos;ve cleared the clutter. Skip the broken job portals and step through the 
+              gate to direct conversations with decision makers.
             </p>
-            <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
               <Link
                 to={pricingTo}
-                className="nth-btn-primary inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base sm:text-lg font-semibold hover:text-white"
+                className="nth-cta-gradient group relative inline-flex items-center justify-center px-10 py-5 rounded-full bg-indigo-600 font-black text-base sm:text-lg uppercase tracking-widest overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-[0_20px_50px_-15px_rgba(79,70,229,0.5)]"
               >
-                Get Started Now
+                <span className="relative z-10">Get Fast-Tracked</span>
+                {/* Subtle internal glow on hover */}
+                <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
               </Link>
             </div>
-          </div>
-          <div className="flex-1 w-full max-w-2xl mx-auto lg:max-w-none order-1 lg:order-2">
-            <img
-              src="/hero-section/Gemini_Generated_Image_fmv3s7fmv3s7fmv3.png"
-              alt="Naveen Talent Hub—connect directly with hiring managers instead of the crowded job market"
-              className="w-full h-auto object-contain drop-shadow-lg rounded-lg transform lg:scale-110"
-            />
-          </div>
+          </motion.div>
         </div>
       </SectionContainer>
     </section>

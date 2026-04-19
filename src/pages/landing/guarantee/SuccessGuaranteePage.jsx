@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Check, Shield, Users, Star, Sparkles, MessageSquare, Calendar, FileCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import Seo from '@/components/Seo';
 
 const PROCESS_STEPS = [
   {
@@ -87,6 +88,12 @@ const fadeUp = {
 export default function SuccessGuarantee() {
   return (
     <div className="min-h-screen bg-background animate-fade-in">
+      <Seo
+        title="100% Refund Guarantee | Naveen Talent Hub"
+        description="Naveen Talent Hub provides end-to-end interview preparation with a clear 100% refund guarantee when milestone conditions are met."
+        canonicalPath="/guarantee"
+        ogImage="/guarantee/refund-badge.png"
+      />
       <Navbar />
 
       {/* ─── Hero ─── */}
@@ -127,13 +134,13 @@ export default function SuccessGuarantee() {
         </div>
       </section>
 
-      {/* ─── Why Trust NTH ─── */}
+      {/* ─── Why Trust Naveen Talent Hub ─── */}
       <section className="py-12 md:py-16 section-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-14 animate-fade-up">
             <span className="text-primary font-bold text-sm uppercase tracking-widest">Why Us</span>
             <h2 className="text-3xl md:text-4xl font-black text-slate-900 mt-2">
-              Why Trust <span className="text-primary">NTH</span>?
+              Why Trust <span className="text-primary">Naveen Talent Hub</span>?
             </h2>
           </div>
 

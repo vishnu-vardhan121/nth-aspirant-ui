@@ -77,7 +77,7 @@ export default function TrustSection() {
           transition={{ duration: 0.6 }}
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-[rgb(var(--nth-text-primary-light))] tracking-tight mb-4">
-            Why Professionals Trust NTH
+            Why Professionals Trust Naveen Talent Hub
           </h2>
           <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-2xl mx-auto">
             Built on real recruiter networks, not fake listings or mass postings.

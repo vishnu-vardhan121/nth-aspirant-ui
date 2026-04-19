@@ -39,6 +39,9 @@ function PlanCard({ plan, index, onSelectPlan }) {
           </li>
         ))}
       </ul>
+      {plan.ctaNote ? (
+        <p className="text-slate-400 text-xs sm:text-sm leading-snug mb-3">{plan.ctaNote}</p>
+      ) : null}
       <button
         type="button"
         disabled={plan.ctaDisabled}

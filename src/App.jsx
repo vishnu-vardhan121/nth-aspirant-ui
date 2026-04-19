@@ -10,6 +10,7 @@ import AdminLayout from './layouts/AdminLayout';
 import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
 import JobDetailsPage from './pages/landing/home/JobDetailsPage';
+import PortfolioIndex from './pages/portfolio/PortfolioIndex';
 import PricingPage from './pages/pricing/pricing/PricingPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
@@ -49,6 +50,7 @@ function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/jobs/:id" element={<JobDetailsPage />} />
+        <Route path="/portfolio" element={<PortfolioIndex />} />
         <Route path="/guarantee" element={<SuccessGuaranteePage />} />
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/login" element={<LoginPage />} />

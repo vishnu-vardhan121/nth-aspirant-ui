@@ -166,7 +166,7 @@ export default function DashboardLayout() {
               if (onMessagesPage) return prev;
               return {
                 show: true,
-                title: isBroadcast ? 'New message from NTH Team' : 'New message',
+                title: isBroadcast ? 'New message from Naveen Talent Hub Team' : 'New message',
                 bodyPreview: bodyPreview(row.body),
                 link: MESSAGES_PATH,
               };

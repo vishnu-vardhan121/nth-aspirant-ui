@@ -1,9 +1,6 @@
 /**
  * Single source of truth for pricing. Base, Silver, Gold.
  * Fresher: Base ₹399; Experienced: Base ₹499. Silver & Gold show xxx.
- *
- * Direct interviews (job applications) per plan must match DB: get_job_applications_limit
- * Base = 1, Silver = 2, Gold = 8.
  */
 const basePlan = {
   id: 'base',
@@ -14,58 +11,64 @@ const basePlan = {
   ctaDisabled: false,
   popular: false,
   features: [
-    '3 mocks with IT working professionals',
+    '1 fixed interview + 1 bonus interview',
+    '2 mocks with IT working professionals',
     'Technical Suggestions',
     'Free job links',
-    'Score 90% in mock to get 1 interview',
   ],
+  ctaNote:
+    'Note: If you get 70% to 80% score in the mock, one interview applies.',
 };
 
 const silverPlan = {
   id: 'silver',
   name: 'Silver',
-  price: 'xxx',
+  price: 'xxxx',
   priceNote: '',
   description: 'Added direct interview opportunities',
   ctaText: 'Choose Silver',
   ctaDisabled: false,
   popular: true,
   features: [
+    '5 direct company interviews + 2 bonus',
     '3 mocks with IT working professionals',
     'Technical Suggestions',
     'Free job links',
-    '2 Direct company interviews',
   ],
+  ctaNote:
+    'Note: If you fail in final rounds or HR rounds, the bonus will apply.',
 };
 
 const goldPlan = {
   id: 'gold',
   name: 'Gold',
-  price: 'xxx',
+  price: 'xxxx',
   priceNote: '',
   description: 'Comprehensive support and mentorship',
   ctaText: 'Choose Gold',
   ctaDisabled: false,
   popular: false,
   features: [
+    '10 direct company interviews + 5 bonus',
     '10 mocks with IT working professionals',
     'Technical Suggestions',
     'Free job links',
-    '8 Direct company interviews',
     'Technical Support',
     'Personal assistance',
     '2 sessions with founder Naveen',
   ],
+  ctaNote:
+    'Note: If you fail in final rounds or HR rounds, the bonus will apply.',
 };
 
 export const PRICING_PLANS = {
   fresher: [
-    { ...basePlan, price: '399' },
+    { ...basePlan, price: '₹399' },
     { ...silverPlan },
     { ...goldPlan },
   ],
   experienced: [
-    { ...basePlan, price: '499' },
+    { ...basePlan, price: '₹499' },
     { ...silverPlan },
     { ...goldPlan },
   ],
