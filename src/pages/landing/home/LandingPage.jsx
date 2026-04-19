@@ -96,7 +96,7 @@ export default function LandingPage() {
       <Navbar />
       <HeroSection />
       <div className="nth-landing-grid">
-        <JobOpeningsSection />
+        <JobOpeningsSection previewLimit={6} viewAllTo="/jobs" />
         <NTHConnectSection />
         <HowItWorksSection />
         <WhyChooseNTHSection />
