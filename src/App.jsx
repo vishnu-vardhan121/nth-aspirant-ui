@@ -9,6 +9,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
+import PublicJobsPage from './pages/landing/home/PublicJobsPage';
 import JobDetailsPage from './pages/landing/home/JobDetailsPage';
 import PortfolioIndex from './pages/portfolio/PortfolioIndex';
 import PricingPage from './pages/pricing/pricing/PricingPage';
@@ -49,6 +50,7 @@ function App() {
       <AuthListener />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/jobs" element={<PublicJobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailsPage />} />
         <Route path="/portfolio" element={<PortfolioIndex />} />
         <Route path="/guarantee" element={<SuccessGuaranteePage />} />

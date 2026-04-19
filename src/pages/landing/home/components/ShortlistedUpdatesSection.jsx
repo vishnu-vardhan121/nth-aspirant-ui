@@ -6,7 +6,14 @@ import SectionContainer from '../../../../components/SectionContainer';
 import { supabase } from '../../../../lib/supabase';
 import { Loader } from '../../../../components/ui/Loader';
 
-const SHORTLIST_PREVIEW_MAX = 8;
+/** In-card preview cap; keeps DOM light for very large shortlists (rest via job link). */
+const SHORTLIST_PREVIEW_MAX = 48;
+
+/** Column height uses viewport so long feeds scroll inside the card instead of stretching the page. */
+const FEED_COLUMN_CLASS =
+  'flex min-h-0 max-h-[min(22rem,55svh)] flex-col p-4 sm:max-h-[min(24rem,50svh)]';
+const FEED_SCROLL_BODY_CLASS =
+  'min-h-0 flex-1 overflow-y-auto [scrollbar-gutter:stable]';
 
 function NoticeItem({ item, isLast }) {
   return (
@@ -315,7 +322,7 @@ export default function ShortlistedUpdatesSection() {
               <div className={bodyGridClass}>
 
                 {hasNotices && (
-                <div className="flex max-h-72 min-h-0 flex-col p-4 sm:max-h-[22rem]">
+                <div className={FEED_COLUMN_CLASS}>
                   <div className="flex shrink-0 items-center gap-2 mb-3">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-50 text-indigo-500">
                       <HiChatBubbleLeftRight className="h-3.5 w-3.5" />
@@ -323,7 +330,7 @@ export default function ShortlistedUpdatesSection() {
                     <h4 className="text-xs font-bold text-slate-800">Timeline Updates</h4>
                   </div>
 
-                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain pr-1 [scrollbar-gutter:stable]">
+                    <div className={`${FEED_SCROLL_BODY_CLASS} pr-1`}>
                       <div className="flex flex-col gap-3 pb-1">
                         {job.notices.map((notice, i) => (
                           <NoticeItem
@@ -338,7 +345,7 @@ export default function ShortlistedUpdatesSection() {
                 )}
 
                 {hasShortlisted && (
-                <div className="flex max-h-72 min-h-0 flex-col p-4 sm:max-h-[22rem]">
+                <div className={FEED_COLUMN_CLASS}>
                   <div className="flex shrink-0 items-center gap-2 mb-3">
                     <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-emerald-50 text-emerald-500">
                       <HiCheckCircle className="h-3.5 w-3.5" />
@@ -347,7 +354,7 @@ export default function ShortlistedUpdatesSection() {
                   </div>
 
                     <div className="flex min-h-0 flex-1 flex-col">
-                      <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain pr-2 [scrollbar-gutter:stable] touch-pan-y">
+                      <div className={`${FEED_SCROLL_BODY_CLASS} pr-2`}>
                         {job.shortlisted.slice(0, SHORTLIST_PREVIEW_MAX).map((person, i) => (
                           <div
                             key={`${job.id}-sl-${String(person.id)}-${i}`}
