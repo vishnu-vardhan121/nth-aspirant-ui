@@ -195,7 +195,7 @@ export default function JobDetailsPage() {
     `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       <Seo 
         title={`${job.title} at ${job.company_name} | Naveen Talent Hub`}
         description={seoDescription}
@@ -204,36 +204,38 @@ export default function JobDetailsPage() {
       />
       <Navbar />
 
-      <main className="py-12 md:py-16">
-        <SectionContainer>
+      <main className="pt-24 sm:pt-28 pb-12 md:pb-16 min-w-0">
+        <SectionContainer className="min-w-0 max-w-full">
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
             {/* Left Column: Job Info */}
-            <div className="lg:col-span-2 space-y-8">
-              <div className="bg-white rounded-3xl p-6 md:p-10 shadow-sm border border-slate-100">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
-                  <div className="flex items-start gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
-                      <HiBuildingOffice2 className="w-8 h-8" />
+            <div className="lg:col-span-2 space-y-8 min-w-0">
+              <div className="bg-white rounded-3xl p-5 sm:p-6 md:p-10 shadow-sm border border-slate-100 min-w-0 overflow-hidden">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8 min-w-0">
+                  <div className="flex items-start gap-3 sm:gap-5 min-w-0 flex-1">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
+                      <HiBuildingOffice2 className="w-6 h-6 sm:w-8 sm:h-8 shrink-0" />
                     </div>
-                    <div>
-                      <h1 className="text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-tight">
+                    <div className="min-w-0 flex-1">
+                      <h1 className="text-xl min-[400px]:text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-snug sm:leading-tight break-words">
                         {job.title}
                       </h1>
-                      <div className="flex flex-wrap items-center gap-y-2 gap-x-4 text-slate-600 font-medium">
-                        <p className="text-lg text-indigo-600">{job.company_name}</p>
-                        <span className="w-1 h-1 rounded-full bg-slate-300 hidden md:block" />
+                      <div className="flex flex-wrap items-center gap-y-2 gap-x-3 sm:gap-x-4 text-slate-600 font-medium min-w-0">
+                        <p className="text-base sm:text-lg text-indigo-600 break-words min-w-0 max-w-full">
+                          {job.company_name}
+                        </p>
+                        <span className="w-1 h-1 rounded-full bg-slate-300 hidden md:block shrink-0" />
                         {job.location && job.location !== '—' && (
-                          <div className="flex items-center gap-1.5">
-                            <HiMapPin className="w-5 h-5 text-slate-400" />
-                            {job.location}
+                          <div className="flex items-start gap-1.5 min-w-0 max-w-full">
+                            <HiMapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                            <span className="break-words">{job.location}</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 shrink-0 min-w-0">
                     <span className="inline-flex items-center px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">
                       {job.job_type || 'Full-time'}
                     </span>
@@ -245,48 +247,50 @@ export default function JobDetailsPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 py-6 border-y border-slate-100">
-                  <div className="flex flex-col gap-1">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 py-6 border-y border-slate-100 min-w-0">
+                  <div className="flex flex-col gap-1 min-w-0">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</span>
-                    <div className="flex items-center gap-2 text-slate-800 font-bold">
-                      <HiBriefcase className="w-5 h-5 text-indigo-500" />
-                      {job.experience_level || '0-3 Years'}
+                    <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
+                      <HiBriefcase className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                      <span className="break-words">{job.experience_level || '0-3 Years'}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 min-w-0">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</span>
-                    <div className="flex items-center gap-2 text-slate-800 font-bold">
-                      <HiCalendarDays className="w-5 h-5 text-indigo-500" />
-                      {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible'}
+                    <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
+                      <HiCalendarDays className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                      <span className="break-words">
+                        {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible'}
+                      </span>
                     </div>
                   </div>
                   {job.location && job.location !== '—' && (
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Location</span>
-                      <div className="flex items-center gap-2 text-slate-800 font-bold">
-                        <HiMapPin className="w-5 h-5 text-indigo-500" />
-                        {job.location}
+                      <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
+                        <HiMapPin className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                        <span className="break-words">{job.location}</span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-8">
-                  <section>
+                <div className="space-y-8 min-w-0">
+                  <section className="min-w-0">
                     <h2 className="text-xl font-bold text-slate-900 mb-4">Job Description</h2>
-                    <div className="prose prose-slate max-w-none text-slate-600 leading-relaxed whitespace-pre-wrap">
+                    <div className="prose prose-slate max-w-full text-slate-600 leading-relaxed whitespace-pre-wrap break-words">
                       {job.description || 'No description provided.'}
                     </div>
                   </section>
 
                   {job.requirements && job.requirements.length > 0 && (
-                    <section>
+                    <section className="min-w-0">
                       <h2 className="text-xl font-bold text-slate-900 mb-4">Key Responsibilities / Requirements</h2>
-                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-3 min-w-0">
                         {job.requirements.map((req, idx) => (
-                          <li key={idx} className="flex items-start gap-2 text-slate-600">
+                          <li key={idx} className="flex items-start gap-2 text-slate-600 min-w-0">
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                            {req}
+                            <span className="break-words min-w-0">{req}</span>
                           </li>
                         ))}
                       </ul>
@@ -297,9 +301,9 @@ export default function JobDetailsPage() {
             </div>
 
             {/* Right Column: Apply Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="sticky top-24 space-y-6">
-                <div className="bg-white rounded-3xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative">
+            <div className="lg:col-span-1 min-w-0">
+              <div className="sticky top-24 space-y-6 min-w-0">
+                <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative min-w-0">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16" />
                   
                   <h3 className="text-lg font-bold text-slate-900 mb-4 relative z-10">Interested in this role?</h3>
@@ -360,7 +364,7 @@ export default function JobDetailsPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-6 text-white shadow-xl shadow-indigo-200/50">
+                <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-indigo-200/50 min-w-0 overflow-hidden">
                    <h3 className="text-lg font-bold mb-2">Want to boost your chances?</h3>
                    <p className="text-indigo-100 text-sm mb-6 leading-relaxed">
                      Get direct interview slots and expert mock interview practice with our Premium plans.
@@ -381,12 +385,12 @@ export default function JobDetailsPage() {
             <section className="mt-16 pt-12 border-t border-slate-200">
               <h2 className="text-xl font-bold text-slate-900 mb-2">More opportunities</h2>
               <p className="text-slate-600 text-sm mb-6">Explore other open positions</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
                 {otherJobs.map((j) => (
                   <Link
                     key={j.id}
                     to={`/jobs/${j.id}`}
-                    className="block bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group"
+                    className="block min-w-0 max-w-full bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group overflow-hidden"
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex flex-wrap gap-2">

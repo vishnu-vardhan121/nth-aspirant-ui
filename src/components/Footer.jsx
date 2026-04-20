@@ -7,7 +7,7 @@ const FOOTER_LINKS = [
   { label: 'Guarantee', to: '/guarantee' },
   { label: 'Login', to: '/login' },
   { label: 'How it works', to: '/#how-it-works' },
-  { label: 'Contact', to: 'mailto:contact@nth.example.com' },
+  { label: 'Contact', to: 'mailto:bollipallinaveen0@gmail.com' },
 ];
 
 export default function Footer() {

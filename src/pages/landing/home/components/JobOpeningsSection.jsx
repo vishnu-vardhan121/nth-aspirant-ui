@@ -1,170 +1,146 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { HiMapPin, HiLockClosed, HiBriefcase, HiArrowRight, HiOutlineBookmark } from 'react-icons/hi2';
+/**
+ * JobOpeningsSection — shared by landing (`variant="landing"`) and `/jobs` (`variant="directory"`).
+ * Landing uses the original NTH Connect–aligned layout; directory reuses the same cards/grid with a full list.
+ */
+
+import { Link, useLocation } from 'react-router-dom';
+import { HiMapPin, HiSparkles, HiLockClosed, HiBriefcase, HiArrowRight } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
 import { PageLoader } from '../../../../components/ui/Loader';
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../../store/hooks';
 import { supabase } from '../../../../lib/supabase';
 
-function JobCard({ job, isAuthenticated, pricingTo }) {
-  const navigate = useNavigate();
+function JobCardLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingTo }) {
   const isFree = job.isFree;
+  const isHovered = hoveredId === job.id;
   const canView = isFree || isAuthenticated;
-  const [applying, setApplying] = useState(false);
-
-  const handleApply = async () => {
-    if (job.isExpired || applying) return;
-
-    const rawLink = job.applyLink && String(job.applyLink).trim();
-    if (rawLink?.startsWith('http')) {
-      window.open(rawLink, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // Free roles: public apply on the job page (guests were wrongly sent to /dashboard/jobs).
-    if (job.isFree) {
-      navigate(`/jobs/${job.id}`);
-      return;
-    }
-
-    if (!isAuthenticated) return;
-
-    setApplying(true);
-    const { data } = await supabase.rpc('record_application', { p_job_id: job.id });
-    setApplying(false);
-    if (data?.ok) {
-      if (rawLink?.startsWith('/')) {
-        navigate(rawLink);
-      } else {
-        navigate('/dashboard/jobs');
-      }
-    } else {
-      navigate(`/jobs/${job.id}`);
-    }
-  };
 
   return (
-    <article className="group flex flex-col bg-white rounded-[16px] p-6 sm:p-7 border border-slate-200/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_-4px_rgba(0,0,0,0.1)] hover:-translate-y-1 transition-all duration-300 relative h-full">
-      
-      {/* Top row: Title and Badge/Bookmark */}
-      <div className="flex items-start justify-between gap-4 mb-4">
-        <div className="flex-1">
-           <Link to={canView ? `/jobs/${job.id}` : pricingTo} className="inline-block">
-             <h3 className="text-[19px] sm:text-[21px] font-bold text-slate-900 leading-tight group-hover:text-indigo-600 transition-colors line-clamp-2">
-               {job.title}
-             </h3>
-           </Link>
-           {/* Company Info directly under title */}
-           <div className="flex items-center gap-2.5 mt-3">
-             <div className="w-7 h-7 rounded bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 shadow-sm">
-               <span className="text-[12px] font-extrabold text-slate-700 leading-none">
-                 {job.company.charAt(0).toUpperCase()}
-               </span>
-             </div>
-             <span className="text-[14px] font-semibold text-slate-800">{job.company}</span>
-           </div>
-        </div>
-
-        <div className="flex flex-col items-end gap-2.5 shrink-0 pt-1">
-          <button type="button" className="text-slate-300 hover:text-indigo-600 transition-colors" aria-label="Bookmark">
-            <HiOutlineBookmark className="w-5 h-5" />
-          </button>
+    <article
+      className={`relative group rounded-2xl overflow-hidden flex flex-col h-full bg-white border transition-all duration-300 ${
+        isFree ? 'border-indigo-100 hover:border-indigo-200' : 'border-violet-100 hover:border-violet-200'
+      } ${isHovered ? 'shadow-xl shadow-slate-200/50 -translate-y-0.5' : 'shadow-sm hover:shadow-lg'}`}
+      onMouseEnter={() => setHoveredId(job.id)}
+      onMouseLeave={() => setHoveredId(null)}
+    >
+      <div className="p-4 sm:p-5 lg:p-5 xl:p-5 flex flex-col h-full min-w-0">
+        <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
           {isFree ? (
-            <span className="inline-flex items-center px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold uppercase tracking-wide">
-              Free Tier
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">
+              <HiSparkles className="w-3.5 h-3.5 shrink-0" />
+              Free
             </span>
           ) : (
-            <span className="inline-flex items-center px-2 py-0.5 rounded bg-violet-50 text-violet-700 border border-violet-100 text-[10px] font-bold uppercase tracking-wide">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-100 text-violet-700 text-xs font-semibold">
+              <HiBriefcase className="w-3.5 h-3.5 shrink-0" />
               Premium
             </span>
           )}
+          <span className="text-xs font-semibold text-slate-800 text-right shrink-0 max-w-[50%] truncate">
+            {job.experience}
+          </span>
         </div>
-      </div>
 
-      {/* Meta Data aligned neatly */}
-      <div className="flex flex-wrap items-center gap-y-3 gap-x-5 mb-5 mt-1">
-        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <HiMapPin className="w-4 h-4 text-slate-400" />
-          {job.city || 'Remote'}
-        </div>
-        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <HiBriefcase className="w-4 h-4 text-slate-400" />
-          {job.experience}
-        </div>
-        {job.applicationDeadline && (
-          <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-             <span className="flex items-center justify-center shrink-0">
-               <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-               </svg>
-             </span>
-             Apply by {job.applicationDeadline}
-          </div>
-        )}
-      </div>
+        <h3 className="text-base sm:text-lg font-bold text-slate-900 mb-1.5 sm:mb-2 leading-tight line-clamp-2 min-w-0">
+          {job.title}
+        </h3>
 
-      {/* Tags */}
-      {job.requirements?.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6 mt-auto">
-          {job.requirements.slice(0, 3).map(req => (
-            <span key={req} className="px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-100 rounded-md text-[11px] font-semibold">
-              {req}
-            </span>
-          ))}
-          {job.requirements.length > 3 && (
-            <span className="px-2.5 py-1 bg-slate-50 text-slate-600 border border-slate-100 rounded-md text-[11px] font-semibold">
-              +{job.requirements.length - 3}
-            </span>
+        <div className="mb-3 sm:mb-4 space-y-1 sm:space-y-1.5 min-w-0">
+          {canView ? (
+            <p className="text-xs sm:text-sm font-semibold text-indigo-700 truncate">{job.company}</p>
+          ) : (
+            <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-100">
+              <HiLockClosed className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <p className="text-xs text-slate-600 font-medium">Premium Members Only</p>
+            </div>
+          )}
+          {job.city && job.city !== '—' && (
+            <p className="text-xs sm:text-sm text-slate-700 flex items-center gap-1.5 min-w-0">
+              <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
+              <span className="truncate">{job.city}</span>
+            </p>
+          )}
+          {job.applicationDeadline && (
+            <p className="text-xs text-slate-600">Apply by {job.applicationDeadline}</p>
           )}
         </div>
-      )}
 
-      {/* Action */}
-      <div className="pt-5 border-t border-slate-100 mt-auto">
-        {job.isExpired ? (
-          <button disabled className="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-200 rounded-[10px] cursor-not-allowed">
-            Applications Closed
-          </button>
-        ) : canView ? (
-          <button
-            onClick={(e) => { e.preventDefault(); handleApply(); }}
-            disabled={applying}
-            className="w-full inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-[12px] shadow-sm shadow-indigo-600/20 transition-all focus:ring-4 focus:ring-indigo-100 disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {applying ? 'Applying...' : 'Apply Now'}
-          </button>
-        ) : (
-          <Link
-            to={pricingTo}
-            className="w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-semibold text-indigo-700 bg-white border-2 border-indigo-100 hover:bg-indigo-50 rounded-[12px] shadow-sm transition-all focus:ring-4 focus:ring-indigo-50"
-          >
-            <HiLockClosed className="w-4 h-4 text-indigo-500" />
-            Unlock Position
-          </Link>
+        {job.requirements?.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-auto mb-3 sm:mb-4">
+            {job.requirements.slice(0, 3).map((req) => (
+              <span
+                key={req}
+                className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 text-xs font-medium border border-slate-100"
+              >
+                {req}
+              </span>
+            ))}
+            {job.requirements.length > 3 && (
+              <span className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-600 text-xs font-medium">
+                +{job.requirements.length - 3}
+              </span>
+            )}
+          </div>
         )}
+
+        <div className="mt-auto pt-3 sm:pt-4 border-t border-slate-100">
+          {job.isExpired ? (
+            <div className="w-full text-center px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-100 cursor-not-allowed">
+              Application closed
+            </div>
+          ) : canView ? (
+            isFree ? (
+              <Link
+                to={`/jobs/${job.id}`}
+                className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+              >
+                Apply Now
+              </Link>
+            ) : (
+              <Link
+                to={pricingTo}
+                className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm bg-violet-600 hover:bg-violet-700 text-white transition-colors"
+              >
+                View Plans to Apply
+              </Link>
+            )
+          ) : (
+            <Link
+              to={pricingTo}
+              className="flex items-center justify-center gap-2 w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors"
+            >
+              <HiLockClosed className="w-4 h-4" />
+              Unlock Position
+            </Link>
+          )}
+        </div>
       </div>
     </article>
   );
 }
 
 export default function JobOpeningsSection({
+  /** `landing` = original home section look; `directory` = `/jobs` full list, same chrome. */
+  variant = 'landing',
   previewLimit = null,
   viewAllTo = null,
   hideWhenEmpty = true,
 } = {}) {
   const location = useLocation();
+  const [hoveredId, setHoveredId] = useState(null);
   const [activeTab, setActiveTab] = useState('free');
   const [landingJobs, setLandingJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const isAuthenticated = useAppSelector((state) => !!state.auth.user);
   const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
+  const isDirectory = variant === 'directory';
 
   useEffect(() => {
     const formatDate = (dateStr) => {
       if (!dateStr) return null;
       const d = new Date(dateStr);
-      // More professional format: e.g. "2 days ago" simulation or clean "Apr 19"
-      return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+      return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     };
     const isExpired = (deadlineStr) => {
       if (!deadlineStr) return false;
@@ -174,8 +150,7 @@ export default function JobOpeningsSection({
       deadline.setHours(0, 0, 0, 0);
       return today > deadline;
     };
-    
-    const fetch = async () => {
+    const fetchJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
         .select('id, title, company_name, location, audience_tracks, allowed_plans, application_deadline, walk_in_date, address, apply_link')
@@ -196,7 +171,7 @@ export default function JobOpeningsSection({
           return {
             id: j.id,
             title: j.title,
-            company: j.company_name ?? 'Confidential',
+            company: j.company_name ?? '',
             city: j.location ?? '—',
             experience: experienceLabel,
             requirements: [],
@@ -211,7 +186,7 @@ export default function JobOpeningsSection({
       }
       setLoading(false);
     };
-    fetch();
+    fetchJobs();
   }, []);
 
   const hasFresherJobs = landingJobs.some((j) => j.experience === 'Fresher' || j.experience === 'Fresher & Experienced');
@@ -254,103 +229,153 @@ export default function JobOpeningsSection({
         : experienceFilteredJobs.length > previewLimit),
   );
 
-  // Derived empty states
   if (!loading && landingJobs.length === 0 && hideWhenEmpty) {
     return null;
   }
 
-  return (
-    <section id="job-openings" className="bg-gradient-to-b from-slate-50/50 to-white py-20 sm:py-28 font-sans border-t border-slate-100">
-      <SectionContainer className="max-w-[1100px] mx-auto px-4 sm:px-6">
-        
-        {/* Top Hero Section */}
-        <div className="text-center mb-16 sm:mb-20">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50/80 border border-indigo-100 mb-6 shadow-sm">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-            </span>
-            <span className="text-sm font-semibold text-indigo-700 tracking-wide">Actively Hiring</span>
-          </div>
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 mb-6">
-            Open <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Positions</span>
-          </h2>
-          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
-            Explore curated roles from top organizations. Find your next career move and apply immediately.
-          </p>
+  const sectionY = isDirectory
+    ? 'pt-2 pb-10 sm:pb-12 md:pb-14'
+    : 'py-10 sm:py-12 md:py-14 lg:py-12 xl:py-14';
 
-          {/* Filter Chips */}
-          {showTabSelector && (
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+  const jobGridClass = isDirectory
+    ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 w-full max-w-6xl mx-auto'
+    /* Landing: max 3 cols from lg+ so six previews layout as 3+3 (avoid xl:4 → 4+2). */
+    : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 lg:gap-6';
+
+  return (
+    <section
+      id="job-openings"
+      className={`relative scroll-mt-24 bg-gradient-to-b from-indigo-50/60 via-white to-slate-50/60 ${sectionY} overflow-x-clip overflow-y-visible`}
+    >
+      <div className="absolute inset-0 opacity-30 pointer-events-none">
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: 'radial-gradient(circle at 2px 2px, rgb(99 102 241 / 0.1) 1px, transparent 0)',
+            backgroundSize: '28px 28px',
+          }}
+        />
+      </div>
+
+      <SectionContainer useGrid wider className="relative z-10">
+        <div className="col-span-full text-center px-4 sm:px-6">
+          <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-indigo-100 text-indigo-900 text-xs sm:text-sm font-semibold mb-3">
+            <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-indigo-500 animate-pulse" />
+            {isDirectory ? 'All openings' : 'Currently Hiring'}
+          </div>
+          <h2 className="text-lg min-[375px]:text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-4xl font-bold text-slate-900 tracking-tight mb-2 leading-tight">
+            {isDirectory ? (
+              <>
+                Browse every{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+                  open position
+                </span>
+              </>
+            ) : (
+              <>
+                Find your next{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">
+                  career opportunity
+                </span>
+              </>
+            )}
+          </h2>
+          <p className="text-slate-700 max-w-xl xl:max-w-2xl mx-auto text-sm sm:text-base md:text-lg leading-relaxed">
+            {isDirectory
+              ? 'Same curated roles as the home page—free and premium—in one place.'
+              : 'Hand-picked positions from innovative companies. Your perfect role is waiting.'}
+          </p>
+        </div>
+
+        {showTabSelector && (
+          <div className="col-span-full flex justify-center px-4 sm:px-6">
+            <div className="inline-flex p-1 rounded-xl bg-white/90 border border-slate-200/80 shadow-sm">
               {['free', 'premium'].map((tab) => (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 rounded-full text-sm font-semibold transition-all duration-200 capitalize ${
+                  className={`relative px-4 sm:px-5 lg:px-6 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 capitalize ${
                     activeTab === tab
-                      ? 'bg-slate-900 text-white shadow-md'
-                      : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-800 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  {tab === 'free' ? 'All Free Tier' : 'Premium Only'}
+                  {tab === 'free' ? (
+                    <span className="flex items-center gap-2">
+                      <HiSparkles className="w-4 h-4" />
+                      {tab}
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      <HiBriefcase className="w-4 h-4" />
+                      {tab}
+                    </span>
+                  )}
                 </button>
               ))}
+            </div>
+          </div>
+        )}
+
+        <div className="col-span-full px-4 sm:px-6 lg:px-0">
+          {loading ? (
+            <div className="flex justify-center py-10 sm:py-12">
+              <PageLoader size="lg" label="Loading jobs…" variant="dots" />
+            </div>
+          ) : landingJobs.length === 0 ? (
+            <div className="col-span-full text-center py-10 sm:py-12 px-4">
+              <div className="inline-flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 max-w-md mx-auto shadow-sm">
+                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                  <HiBriefcase className="w-7 h-7 text-slate-500" />
+                </div>
+                <p className="text-slate-700 font-medium">No positions available right now</p>
+                <p className="text-slate-600 text-sm">Check back soon for new opportunities</p>
+              </div>
+            </div>
+          ) : (
+            <div key={activeTab} className={jobGridClass}>
+              {displayJobs.length > 0 ? (
+                displayJobs.map((job) => (
+                  <JobCardLanding
+                    key={job.id}
+                    job={job}
+                    hoveredId={hoveredId}
+                    setHoveredId={setHoveredId}
+                    isAuthenticated={isAuthenticated}
+                    pricingTo={pricingTo}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-10 sm:py-12 px-4">
+                  <div className="inline-flex flex-col items-center gap-3 sm:gap-4 p-6 sm:p-8 rounded-2xl bg-white border border-slate-200 max-w-md mx-auto shadow-sm">
+                    <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center">
+                      <HiBriefcase className="w-7 h-7 text-slate-500" />
+                    </div>
+                    <p className="text-slate-700 font-medium">
+                      {showTabSelector
+                        ? `No ${activeTab} positions available right now`
+                        : 'No positions available right now'}
+                    </p>
+                    <p className="text-slate-600 text-sm">Check back soon for new opportunities</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Grid Container */}
-        <div className="w-full">
-          {loading ? (
-             <div className="flex justify-center py-20">
-               <PageLoader size="lg" label="Loading opportunities…" variant="dots" />
-             </div>
-          ) : landingJobs.length === 0 ? (
-             <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-3xl border border-slate-100 shadow-sm max-w-2xl mx-auto">
-                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-5 border border-slate-100">
-                  <HiBriefcase className="w-8 h-8 text-slate-300" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">No positions available</h3>
-                <p className="text-slate-500 mt-2">There are currently no openings listed. Please check back later.</p>
-             </div>
-          ) : displayJobs.length > 0 ? (
-             <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 ${
-               displayJobs.length <= 4 ? 'max-w-4xl mx-auto' : 'w-full'
-             }`}>
-               {displayJobs.map(job => (
-                 <JobCard 
-                   key={job.id} 
-                   job={job} 
-                   isAuthenticated={isAuthenticated} 
-                   pricingTo={pricingTo} 
-                 />
-               ))}
-             </div>
-          ) : (
-             <div className="flex flex-col items-center justify-center p-12 text-center bg-white rounded-[24px] border border-slate-100 shadow-sm max-w-2xl mx-auto">
-                <div className="w-16 h-16 bg-slate-50 rounded-[18px] flex items-center justify-center mb-5 border border-slate-100">
-                  <HiBriefcase className="w-8 h-8 text-slate-300" />
-                </div>
-                <h3 className="text-xl font-bold text-slate-800">No {activeTab} positions found</h3>
-                <p className="text-slate-500 mt-2">Try switching filters or check back later.</p>
-             </div>
-          )}
-        </div>
-
-        {/* View All */}
         {showViewAll && (
-           <div className="mt-14 flex justify-center">
-             <Link 
-               to={viewAllTo}
-               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-all shadow-sm focus:ring-4 focus:ring-slate-100"
-             >
-               View all positions
-               <HiArrowRight className="w-4 h-4" />
-             </Link>
-           </div>
+          <div className="col-span-full flex justify-center px-4 sm:px-6 pt-6 sm:pt-8 pb-1">
+            <Link
+              to={viewAllTo}
+              className="group inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 sm:px-8 sm:py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-600/25 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-600/30 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              View all jobs
+              <HiArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+          </div>
         )}
-
       </SectionContainer>
     </section>
   );

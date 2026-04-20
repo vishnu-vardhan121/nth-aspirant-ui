@@ -13,8 +13,8 @@ export default function PublicJobsPage() {
         ogImage="/hero-section/hero-image.jpg"
       />
       <Navbar />
-      <main>
-        <JobOpeningsSection hideWhenEmpty={false} />
+      <main className="pt-24 sm:pt-28 min-w-0">
+        <JobOpeningsSection variant="directory" hideWhenEmpty={false} />
       </main>
       <Footer />
     </div>
