@@ -14,6 +14,7 @@ import {
   HiChatBubbleLeftRight,
   HiGlobeAlt,
   HiTrash,
+  HiPencilSquare,
 } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -333,6 +334,8 @@ export default function AdminJobApplicantsPage() {
   const [noticeBody, setNoticeBody] = useState('');
   const [noticeBusy, setNoticeBusy] = useState(false);
   const [noticeMessage, setNoticeMessage] = useState({ type: '', text: '' });
+  const [editingNoticeId, setEditingNoticeId] = useState(null);
+  const [editingNoticeBody, setEditingNoticeBody] = useState('');
   const [spotlightModalOpen, setSpotlightModalOpen] = useState(false);
 
   useEffect(() => {
@@ -497,12 +500,61 @@ export default function AdminJobApplicantsPage() {
   const deleteLandingNotice = async (noticeId) => {
     if (!jobId) return;
     setNoticeMessage({ type: '', text: '' });
+    if (editingNoticeId === noticeId) {
+      setEditingNoticeId(null);
+      setEditingNoticeBody('');
+    }
     const { error } = await supabase.from('job_landing_notices').delete().eq('id', noticeId);
     if (error) {
       setNoticeMessage({ type: 'error', text: error.message ?? 'Could not delete notice.' });
       return;
     }
     setLandingNotices((prev) => prev.filter((n) => n.id !== noticeId));
+  };
+
+  const saveLandingNoticeEdit = async () => {
+    if (!jobId || !editingNoticeId) return;
+    const t = editingNoticeBody.trim();
+    if (!t) {
+      setNoticeMessage({ type: 'error', text: 'Notice text cannot be empty.' });
+      return;
+    }
+    setNoticeMessage({ type: '', text: '' });
+    setNoticeBusy(true);
+    const { data, error } = await supabase
+      .from('job_landing_notices')
+      .update({ body: t })
+      .eq('id', editingNoticeId)
+      .eq('job_id', jobId)
+      .select('id, body, created_at')
+      .single();
+    setNoticeBusy(false);
+    if (error) {
+      setNoticeMessage({ type: 'error', text: error.message ?? 'Could not update notice.' });
+      return;
+    }
+    if (data) {
+      setLandingNotices((prev) => prev.map((n) => (n.id === data.id ? { ...n, body: data.body } : n)));
+      setEditingNoticeId(null);
+      setEditingNoticeBody('');
+      setNoticeMessage({ type: 'success', text: 'Notice updated.' });
+    }
+  };
+
+  const startEditLandingNotice = (n) => {
+    setNoticeMessage({ type: '', text: '' });
+    setEditingNoticeId(n.id);
+    setEditingNoticeBody(n.body ?? '');
+  };
+
+  const cancelEditLandingNotice = () => {
+    setEditingNoticeId(null);
+    setEditingNoticeBody('');
+  };
+
+  const closeSpotlightModal = () => {
+    cancelEditLandingNotice();
+    setSpotlightModalOpen(false);
   };
 
   if (!jobId) return null;
@@ -758,13 +810,13 @@ export default function AdminJobApplicantsPage() {
       )}
       {spotlightModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/60" aria-hidden onClick={() => setSpotlightModalOpen(false)} />
+          <div className="absolute inset-0 bg-slate-900/60" aria-hidden onClick={closeSpotlightModal} />
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Home page spotlight controls</h2>
               <button
                 type="button"
-                onClick={() => setSpotlightModalOpen(false)}
+                onClick={closeSpotlightModal}
                 className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 aria-label="Close spotlight controls"
               >
@@ -846,27 +898,71 @@ export default function AdminJobApplicantsPage() {
               {landingNotices.length > 0 ? (
                 <ul className="mt-4 divide-y divide-slate-100 rounded-xl border border-slate-100">
                   {landingNotices.map((n) => (
-                    <li key={n.id} className="flex gap-3 p-3 text-sm">
+                    <li key={n.id} className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:gap-3">
                       <div className="min-w-0 flex-1">
-                        <p className="text-slate-900 whitespace-pre-wrap">{n.body}</p>
-                        <p className="mt-1 text-xs text-slate-500">
-                          {new Date(n.created_at).toLocaleString('en-IN', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
+                        {editingNoticeId === n.id ? (
+                          <div className="space-y-2">
+                            <textarea
+                              value={editingNoticeBody}
+                              onChange={(e) => setEditingNoticeBody(e.target.value)}
+                              rows={4}
+                              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none resize-y min-h-24"
+                              aria-label="Edit notice text"
+                            />
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={saveLandingNoticeEdit}
+                                disabled={noticeBusy || !editingNoticeBody.trim()}
+                                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-indigo-700 disabled:opacity-50"
+                              >
+                                {noticeBusy ? 'Saving…' : 'Save changes'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEditLandingNotice}
+                                disabled={noticeBusy}
+                                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <p className="text-slate-900 whitespace-pre-wrap">{n.body}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {new Date(n.created_at).toLocaleString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
+                          </>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => deleteLandingNotice(n.id)}
-                        className="shrink-0 self-start rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
-                        aria-label="Delete notice"
-                      >
-                        <HiTrash className="h-4 w-4" />
-                      </button>
+                      {editingNoticeId !== n.id ? (
+                        <div className="flex shrink-0 items-start gap-1 self-end sm:self-start">
+                          <button
+                            type="button"
+                            onClick={() => startEditLandingNotice(n)}
+                            className="rounded-lg p-2 text-slate-400 hover:bg-indigo-50 hover:text-indigo-700"
+                            aria-label="Edit notice"
+                          >
+                            <HiPencilSquare className="h-4 w-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteLandingNotice(n.id)}
+                            className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                            aria-label="Delete notice"
+                          >
+                            <HiTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      ) : null}
                     </li>
                   ))}
                 </ul>

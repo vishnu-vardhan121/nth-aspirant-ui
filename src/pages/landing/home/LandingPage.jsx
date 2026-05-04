@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
@@ -12,7 +12,7 @@ import MoneyBackGuaranteeSection from './components/MoneyBackGuaranteeSection';
 import ApplicationSection from './components/ApplicationSection';
 import EarlyAccessLandingSection from './components/EarlyAccessLandingSection';
 import CTAStrip from './components/CTAStrip';
-import InstituteAdModal from './components/InstituteAdModal';
+import InstituteAdModal, { LANDING_INSTITUTE_AD_DISMISS_KEY } from './components/InstituteAdModal';
 import Seo from '../../../components/Seo';
 
 const LANDING_CLASS = 'nth-landing-page';
@@ -23,6 +23,7 @@ const AD_SCROLL_THRESHOLD_PX = 500;
 
 export default function LandingPage() {
   const [activeAd, setActiveAd] = useState(null);
+  const [adFetchComplete, setAdFetchComplete] = useState(false);
   const [instituteAdOpen, setInstituteAdOpen] = useState(false);
   const [adDelayPassed, setAdDelayPassed] = useState(false);
   const [adScrollPassed, setAdScrollPassed] = useState(false);
@@ -42,12 +43,16 @@ export default function LandingPage() {
     let cancelled = false;
 
     (async () => {
-      const { data } = await supabase
-        .from('institute_ads')
-        .select('id, institute_name, image_url, link_url')
-        .eq('is_active', true)
-        .maybeSingle();
-      if (!cancelled) setActiveAd(data ?? null);
+      try {
+        const { data } = await supabase
+          .from('institute_ads')
+          .select('id, institute_name, image_url, link_url')
+          .eq('is_active', true)
+          .maybeSingle();
+        if (!cancelled) setActiveAd(data ?? null);
+      } finally {
+        if (!cancelled) setAdFetchComplete(true);
+      }
     })();
 
     return () => {
@@ -73,10 +78,28 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (adHasOpenedRef.current || !activeAd || !adDelayPassed || !adScrollPassed) return;
+    if (adHasOpenedRef.current || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
+    if (!activeAd) {
+      try {
+        if (typeof window !== 'undefined' && window.localStorage.getItem(LANDING_INSTITUTE_AD_DISMISS_KEY) === '1') return;
+      } catch {
+        /* ignore */
+      }
+    }
     adHasOpenedRef.current = true;
     setInstituteAdOpen(true);
-  }, [activeAd, adDelayPassed, adScrollPassed]);
+  }, [activeAd, adFetchComplete, adDelayPassed, adScrollPassed]);
+
+  const handleAdModalClose = useCallback((opts) => {
+    setInstituteAdOpen(false);
+    if (opts?.dontShowAgain) {
+      try {
+        window.localStorage.setItem(LANDING_INSTITUTE_AD_DISMISS_KEY, '1');
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
@@ -109,9 +132,17 @@ export default function LandingPage() {
       </div>
 
       <InstituteAdModal
-        open={instituteAdOpen && !!activeAd}
-        onClose={() => setInstituteAdOpen(false)}
-        ad={activeAd ? { imageUrl: activeAd.image_url, linkUrl: activeAd.link_url || '', sponsorLabel: activeAd.institute_name } : null}
+        open={instituteAdOpen && adFetchComplete}
+        onClose={handleAdModalClose}
+        ad={
+          activeAd
+            ? {
+                imageUrl: activeAd.image_url,
+                linkUrl: activeAd.link_url || '',
+                sponsorLabel: activeAd.institute_name,
+              }
+            : { isFallback: true }
+        }
       />
     </div>
   );

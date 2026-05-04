@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi2';
 import { useAppSelector } from '../../store/hooks';
 import { supabase } from '../../lib/supabase';
+import { buildApplicationDeadlineAtIsoIst } from '../../lib/jobApplicationDeadline';
 import {
   jobCheckboxClass,
   jobHintClass,
@@ -27,6 +28,7 @@ const defaultForm = {
   salary_range: '',
   apply_link: '',
   application_deadline: '',
+  application_deadline_time: '',
   walk_in_date: '',
   audience_tracks: ['fresher'],
   job_tier: 'free',
@@ -36,6 +38,7 @@ const defaultForm = {
   application_limit: '',
   hiring_spotlight: false,
   hiring_spotlight_order: 100,
+  key_skills: '',
 };
 
 const JOB_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
@@ -131,6 +134,10 @@ export default function CreateJobPage() {
     }
     setSubmitting(true);
     try {
+      const keySkillsParsed = String(form.key_skills ?? '')
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const { error } = await supabase.from('jobs').insert({
         created_by: currentAdmin?.id ?? null,
         title: titleT,
@@ -142,6 +149,9 @@ export default function CreateJobPage() {
         salary_range: form.salary_range.trim() || null,
         apply_link: applyT ? (applyT.startsWith('http') ? applyT : `https://${applyT}`) : null,
         application_deadline: form.application_deadline || null,
+        application_deadline_at: form.application_deadline
+          ? buildApplicationDeadlineAtIsoIst(form.application_deadline, form.application_deadline_time)
+          : null,
         walk_in_date: form.walk_in_date || null,
         audience_tracks: form.audience_tracks,
         allowed_plans: form.job_tier === 'premium' && form.allowed_plans.length ? form.allowed_plans : null,
@@ -157,6 +167,7 @@ export default function CreateJobPage() {
           const n = parseInt(s, 10);
           return Number.isFinite(n) ? n : null;
         })(),
+        key_skills: keySkillsParsed.length ? keySkillsParsed : [],
       });
       if (error) throw error;
       try {
@@ -249,6 +260,17 @@ export default function CreateJobPage() {
                 placeholder="Role summary, expectations, stack…"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Key skills (landing page)</label>
+              <p className={jobHintClass}>Comma-separated tags shown on the public home jobs section (e.g. Linux, AWS, Docker).</p>
+              <input
+                type="text"
+                value={form.key_skills}
+                onChange={(e) => setForm((p) => ({ ...p, key_skills: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. DevOps, Kubernetes, CI/CD"
+              />
+            </div>
           </div>
         </section>
 
@@ -313,7 +335,21 @@ export default function CreateJobPage() {
                 onChange={(e) => setForm((p) => ({ ...p, application_deadline: e.target.value }))}
                 className={jobInputClass}
               />
-              <p className={jobHintClass}>After this date, the public job page treats applications as closed.</p>
+              <p className={jobHintClass}>
+                After this instant (IST), the public job page treats applications as closed. Leave time empty for
+                end of that day (11:59:59 PM IST).
+              </p>
+            </div>
+            <div>
+              <label className={jobLabelClass}>Apply closes at (IST, optional)</label>
+              <input
+                type="time"
+                value={form.application_deadline_time}
+                onChange={(e) => setForm((p) => ({ ...p, application_deadline_time: e.target.value }))}
+                disabled={!form.application_deadline}
+                className={jobInputClass}
+              />
+              <p className={jobHintClass}>Wall clock in India. Only used when a last apply date is set.</p>
             </div>
             <div>
               <label className={jobLabelClass}>Walk-in date</label>

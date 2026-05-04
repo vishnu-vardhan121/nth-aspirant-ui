@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { HiArrowLeft } from 'react-icons/hi2';
 import { supabase } from '../../lib/supabase';
+import { buildApplicationDeadlineAtIsoIst, parseDeadlineAtForForm } from '../../lib/jobApplicationDeadline';
 import { PageLoader, ButtonLoader } from '../../components/ui/Loader';
 import {
   jobCheckboxClass,
@@ -51,6 +52,7 @@ export default function EditJobPage() {
     salary_range: '',
     apply_link: '',
     application_deadline: '',
+    application_deadline_time: '',
     walk_in_date: '',
     audience_tracks: ['fresher'],
     job_tier: 'free',
@@ -58,6 +60,7 @@ export default function EditJobPage() {
     show_on_landing: false,
     status: 'open',
     application_limit: '',
+    key_skills: '',
   });
 
   const toggleTrack = (track) => {
@@ -92,6 +95,9 @@ export default function EditJobPage() {
         return;
       }
       if (data) {
+        const deadlineParts = data.application_deadline_at
+          ? parseDeadlineAtForForm(data.application_deadline_at)
+          : { date: data.application_deadline ?? '', time: '' };
         setForm({
           title: data.title ?? '',
           company_name: data.company_name ?? '',
@@ -101,7 +107,8 @@ export default function EditJobPage() {
           job_type: data.job_type ?? 'Full-time',
           salary_range: data.salary_range ?? '',
           apply_link: data.apply_link ?? '',
-          application_deadline: data.application_deadline ?? '',
+          application_deadline: deadlineParts.date,
+          application_deadline_time: deadlineParts.time,
           walk_in_date: data.walk_in_date ?? '',
           audience_tracks: Array.isArray(data.audience_tracks) && data.audience_tracks.length ? data.audience_tracks : ['fresher'],
           job_tier: (data.allowed_plans && data.allowed_plans.length) ? 'premium' : 'free',
@@ -109,6 +116,9 @@ export default function EditJobPage() {
           show_on_landing: data.show_on_landing ?? false,
           status: data.status ?? 'open',
           application_limit: data.application_limit ?? '',
+          key_skills: Array.isArray(data.key_skills) && data.key_skills.length
+            ? data.key_skills.join(', ')
+            : '',
         });
       }
       setLoading(false);
@@ -145,6 +155,10 @@ export default function EditJobPage() {
     }
     setSubmitting(true);
     try {
+      const keySkillsParsed = String(form.key_skills ?? '')
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const { error } = await supabase
         .from('jobs')
         .update({
@@ -157,6 +171,9 @@ export default function EditJobPage() {
           salary_range: form.salary_range.trim() || null,
           apply_link: applyT ? (applyT.startsWith('http') ? applyT : `https://${applyT}`) : null,
           application_deadline: form.application_deadline || null,
+          application_deadline_at: form.application_deadline
+            ? buildApplicationDeadlineAtIsoIst(form.application_deadline, form.application_deadline_time)
+            : null,
           walk_in_date: form.walk_in_date || null,
           audience_tracks: form.audience_tracks,
           allowed_plans: form.job_tier === 'premium' && form.allowed_plans.length ? form.allowed_plans : null,
@@ -168,6 +185,7 @@ export default function EditJobPage() {
             const n = parseInt(s, 10);
             return Number.isFinite(n) ? n : null;
           })(),
+          key_skills: keySkillsParsed.length ? keySkillsParsed : [],
         })
         .eq('id', id);
       if (error) throw error;
@@ -241,6 +259,17 @@ export default function EditJobPage() {
                 placeholder="Role summary, expectations, stack…"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Key skills (landing page)</label>
+              <p className={jobHintClass}>Comma-separated tags shown on the public home jobs section.</p>
+              <input
+                type="text"
+                value={form.key_skills}
+                onChange={(e) => setForm((p) => ({ ...p, key_skills: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. DevOps, Kubernetes, CI/CD"
+              />
+            </div>
           </div>
         </section>
 
@@ -303,6 +332,19 @@ export default function EditJobPage() {
                 type="date"
                 value={form.application_deadline}
                 onChange={(e) => setForm((p) => ({ ...p, application_deadline: e.target.value }))}
+                className={jobInputClass}
+              />
+              <p className={jobHintClass}>
+                Leave time empty for end of that day (11:59:59 PM IST). Times are wall clock in India (IST).
+              </p>
+            </div>
+            <div>
+              <label className={jobLabelClass}>Apply closes at (IST, optional)</label>
+              <input
+                type="time"
+                value={form.application_deadline_time}
+                onChange={(e) => setForm((p) => ({ ...p, application_deadline_time: e.target.value }))}
+                disabled={!form.application_deadline}
                 className={jobInputClass}
               />
             </div>

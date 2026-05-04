@@ -21,6 +21,13 @@ const WORK_MODES = [
   { value: 'any', label: 'Any' },
 ];
 
+/** Tri-state filter: empty = no filter, yes/no = match boolean column */
+const YES_NO_ANY = [
+  { value: '', label: 'Any' },
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+];
+
 function formatDate(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -132,7 +139,18 @@ function CandidateDetailModal({ row, onClose, onSaved }) {
             <DetailRow label="Phone" value={row.phone} />
             <DetailRow label="City" value={row.city} />
             <DetailRow label="Country" value={row.country} />
-            <DetailRow label="Relocate" value={row.willing_to_relocate ? 'Yes' : 'No'} />
+            <DetailRow
+              label="Open to relocating for the right role"
+              value={row.willing_to_relocate ? 'Yes' : 'No'}
+            />
+            <DetailRow
+              label="Ready to attend interview in Hyderabad"
+              value={row.ready_interview_hyderabad ? 'Yes' : 'No'}
+            />
+            <DetailRow
+              label="Ready to attend interview in Bangalore"
+              value={row.ready_interview_bangalore ? 'Yes' : 'No'}
+            />
             <DetailRow label="Fresher" value={row.is_fresher ? 'Yes' : 'No'} />
             <DetailRow label="Years exp." value={row.years_experience} />
             <DetailRow label="Employment" value={row.employment_status} />
@@ -258,6 +276,9 @@ export default function AdminTalentPoolPage() {
   const [yearsMax, setYearsMax] = useState('');
   const [commMin, setCommMin] = useState('');
   const [searchText, setSearchText] = useState('');
+  const [relocateFilter, setRelocateFilter] = useState('');
+  const [hydInterviewFilter, setHydInterviewFilter] = useState('');
+  const [blrInterviewFilter, setBlrInterviewFilter] = useState('');
 
   const loadRows = useCallback(async () => {
     setLoading(true);
@@ -266,6 +287,13 @@ export default function AdminTalentPoolPage() {
     if (statusFilter) q = q.eq('status', statusFilter);
     if (workModeFilter) q = q.eq('work_mode', workModeFilter);
     if (cityFilter.trim()) q = q.ilike('city', `%${cityFilter.trim()}%`);
+
+    if (relocateFilter === 'yes') q = q.eq('willing_to_relocate', true);
+    if (relocateFilter === 'no') q = q.eq('willing_to_relocate', false);
+    if (hydInterviewFilter === 'yes') q = q.eq('ready_interview_hyderabad', true);
+    if (hydInterviewFilter === 'no') q = q.eq('ready_interview_hyderabad', false);
+    if (blrInterviewFilter === 'yes') q = q.eq('ready_interview_bangalore', true);
+    if (blrInterviewFilter === 'no') q = q.eq('ready_interview_bangalore', false);
 
     const yMin = yearsMin.trim() === '' ? null : Number(yearsMin);
     const yMax = yearsMax.trim() === '' ? null : Number(yearsMax);
@@ -294,19 +322,32 @@ export default function AdminTalentPoolPage() {
     setRows(list);
     setLoading(false);
     setSelected((prev) => (prev ? list.find((r) => r.id === prev.id) ?? prev : null));
-  }, [statusFilter, workModeFilter, cityFilter, skillsFilter, yearsMin, yearsMax, commMin, searchText]);
+  }, [
+    statusFilter,
+    workModeFilter,
+    cityFilter,
+    skillsFilter,
+    yearsMin,
+    yearsMax,
+    commMin,
+    searchText,
+    relocateFilter,
+    hydInterviewFilter,
+    blrInterviewFilter,
+  ]);
 
   useEffect(() => {
     loadRows();
   }, [loadRows]);
 
-  if (loading) return <PageLoader size="md" label="Loading talent pool…" className="py-12" />;
+  if (loading) return <PageLoader size="md" label="Loading profiles…" className="py-12" />;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Talent pool</h1>
+      <h1 className="text-2xl font-bold text-slate-900 mb-2">Candidate profiles (matching)</h1>
       <p className="text-slate-600 text-sm mb-6">
-        Candidates who joined from the landing page. Newest first. Filter by skills (comma-separated), experience, communication, and more.
+        Candidates who joined from the landing page. Newest first. Filter by skills (comma-separated), experience,
+        communication, relocation / interview location preferences, and more.
       </p>
 
       <div className="rounded-xl border border-slate-200 bg-white p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -401,6 +442,48 @@ export default function AdminTalentPoolPage() {
             max={10}
           />
         </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">Open to relocating (right role)</label>
+          <select
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+            value={relocateFilter}
+            onChange={(e) => setRelocateFilter(e.target.value)}
+          >
+            {YES_NO_ANY.map((o) => (
+              <option key={`rel-${o.value || 'any'}`} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">Ready to interview in Hyderabad</label>
+          <select
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+            value={hydInterviewFilter}
+            onChange={(e) => setHydInterviewFilter(e.target.value)}
+          >
+            {YES_NO_ANY.map((o) => (
+              <option key={`hyd-${o.value || 'any'}`} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-slate-500 mb-1">Ready to interview in Bangalore</label>
+          <select
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+            value={blrInterviewFilter}
+            onChange={(e) => setBlrInterviewFilter(e.target.value)}
+          >
+            {YES_NO_ANY.map((o) => (
+              <option key={`blr-${o.value || 'any'}`} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <p className="text-xs text-slate-500 mb-2">Showing up to 500 rows · sorted by newest first</p>
@@ -414,6 +497,7 @@ export default function AdminTalentPoolPage() {
                 <th className="px-4 py-3 font-semibold text-slate-700">Name</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Email</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Skills</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 whitespace-nowrap">HY / BLR</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Yrs</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Comm</th>
                 <th className="px-4 py-3 font-semibold text-slate-700">Status</th>
@@ -422,7 +506,7 @@ export default function AdminTalentPoolPage() {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                     No candidates match these filters.
                   </td>
                 </tr>
@@ -440,6 +524,15 @@ export default function AdminTalentPoolPage() {
                     </td>
                     <td className="px-4 py-3 text-slate-600 max-w-[220px] truncate" title={skillsToString(r.primary_skills)}>
                       {skillsToString(r.primary_skills)}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 whitespace-nowrap text-xs">
+                      <span className={r.ready_interview_hyderabad ? 'text-emerald-700 font-semibold' : 'text-slate-400'}>
+                        HYD{r.ready_interview_hyderabad ? ' ✓' : ''}
+                      </span>
+                      <span className="mx-1 text-slate-300">·</span>
+                      <span className={r.ready_interview_bangalore ? 'text-emerald-700 font-semibold' : 'text-slate-400'}>
+                        BLR{r.ready_interview_bangalore ? ' ✓' : ''}
+                      </span>
                     </td>
                     <td className="px-4 py-3 text-slate-600 tabular-nums">{r.years_experience ?? '—'}</td>
                     <td className="px-4 py-3 text-slate-600 tabular-nums">{r.communication_level}</td>

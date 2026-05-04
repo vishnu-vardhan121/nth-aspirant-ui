@@ -168,6 +168,8 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
   const [willingRelocate, setWillingRelocate] = useState(false);
+  const [readyInterviewHyderabad, setReadyInterviewHyderabad] = useState(false);
+  const [readyInterviewBangalore, setReadyInterviewBangalore] = useState(false);
   const [isFresher, setIsFresher] = useState(false);
   const [yearsExperience, setYearsExperience] = useState('');
   const [employmentStatus, setEmploymentStatus] = useState('working');
@@ -339,6 +341,8 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
       p_communication_level: comm,
       p_consent_given: true,
       p_consent_policy_version: 'v1',
+      p_ready_interview_hyderabad: readyInterviewHyderabad,
+      p_ready_interview_bangalore: readyInterviewBangalore,
       p_source: source,
     });
 
@@ -368,9 +372,9 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-400 to-teal-600 text-white">
           <HiCheckCircle className="h-9 w-9" aria-hidden />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">You&apos;re on our verified shortlist</h2>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">You&apos;re registered for matching</h2>
         <p className="mt-3 text-slate-600 leading-relaxed">
-          We&apos;ll reach out when a company needs someone with your profile. You can browse open roles anytime.
+          We&apos;ll contact you when a role fits your profile. You can still browse open jobs anytime.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
           <Link
@@ -510,7 +514,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
               placeholder="India"
             />
           </div>
-          <div className="col-span-full min-w-0 rounded-xl border border-slate-200/80 bg-slate-50/90 p-3 sm:p-4">
+          <div className="col-span-full min-w-0 rounded-xl border border-slate-200/80 bg-slate-50/90 p-3 sm:p-4 space-y-3">
             <label className="flex cursor-pointer items-start gap-3 sm:items-center">
               <input
                 type="checkbox"
@@ -520,6 +524,28 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
               />
               <span className="min-w-0 text-sm font-medium text-slate-700 leading-snug">
                 Open to relocating for the right role
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 sm:items-center">
+              <input
+                type="checkbox"
+                checked={readyInterviewHyderabad}
+                onChange={(e) => setReadyInterviewHyderabad(e.target.checked)}
+                className="mt-0.5 sm:mt-0 h-5 w-5 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="min-w-0 text-sm font-medium text-slate-700 leading-snug">
+                Ready to attend interview in Hyderabad
+              </span>
+            </label>
+            <label className="flex cursor-pointer items-start gap-3 sm:items-center">
+              <input
+                type="checkbox"
+                checked={readyInterviewBangalore}
+                onChange={(e) => setReadyInterviewBangalore(e.target.checked)}
+                className="mt-0.5 sm:mt-0 h-5 w-5 shrink-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span className="min-w-0 text-sm font-medium text-slate-700 leading-snug">
+                Ready to attend interview in Bangalore
               </span>
             </label>
           </div>
@@ -975,7 +1001,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
           disabled={submitting}
           className="nth-btn-primary w-full min-h-12 cursor-pointer text-base transition-opacity duration-200 disabled:opacity-60 sm:w-auto sm:min-w-52 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 touch-manipulation"
         >
-          {submitting ? 'Submitting…' : 'Join the shortlist'}
+          {submitting ? 'Submitting…' : 'Submit my profile'}
         </button>
       </form>
     </>

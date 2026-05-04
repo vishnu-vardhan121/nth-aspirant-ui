@@ -46,8 +46,8 @@ export default function EarlyAccessPage() {
         aria-hidden
       />
       <Seo
-        title="Join the verified shortlist | Naveen Talent Hub"
-        description="Share your profile once. When a company needs your skills, we match and connect you directly—verified opportunities from Naveen Talent Hub."
+        title="Share your profile for recruiter matching | Naveen Talent Hub"
+        description="One form: your skills and resume stay on file with our team. When a hiring team needs someone like you, Naveen Talent Hub introduces you directly-no spam, no re-applying on ten portals."
         canonicalPath="/early-access"
         ogImage="/hero-section/hero-image.jpg"
       />
@@ -81,17 +81,17 @@ export default function EarlyAccessPage() {
               <header className="mb-8 min-w-0 lg:mb-10">
                 <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-700 ring-1 ring-indigo-100">
                   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" aria-hidden />
-                  Verified shortlist
+                  Recruiter-led matching
                 </p>
                 <h1 className="max-w-3xl text-pretty text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-                  Join the{' '}
+                  Share your profile once-{' '}
                   <span className="bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                    shortlist
+                    we handle introductions
                   </span>
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                  Your profile stays in our verified pool. When a company needs someone with your skills, we match and connect you
-                  directly—without making you re-apply on every portal.
+                  Your details stay on file with our recruiters. When a team is hiring for your skills, we connect you
+                  directly-so you are not re-uploading the same CV on every job board.
                 </p>
               </header>
 
