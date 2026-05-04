@@ -135,6 +135,17 @@
   z-index: 1;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-cta-pulse,
+  .cta-moving-border::before {
+    animation: none;
+  }
+  .animate-marquee,
+  .animate-marquee-pricing {
+    animation: none;
+  }
+}
+
 /* NTH design system */
 :root {
   --nth-orange: 24 95% 53%; /* Orange 500 equivalent */
@@ -368,6 +379,29 @@ body {
   color: rgb(255 255 255);
 }
 
+/*
+ * Hero solid (white) pill CTAs: global #hero a { color: inherit } beats Tailwind text-slate-900,
+ * so labels were near-white on white. Force readable body text on light fills.
+ */
+#hero a.bg-white,
+#hero a.bg-white:visited {
+  color: rgb(15 23 42) !important; /* slate-900 */
+}
+#hero a.bg-white:hover,
+#hero a.bg-white:focus-visible {
+  color: rgb(15 23 42) !important;
+}
+
+/* Ghost / glass hero CTAs: keep label clearly light (inherit is ok but explicit wins over a:hover white). */
+#hero a.text-white,
+#hero a.text-white:visited {
+  color: rgb(255 255 255) !important;
+}
+#hero a.text-white:hover,
+#hero a.text-white:focus-visible {
+  color: rgb(255 255 255) !important;
+}
+
 /* #job-openings is light; do not treat it like #hero (would force links to inherit near-white). */
 
 /* Landing page: no horizontal scroll and hide vertical scrollbar (page still scrolls) */
@@ -393,6 +427,59 @@ body.nth-landing-page::-webkit-scrollbar {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * Talent pool / early-access form: Chrome & Safari paint autofilled fields with a blue-grey
+ * background and light text. Reset to match our white inputs + slate-900 text.
+ */
+#early-access-form input:-webkit-autofill,
+#early-access-form input:-webkit-autofill:hover,
+#early-access-form input:-webkit-autofill:focus,
+#early-access-form input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a;
+}
+
+/* Hide native number spinners (cleaner than default Chrome/Safari arrows). */
+#early-access-form input[type='number'] {
+  -moz-appearance: textfield;
+}
+#early-access-form input[type='number']::-webkit-outer-spin-button,
+#early-access-form input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/*
+ * Native date / datetime-local / time: :root uses color-scheme: light dark, which can make
+ * WebKit’s calendar/clock icon use the “dark” control theme (e.g. near-invisible on white inputs).
+ * Force light native controls on these fields; enlarge picker affordance slightly.
+ * Opening the picker on any field click is handled in GlobalNativeDateTimeInputBehavior (showPicker).
+ */
+input[type='date'],
+input[type='datetime-local'],
+input[type='time'],
+input[type='month'],
+input[type='week'] {
+  color-scheme: light;
+  cursor: pointer;
+}
+
+input[type='date']::-webkit-calendar-picker-indicator,
+input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  padding: 0.4rem 0.2rem;
+  margin-inline-end: -0.1rem;
+}
+
+input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 1;
+  padding: 0.35rem 0.15rem;
 }
 
 /* Heading sizes are controlled via Tailwind utilities (text-*) */
@@ -531,6 +618,16 @@ button:focus-visible {
   grid-template-columns: minmax(0, 1fr);
   gap: 0;
   width: 100%;
+}
+
+/* Shared vertical rhythm for marketing sections (Tailwind @apply) */
+@layer components {
+  .nth-section-y {
+    @apply py-14 sm:py-16 md:py-20;
+  }
+  .nth-section-y-compact {
+    @apply py-12 sm:py-14 md:py-16;
+  }
 }
 
 .nth-section-grid {

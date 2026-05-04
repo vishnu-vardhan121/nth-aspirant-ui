@@ -15,7 +15,7 @@ export default function CTAStrip() {
   const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
 
   return (
-    <section id="cta-strip" className="relative py-16 sm:py-20 md:py-24 lg:py-28 overflow-hidden bg-[rgb(var(--nth-bg-hero-start))]">
+    <section id="cta-strip" className="relative py-14 sm:py-16 md:py-20 lg:py-24 overflow-hidden bg-[rgb(var(--nth-bg-hero-start))]">
       {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(79,70,229,0.25)_0%,transparent_50%)]" />
@@ -75,7 +75,7 @@ export default function CTAStrip() {
             {HIGHLIGHTS.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-all duration-200"
+                className="flex items-center gap-3 sm:gap-4 px-4 py-3 sm:py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/[0.08] hover:border-white/20 transition-colors duration-200"
               >
                 <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
                   <HiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-300" />
@@ -97,13 +97,13 @@ export default function CTAStrip() {
           >
             <Link
               to={pricingTo}
-              className="cta-strip-primary inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              className="cta-strip-primary cursor-pointer inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               View Pricing Plans
             </Link>
             <Link
               to="/contact"
-              className="cta-strip-secondary inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 font-bold text-base sm:text-lg text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200"
+              className="cta-strip-secondary cursor-pointer inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 font-bold text-base sm:text-lg text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               Contact Us
             </Link>
@@ -115,7 +115,7 @@ export default function CTAStrip() {
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-16 sm:mt-20 pt-8 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4"
+            className="mt-12 sm:mt-14 pt-6 sm:pt-8 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4"
           >
             <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
               Trusted by 10,000+ candidates

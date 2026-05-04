@@ -16,7 +16,7 @@ function isExternalUrl(href) {
 
 /** Same gradient CTA as MoneyBackGuaranteeSection so both sections match */
 const CTA_GRADIENT_CLASS =
-  'nth-cta-gradient inline-flex items-center justify-center w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200';
+  'nth-cta-gradient cursor-pointer inline-flex items-center justify-center w-fit px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
 
 function CtaButton({ href, label }) {
   const url = (href || '').trim();
@@ -74,7 +74,7 @@ export default function BestInstituteHyderabadSection() {
   function renderSecondaryCard(item) {
     const href = (item.cta_link || '').trim();
     const card = (
-      <div className="group h-full rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-200 overflow-hidden">
+      <div className="group h-full rounded-xl border border-slate-200 bg-white shadow-sm hover:shadow-md hover:border-indigo-200 transition-shadow duration-200 overflow-hidden">
         <div className="grid grid-cols-[84px_1fr] sm:grid-cols-[100px_1fr] min-h-[96px]">
           <div className="relative h-full bg-slate-100 border-r border-slate-200">
             {item.image_url ? (
@@ -112,7 +112,7 @@ export default function BestInstituteHyderabadSection() {
   return (
     <section
       id="best-institute-hyderabad"
-      className="relative overflow-hidden bg-[rgb(var(--nth-bg-light))]"
+      className="relative overflow-hidden bg-[rgb(var(--nth-bg-light))] nth-section-y-compact border-t border-slate-100"
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(99,102,241,0.06)_0%,transparent_55%)] pointer-events-none" />
 
@@ -155,13 +155,13 @@ export default function BestInstituteHyderabadSection() {
                 {subtext}
               </p>
               {highlight ? (
-                <p className="text-sm text-slate-600 border-l-4 border-indigo-400 pl-4 py-1 mb-6 italic">
+                <p className="text-sm text-slate-600 border-l-4 border-indigo-400 pl-4 py-1 mb-0 italic">
                   {highlight}
                 </p>
-              ) : (
-                <div className="mb-6" />
-              )}
-              <CtaButton href={ctaLink} label={ctaLabel} />
+              ) : null}
+              <div className="mt-6">
+                <CtaButton href={ctaLink} label={ctaLabel} />
+              </div>
             </div>
           </div>
         </motion.div>
