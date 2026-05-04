@@ -9,8 +9,8 @@ import HowItWorksSection from './components/HowItWorksSection';
 import WhyChooseNTHSection from './components/WhyChooseNTHSection';
 import BestInstituteHyderabadSection from './components/BestInstituteHyderabadSection';
 import MoneyBackGuaranteeSection from './components/MoneyBackGuaranteeSection';
-import ShortlistedUpdatesSection from './components/ShortlistedUpdatesSection';
 import ApplicationSection from './components/ApplicationSection';
+import EarlyAccessLandingSection from './components/EarlyAccessLandingSection';
 import CTAStrip from './components/CTAStrip';
 import InstituteAdModal from './components/InstituteAdModal';
 import Seo from '../../../components/Seo';
@@ -103,7 +103,7 @@ export default function LandingPage() {
         <BestInstituteHyderabadSection />
         <MoneyBackGuaranteeSection />
         <ApplicationSection />
-        <ShortlistedUpdatesSection />
+        <EarlyAccessLandingSection />
         <CTAStrip />
         <Footer />
       </div>

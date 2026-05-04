@@ -52,21 +52,18 @@ export default function ApplicationSection() {
   return (
     <section
       id="app"
-      className="relative py-12 sm:py-14 md:py-16 overflow-hidden"
+      className="relative nth-section-y-compact overflow-hidden border-t border-slate-100"
     >
       {/* Full-width professional briefcase background */}
       <div
-        className="absolute inset-0 w-full bg-cover bg-center bg-no-repeat pointer-events-none"
-        style={{
-          backgroundImage: 'url(/hero-section/close-up-briefcase.jpg)',
-        }}
+        className="absolute inset-0 w-full bg-cover bg-center bg-no-repeat pointer-events-none bg-[url('/hero-section/job-application-bg.jpg')]"
       />
       <div
-        className="absolute inset-0 w-full bg-white/40 pointer-events-none"
+        className="absolute inset-0 w-full bg-gradient-to-br from-white/75 via-white/60 to-slate-50/85 pointer-events-none"
         aria-hidden
       />
       <SectionContainer className="relative z-10">
-        <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-14 items-center">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -86,15 +83,11 @@ export default function ApplicationSection() {
             
             <Link
               to={pricingTo}
-              className="nth-btn-primary inline-flex items-center justify-center gap-3 text-lg group hover:text-white"
+              className="nth-btn-primary cursor-pointer inline-flex items-center justify-center gap-3 text-lg group hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              <motion.span
-                className="inline-flex items-center justify-center gap-3"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
+              <span className="inline-flex items-center justify-center gap-3">
                 View Plans & Get Started
-              </motion.span>
+              </span>
             </Link>
           </motion.div>
 
@@ -111,7 +104,7 @@ export default function ApplicationSection() {
                 <motion.div
                   key={feature.title}
                   variants={itemVariants}
-                  className="flex items-start gap-4 p-5 rounded-xl bg-white shadow-sm border border-slate-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+                  className="flex items-start gap-4 p-5 rounded-xl bg-white/95 backdrop-blur-sm shadow-sm border border-slate-200/90 hover:shadow-md hover:border-slate-300/90 transition-[box-shadow,border-color] duration-200 cursor-default"
                 >
                   <div
                     className={`shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-white bg-gradient-to-br ${feature.color} ${feature.shadow} shadow-lg`}

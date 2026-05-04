@@ -8,11 +8,16 @@ export default function WeeklyInterviewsMarquee({ className = '' }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_public_hero_interviews');
+      if (!rpcError && Array.isArray(rpcData)) {
+        if (!cancelled) setInterviews(rpcData);
+        return;
+      }
+      const { data: tableData } = await supabase
         .from('todays_interviews')
         .select('id, name, role, level')
         .order('display_order');
-      if (!cancelled) setInterviews(data ?? []);
+      if (!cancelled) setInterviews(tableData ?? []);
     })();
     return () => {
       cancelled = true;

@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { GlobalNativeDateTimeInputBehavior } from './components/system/GlobalNativeDateTimeInputBehavior';
 import AuthListener from './components/auth/AuthListener';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -9,6 +10,7 @@ import DashboardLayout from './layouts/DashboardLayout';
 import AdminLayout from './layouts/AdminLayout';
 import InterviewerLayout from './layouts/InterviewerLayout';
 import LandingPage from './pages/landing/home/LandingPage';
+import EarlyAccessPage from './pages/landing/home/EarlyAccessPage';
 import PublicJobsPage from './pages/landing/home/PublicJobsPage';
 import JobDetailsPage from './pages/landing/home/JobDetailsPage';
 import PortfolioIndex from './pages/portfolio/PortfolioIndex';
@@ -33,6 +35,7 @@ import AdminMocksPage from './pages/admin/AdminMocksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
+import AdminTalentPoolPage from './pages/admin/AdminTalentPoolPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
 import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
 import AdminInstituteSpotlightPage from './pages/admin/AdminInstituteSpotlightPage';
@@ -46,10 +49,12 @@ import SuccessGuaranteePage from './pages/landing/guarantee/SuccessGuaranteePage
 function App() {
   return (
     <BrowserRouter>
+      <GlobalNativeDateTimeInputBehavior />
       <ScrollToTop />
       <AuthListener />
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/early-access" element={<EarlyAccessPage />} />
         <Route path="/jobs" element={<PublicJobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailsPage />} />
         <Route path="/portfolio" element={<PortfolioIndex />} />
@@ -89,6 +94,7 @@ function App() {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
+          <Route path="talent-pool" element={<AdminTalentPoolPage />} />
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
           <Route path="institute-spotlight" element={<AdminInstituteSpotlightPage />} />
           <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />

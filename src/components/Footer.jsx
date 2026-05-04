@@ -16,7 +16,7 @@ export default function Footer() {
 
   return (
     <footer
-      className="relative py-8 sm:py-10"
+      className="relative py-10 sm:py-12"
       style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
     >
       <SectionContainer useGrid>

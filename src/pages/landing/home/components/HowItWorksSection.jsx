@@ -55,15 +55,15 @@ export default function HowItWorksSection() {
   }, [isHovered]);
 
   return (
-    <section id="how-it-works" className="py-5 lg:py-7 bg-white relative overflow-hidden border-t border-slate-100">
+    <section id="how-it-works" className="scroll-mt-24 nth-section-y-compact bg-white relative overflow-hidden border-t border-slate-100">
       <SectionContainer>
-        <div className="text-center max-w-3xl mx-auto mb-20">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-800 mb-6"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight"
           >
             Our Direct Hiring Process
           </motion.h2>
@@ -72,14 +72,14 @@ export default function HowItWorksSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-lg text-slate-600"
+            className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto"
           >
             A clear, transparent, and proven path from your application to your offer letter.
           </motion.p>
         </div>
 
         {/* Desktop: Horizontal single-line timeline */}
-        <div className="hidden lg:block relative w-full pt-4 pb-12">
+        <div className="hidden lg:block relative w-full pt-2 pb-8">
           {/* Base Connector Line */}
           <div className="absolute top-[3.25rem] left-[8%] right-[8%] h-[2px] bg-slate-200" />
           
@@ -110,7 +110,7 @@ export default function HowItWorksSection() {
                 >
                   {/* Step Node */}
                   <div className={`w-[4.5rem] h-[4.5rem] bg-white rounded-full border-2 flex items-center justify-center mb-6 relative transition-all duration-500 ease-out
-                    ${isActive ? 'border-indigo-600 scale-110 shadow-[0_0_0_8px_white,0_10px_25px_-5px_rgba(79,70,229,0.3)]' : 
+                    ${isActive ? 'border-indigo-600 ring-4 ring-indigo-500/25 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.35)]' : 
                       isPast ? 'border-indigo-400 shadow-[0_0_0_8px_white]' : 'border-slate-200 shadow-[0_0_0_8px_white]'}`}>
                     <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-500
                       ${isPast ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
@@ -151,7 +151,7 @@ export default function HowItWorksSection() {
                   onMouseEnter={() => setActiveIndex(index)}
                 >
                   <div className={`w-16 h-16 bg-white rounded-full flex items-center justify-center mb-5 relative transition-all duration-500 ease-out border
-                    ${isActive ? 'border-indigo-600 scale-110 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.2)]' : 
+                    ${isActive ? 'border-indigo-600 ring-4 ring-indigo-500/25 shadow-[0_10px_25px_-5px_rgba(79,70,229,0.2)]' : 
                       isPast ? 'border-indigo-400 shadow-sm' : 'border-slate-200 shadow-sm'}`}>
                     <div className={`absolute -top-1 -right-1 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors duration-500
                       ${isPast ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-500'}`}>
@@ -197,7 +197,7 @@ export default function HowItWorksSection() {
                 >
                   {/* Node */}
                   <span className={`absolute -left-[17px] top-1 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-500 ease-out
-                    ${isActive ? 'bg-indigo-600 border-2 border-indigo-600 scale-125 shadow-md shadow-indigo-500/30' : 
+                    ${isActive ? 'bg-indigo-600 border-2 border-indigo-600 ring-2 ring-white/70 shadow-md shadow-indigo-500/30' : 
                       isPast ? 'bg-indigo-50 border-2 border-indigo-400' : 'bg-white border-2 border-slate-300'}`}>
                     <span className={`font-bold text-xs transition-colors duration-500 ${isActive ? 'text-white' : isPast ? 'text-indigo-600' : 'text-slate-400'}`}>
                       {step.step}

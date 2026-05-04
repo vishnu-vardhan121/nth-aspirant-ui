@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { HiMapPin, HiBriefcase, HiCalendarDays, HiBuildingOffice2, HiSparkles } from 'react-icons/hi2';
 import { supabase } from '../../../lib/supabase';
 import Navbar from '../../../components/Navbar';
@@ -47,14 +47,63 @@ const isJobExpired = (deadlineStr) => {
   return onIST < calendarTodayIST();
 };
 
+const toArray = (value) => {
+  if (value == null) return [];
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      return toArray(JSON.parse(value));
+    } catch {
+      return [];
+    }
+  }
+  if (typeof value === 'object') {
+    const numericKeys = Object.keys(value)
+      .filter((key) => /^\d+$/.test(key))
+      .sort((a, b) => Number(a) - Number(b));
+    if (numericKeys.length) return numericKeys.map((key) => value[key]);
+  }
+  return [];
+};
+
+const parseSpotlightPayload = (raw) => {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      return parseSpotlightPayload(JSON.parse(raw));
+    } catch {
+      return [];
+    }
+  }
+  if (typeof raw === 'object') {
+    if (Array.isArray(raw.jobs)) return raw.jobs;
+    if (typeof raw.jobs === 'string') {
+      try {
+        return parseSpotlightPayload({ ...raw, jobs: JSON.parse(raw.jobs) });
+      } catch {
+        return [];
+      }
+    }
+    const numericKeys = Object.keys(raw)
+      .filter((key) => /^\d+$/.test(key))
+      .sort((a, b) => Number(a) - Number(b));
+    if (numericKeys.length) return numericKeys.map((key) => raw[key]);
+  }
+  return [];
+};
+
 export default function JobDetailsPage() {
   const { id } = useParams();
+  const location = useLocation();
+  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}`;
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [otherJobs, setOtherJobs] = useState([]);
   const [publicCapacity, setPublicCapacity] = useState(null);
   const [publicCapacityLoading, setPublicCapacityLoading] = useState(false);
+  const [spotlightActivity, setSpotlightActivity] = useState({ notices: [], shortlisted: [] });
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -146,6 +195,31 @@ export default function JobDetailsPage() {
     fetchOtherJobs();
   }, [id]);
 
+  useEffect(() => {
+    if (!job?.id) {
+      setSpotlightActivity({ notices: [], shortlisted: [] });
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.rpc('get_landing_hiring_spotlight');
+      if (cancelled) return;
+      const spotlightJobs = parseSpotlightPayload(data);
+      const matched = spotlightJobs.find((entry) => String(entry?.id) === String(job.id));
+      if (!matched) {
+        setSpotlightActivity({ notices: [], shortlisted: [] });
+        return;
+      }
+      setSpotlightActivity({
+        notices: toArray(matched.notices),
+        shortlisted: toArray(matched.shortlisted),
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [job?.id]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col bg-white">
@@ -193,6 +267,9 @@ export default function JobDetailsPage() {
   const seoDescription =
     trimText(job.description, 155) ||
     `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
+  const jobNotices = spotlightActivity.notices.length > 0 ? spotlightActivity.notices : toArray(job.notices);
+  const jobShortlisted = spotlightActivity.shortlisted.length > 0 ? spotlightActivity.shortlisted : toArray(job.shortlisted);
+  const hasActivity = jobNotices.length > 0 || jobShortlisted.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden">
@@ -204,43 +281,43 @@ export default function JobDetailsPage() {
       />
       <Navbar />
 
-      <main className="pt-24 sm:pt-28 pb-12 md:pb-16 min-w-0">
+      <main className="pt-20 sm:pt-24 lg:pt-28 pb-12 md:pb-16 min-w-0">
         <SectionContainer className="min-w-0 max-w-full">
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 min-w-0">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 min-w-0">
             {/* Left Column: Job Info */}
-            <div className="lg:col-span-2 space-y-8 min-w-0">
+            <div className="xl:col-span-2 space-y-6 sm:space-y-8 min-w-0">
               <div className="bg-white rounded-3xl p-5 sm:p-6 md:p-10 shadow-sm border border-slate-100 min-w-0 overflow-hidden">
-                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8 min-w-0">
+                <div className="flex flex-col 2xl:flex-row 2xl:items-start justify-between gap-4 sm:gap-6 mb-6 sm:mb-8 min-w-0">
                   <div className="flex items-start gap-3 sm:gap-5 min-w-0 flex-1">
                     <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
                       <HiBuildingOffice2 className="w-6 h-6 sm:w-8 sm:h-8 shrink-0" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h1 className="text-xl min-[400px]:text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-snug sm:leading-tight break-words">
+                      <h1 className="text-xl min-[400px]:text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 mb-2 leading-snug sm:leading-tight wrap-break-word">
                         {job.title}
                       </h1>
                       <div className="flex flex-wrap items-center gap-y-2 gap-x-3 sm:gap-x-4 text-slate-600 font-medium min-w-0">
-                        <p className="text-base sm:text-lg text-indigo-600 break-words min-w-0 max-w-full">
+                        <p className="text-base sm:text-lg text-indigo-600 wrap-anywhere min-w-0 max-w-full">
                           {job.company_name}
                         </p>
                         <span className="w-1 h-1 rounded-full bg-slate-300 hidden md:block shrink-0" />
                         {job.location && job.location !== '—' && (
                           <div className="flex items-start gap-1.5 min-w-0 max-w-full">
                             <HiMapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
-                            <span className="break-words">{job.location}</span>
+                            <span className="wrap-anywhere">{job.location}</span>
                           </div>
                         )}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2 shrink-0 min-w-0">
-                    <span className="inline-flex items-center px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">
+                  <div className="flex w-full 2xl:w-auto flex-wrap gap-2 2xl:justify-end min-w-0">
+                    <span className="inline-flex items-center max-w-full 2xl:max-w-56 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-slate-100 text-slate-700 text-xs sm:text-sm font-bold wrap-break-word">
                       {job.job_type || 'Full-time'}
                     </span>
                     {job.salary_range && (
-                      <span className="inline-flex items-center px-4 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-sm font-bold">
+                      <span className="inline-flex items-center max-w-full 2xl:max-w-56 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs sm:text-sm font-bold wrap-break-word">
                         {job.salary_range}
                       </span>
                     )}
@@ -252,14 +329,14 @@ export default function JobDetailsPage() {
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Experience</span>
                     <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
                       <HiBriefcase className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                      <span className="break-words">{job.experience_level || '0-3 Years'}</span>
+                      <span className="wrap-anywhere">{job.experience_level || '0-3 Years'}</span>
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 min-w-0">
                     <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Deadline</span>
                     <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
                       <HiCalendarDays className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                      <span className="break-words">
+                      <span className="wrap-anywhere">
                         {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible'}
                       </span>
                     </div>
@@ -269,7 +346,7 @@ export default function JobDetailsPage() {
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Location</span>
                       <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
                         <HiMapPin className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
-                        <span className="break-words">{job.location}</span>
+                        <span className="wrap-anywhere">{job.location}</span>
                       </div>
                     </div>
                   )}
@@ -278,9 +355,58 @@ export default function JobDetailsPage() {
                 <div className="space-y-8 min-w-0">
                   <section className="min-w-0">
                     <h2 className="text-xl font-bold text-slate-900 mb-4">Job Description</h2>
-                    <div className="prose prose-slate max-w-full text-slate-600 leading-relaxed whitespace-pre-wrap break-words">
+                    <div className="prose prose-slate max-w-full text-slate-600 leading-relaxed whitespace-pre-wrap wrap-anywhere">
                       {job.description || 'No description provided.'}
                     </div>
+                  </section>
+
+                  <section className="min-w-0">
+                    <h2 className="text-xl font-bold text-slate-900 mb-4">Live Hiring Activity</h2>
+                    {hasActivity ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                          <h3 className="text-sm font-semibold text-slate-800 mb-3">Timeline Updates</h3>
+                          {jobNotices.length > 0 ? (
+                            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                              {jobNotices.map((notice, idx) => (
+                                <div key={`notice-${idx}`} className="rounded-xl bg-white border border-slate-100 p-3">
+                                  <p className="text-sm text-slate-700 wrap-anywhere">{notice?.message ?? 'Update available'}</p>
+                                  {notice?.at && (
+                                    <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-400">{notice.at}</p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500">No timeline updates yet.</p>
+                          )}
+                        </div>
+
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                          <h3 className="text-sm font-semibold text-slate-800 mb-3">Selected Aspirants</h3>
+                          {jobShortlisted.length > 0 ? (
+                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                              {jobShortlisted.map((person, idx) => (
+                                <div key={`shortlisted-${idx}`} className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-100 px-3 py-2">
+                                  <span className="text-sm font-medium text-slate-700 wrap-anywhere">
+                                    {person?.name || 'Candidate'}
+                                  </span>
+                                  <span className="text-xs text-slate-500 shrink-0">{person?.city || 'N/A'}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className="text-sm text-slate-500">No shortlisted aspirants yet.</p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                        <p className="text-sm text-slate-500">
+                          Activity will appear here once admins publish timeline updates or shortlisted candidates.
+                        </p>
+                      </div>
+                    )}
                   </section>
 
                   {job.requirements && job.requirements.length > 0 && (
@@ -290,7 +416,7 @@ export default function JobDetailsPage() {
                         {job.requirements.map((req, idx) => (
                           <li key={idx} className="flex items-start gap-2 text-slate-600 min-w-0">
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                            <span className="break-words min-w-0">{req}</span>
+                            <span className="wrap-anywhere min-w-0">{req}</span>
                           </li>
                         ))}
                       </ul>
@@ -301,8 +427,8 @@ export default function JobDetailsPage() {
             </div>
 
             {/* Right Column: Apply Sidebar */}
-            <div className="lg:col-span-1 min-w-0">
-              <div className="sticky top-24 space-y-6 min-w-0">
+            <div className="xl:col-span-1 min-w-0">
+              <div className="xl:sticky xl:top-24 space-y-5 sm:space-y-6 min-w-0">
                 <div className="bg-white rounded-3xl p-5 sm:p-6 shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden relative min-w-0">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16" />
                   
@@ -370,8 +496,8 @@ export default function JobDetailsPage() {
                      Get direct interview slots and expert mock interview practice with our Premium plans.
                    </p>
                    <Link 
-                     to="/pricing"
-                     className="block w-full text-center px-6 py-3 rounded-xl bg-white text-indigo-600 font-bold hover:bg-slate-50 transition-colors"
+                     to={pricingTo}
+                     className="block w-full text-center px-6 py-3 rounded-xl bg-white text-indigo-600 font-bold hover:bg-slate-50 transition-colors duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                    >
                      View Pricing
                    </Link>
@@ -382,7 +508,7 @@ export default function JobDetailsPage() {
 
           {/* More Jobs - Free & Premium */}
           {otherJobs.length > 0 && (
-            <section className="mt-16 pt-12 border-t border-slate-200">
+            <section className="mt-12 sm:mt-16 pt-10 sm:pt-12 border-t border-slate-200">
               <h2 className="text-xl font-bold text-slate-900 mb-2">More opportunities</h2>
               <p className="text-slate-600 text-sm mb-6">Explore other open positions</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-w-0">
@@ -390,7 +516,7 @@ export default function JobDetailsPage() {
                   <Link
                     key={j.id}
                     to={`/jobs/${j.id}`}
-                    className="block min-w-0 max-w-full bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group overflow-hidden"
+                    className="block min-w-0 max-w-full bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-lg hover:border-indigo-200 transition-shadow duration-200 group overflow-hidden cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-2 mb-3">
                       <div className="flex flex-wrap gap-2">
