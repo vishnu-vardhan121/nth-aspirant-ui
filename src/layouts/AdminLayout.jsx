@@ -101,7 +101,7 @@ export default function AdminLayout() {
             className={navLinkClass(isActive('/admin/talent-pool'))}
           >
             <HiQueueList className="w-5 h-5 shrink-0" />
-            Talent pool
+            Matching (profiles)
           </Link>
           <Link
             to="/admin/institute-ads"

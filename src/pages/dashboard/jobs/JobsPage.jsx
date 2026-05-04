@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { formatApplyDeadlineShort, isApplyDeadlinePassed } from '../../../lib/jobApplicationDeadline';
 import { PageLoader } from '../../../components/ui/Loader';
 import JobsList from './components/JobsList';
 
@@ -15,15 +16,6 @@ function formatDate(dateStr) {
   return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function isApplicationExpired(deadlineStr) {
-  if (!deadlineStr) return false;
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const deadline = new Date(deadlineStr);
-  deadline.setHours(0, 0, 0, 0);
-  return today > deadline;
-}
-
 export default function JobsPage() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,7 +27,7 @@ export default function JobsPage() {
     const fetchJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, walk_in_date, address, apply_link, audience_tracks')
+        .select('id, title, company_name, description, location, job_type, salary_range, created_at, application_deadline, application_deadline_at, walk_in_date, address, apply_link, audience_tracks')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
       if (!error) setJobs(data ?? []);
@@ -86,12 +78,15 @@ export default function JobsPage() {
       experience: experienceLabel,
       postedAt: formatPostedAt(j.created_at),
       snippet: j.description ? j.description.slice(0, 120) + (j.description.length > 120 ? '…' : '') : '',
-      applicationDeadline: formatDate(j.application_deadline),
+      applicationDeadline: formatApplyDeadlineShort(j.application_deadline_at, j.application_deadline),
       applicationDeadlineRaw: j.application_deadline,
       walkInDate: formatDate(j.walk_in_date),
       address: j.address ?? '',
       applyLink: j.apply_link ?? '',
-      isExpired: isApplicationExpired(j.application_deadline),
+      isExpired: isApplyDeadlinePassed({
+        application_deadline_at: j.application_deadline_at,
+        application_deadline: j.application_deadline,
+      }),
     };
   }), [jobs]);
 

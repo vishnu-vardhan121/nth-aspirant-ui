@@ -1,7 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { HiMapPin, HiBriefcase, HiCalendarDays, HiBuildingOffice2, HiSparkles } from 'react-icons/hi2';
+import {
+  HiMapPin,
+  HiBriefcase,
+  HiCalendarDays,
+  HiBuildingOffice2,
+  HiSparkles,
+  HiClock,
+  HiChatBubbleLeftRight,
+  HiUserGroup,
+  HiCheckBadge,
+} from 'react-icons/hi2';
 import { supabase } from '../../../lib/supabase';
+import ApplyDeadlineCountdown from '../../../components/ApplyDeadlineCountdown';
+import { formatApplyDeadlineShort, isApplyDeadlinePassed } from '../../../lib/jobApplicationDeadline';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import Seo from '../../../components/Seo';
@@ -19,32 +31,6 @@ const trimText = (value, max = 155) => {
   const text = String(value || '').replace(/\s+/g, ' ').trim();
   if (!text) return '';
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
-};
-
-/** Calendar compare in Asia/Kolkata, aligned with public SQL guards (deadline &lt; today = closed). */
-const calendarTodayIST = () =>
-  new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date());
-
-const isJobExpired = (deadlineStr) => {
-  if (!deadlineStr) return false;
-  const d = String(deadlineStr).slice(0, 10);
-  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-    return d < calendarTodayIST();
-  }
-  const t = new Date(deadlineStr);
-  if (isNaN(t.getTime())) return false;
-  const onIST = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Kolkata',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(t);
-  return onIST < calendarTodayIST();
 };
 
 const toArray = (value) => {
@@ -93,6 +79,190 @@ const parseSpotlightPayload = (raw) => {
   return [];
 };
 
+/** Human-readable time for a hiring notice (prefers structured `at` when parseable). */
+function formatHiringNoticeTime(item) {
+  if (!item || typeof item !== 'object') return null;
+  const raw = item.at ?? item.created_at ?? item.createdAt ?? item.timestamp ?? null;
+  if (raw == null) return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    const d = new Date(raw);
+    if (!Number.isNaN(d.getTime())) {
+      return d.toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      });
+    }
+  }
+  const s = String(raw).trim();
+  if (!s) return null;
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) {
+    return d.toLocaleString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+  return s.length > 48 ? `${s.slice(0, 45)}…` : s;
+}
+
+function hiringInitials(name) {
+  if (!name || !String(name).trim()) return '?';
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
+}
+
+function LiveHiringActivitySection({ notices, shortlisted }) {
+  const nLen = notices.length;
+  const sLen = shortlisted.length;
+  const hasAny = nLen > 0 || sLen > 0;
+
+  return (
+    <section id="hiring-activity" className="min-w-0 scroll-mt-28">
+      <div className="overflow-hidden rounded-2xl border border-indigo-100/70 bg-linear-to-br from-indigo-50/30 via-white to-slate-50/40 shadow-sm ring-1 ring-indigo-100/40">
+        <div className="h-1 w-full bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-500" />
+        <div className="p-5 sm:p-6">
+          <div className="mb-5 flex flex-col gap-4 sm:mb-6 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+            <div className="min-w-0">
+              <div className="mb-1 flex items-center gap-2">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-300/40">
+                  <HiSparkles className="h-4 w-4" aria-hidden />
+                </span>
+                <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">Live hiring activity</h2>
+              </div>
+              <p className="max-w-xl text-sm leading-relaxed text-slate-600">
+                Timeline posts and shortlisted candidates shared for this role on the public job spotlight.
+              </p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                <HiChatBubbleLeftRight className="h-3.5 w-3.5 text-indigo-500" aria-hidden />
+                {nLen} update{nLen === 1 ? '' : 's'}
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200/80 bg-indigo-50/90 px-3 py-1.5 text-xs font-semibold text-indigo-900 shadow-sm">
+                <HiUserGroup className="h-3.5 w-3.5 text-indigo-600" aria-hidden />
+                {sLen} shortlisted
+              </span>
+            </div>
+          </div>
+
+          {!hasAny ? (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-indigo-200/60 bg-white/60 px-4 py-10 text-center">
+              <HiChatBubbleLeftRight className="h-10 w-10 text-indigo-200" aria-hidden />
+              <p className="text-sm font-medium text-slate-600">No public activity yet</p>
+              <p className="max-w-sm text-xs leading-relaxed text-slate-500">
+                When your team publishes timeline updates or shortlists candidates for spotlight, they will show here
+                for candidates viewing this job.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-0 lg:divide-x lg:divide-slate-200/80">
+              <div className="min-w-0 lg:pr-6">
+                <div className="mb-3 flex items-center gap-2 text-indigo-900">
+                  <HiChatBubbleLeftRight className="h-4 w-4 shrink-0 text-indigo-500" aria-hidden />
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Timeline</h3>
+                </div>
+                {nLen > 0 ? (
+                  <div className="min-h-0">
+                    {nLen > 5 ? (
+                      <p className="mb-2 text-[11px] font-medium text-slate-500">
+                        Showing first rows — scroll for all {nLen} updates
+                      </p>
+                    ) : null}
+                    <div
+                      className="max-h-[24rem] overflow-y-auto overscroll-y-contain scroll-smooth rounded-lg border border-slate-100/80 bg-slate-50/30 pr-1 pl-0.5 pt-1 pb-1 [-webkit-overflow-scrolling:touch]"
+                      role="region"
+                      aria-label="Timeline updates, scrollable list"
+                    >
+                      <ul className="space-y-3 pr-1">
+                        {notices.map((notice, idx) => {
+                          const timeLabel = formatHiringNoticeTime(notice);
+                          return (
+                            <li key={`notice-${idx}`} className="flex gap-3">
+                              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-[10px] font-bold text-white shadow-sm ring-2 ring-white">
+                                {idx + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <div className="rounded-xl border border-slate-100 bg-white/90 px-3.5 py-3 shadow-sm transition-colors hover:border-indigo-100 hover:bg-white">
+                                  <p className="text-sm leading-relaxed text-slate-800 wrap-anywhere">
+                                    {notice?.message ?? 'Update'}
+                                  </p>
+                                  {timeLabel ? (
+                                    <p className="mt-2 text-[11px] font-medium tabular-nums text-slate-400">{timeLabel}</p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3 text-sm text-slate-500">
+                    No timeline posts yet.
+                  </p>
+                )}
+              </div>
+
+              <div className="min-w-0 lg:pl-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <HiCheckBadge className="h-4 w-4 shrink-0 text-indigo-500" aria-hidden />
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">Shortlisted</h3>
+                </div>
+                {sLen > 0 ? (
+                  <div className="min-h-0">
+                    {sLen > 5 ? (
+                      <p className="mb-2 text-[11px] font-medium text-slate-500">
+                        Showing first rows — scroll for all {sLen} shortlisted
+                      </p>
+                    ) : null}
+                    <div
+                      className="max-h-[22rem] overflow-y-auto overscroll-y-contain scroll-smooth rounded-lg border border-slate-100/80 bg-slate-50/30 p-1 [-webkit-overflow-scrolling:touch]"
+                      role="region"
+                      aria-label="Shortlisted candidates, scrollable list"
+                    >
+                      <ul className="grid grid-cols-1 gap-2 pr-1 sm:grid-cols-2">
+                        {shortlisted.map((person, idx) => (
+                          <li
+                            key={`short-${idx}`}
+                            className="flex items-center gap-3 rounded-xl border border-slate-100 bg-white/90 px-3 py-2.5 shadow-sm transition-colors hover:border-indigo-100"
+                          >
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-indigo-500 to-violet-600 text-xs font-bold text-white shadow-sm">
+                              {hiringInitials(person?.name)}
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-slate-900">{person?.name || 'Candidate'}</p>
+                              <p className="truncate text-xs text-slate-500">{person?.city || '—'}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-3 text-sm text-slate-500">
+                    No shortlisted candidates listed yet.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function JobDetailsPage() {
   const { id } = useParams();
   const location = useLocation();
@@ -123,7 +293,10 @@ export default function JobDetailsPage() {
 
   useEffect(() => {
     if (!job) return;
-    const expired = isJobExpired(job.application_deadline);
+    const expired = isApplyDeadlinePassed({
+      application_deadline_at: job.application_deadline_at,
+      application_deadline: job.application_deadline,
+    });
     const externalApply = job.apply_link && String(job.apply_link).trim();
     const notOpen = job.status !== 'open';
     if (expired || externalApply || notOpen) {
@@ -161,13 +334,18 @@ export default function JobDetailsPage() {
     const fetchOtherJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company_name, location, audience_tracks, allowed_plans, application_deadline, walk_in_date, apply_link')
+        .select('id, title, company_name, location, audience_tracks, allowed_plans, application_deadline, application_deadline_at, walk_in_date, apply_link')
         .eq('show_on_landing', true)
         .eq('status', 'open')
         .neq('id', id);
       if (!error && data) {
         setOtherJobs(data
-          .filter((j) => !isJobExpired(j.application_deadline))
+          .filter((j) =>
+            !isApplyDeadlinePassed({
+              application_deadline_at: j.application_deadline_at,
+              application_deadline: j.application_deadline,
+            }),
+          )
           .map((j) => {
             const tracks = Array.isArray(j.audience_tracks) ? j.audience_tracks : [];
             const hasFresher = tracks.includes('fresher');
@@ -186,7 +364,7 @@ export default function JobDetailsPage() {
               city: j.location ?? '—',
               experience: experienceLabel,
               isFree: !(j.allowed_plans && j.allowed_plans.length),
-              applicationDeadline: formatDate(j.application_deadline),
+              applicationDeadline: formatApplyDeadlineShort(j.application_deadline_at, j.application_deadline),
               walkInDate: formatDate(j.walk_in_date),
             };
           }));
@@ -248,7 +426,12 @@ export default function JobDetailsPage() {
     );
   }
 
-  const isExpired = isJobExpired(job.application_deadline);
+  const deadlineDateRaw =
+    job.application_deadline != null ? String(job.application_deadline).slice(0, 10) : null;
+  const isExpired = isApplyDeadlinePassed({
+    application_deadline_at: job.application_deadline_at,
+    application_deadline: job.application_deadline,
+  });
   const jobNotAccepting = job.status !== 'open';
   const usesPublicForm = !(
     (job.apply_link && job.apply_link.trim()) ||
@@ -269,8 +452,6 @@ export default function JobDetailsPage() {
     `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
   const jobNotices = spotlightActivity.notices.length > 0 ? spotlightActivity.notices : toArray(job.notices);
   const jobShortlisted = spotlightActivity.shortlisted.length > 0 ? spotlightActivity.shortlisted : toArray(job.shortlisted);
-  const hasActivity = jobNotices.length > 0 || jobShortlisted.length > 0;
-
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       <Seo 
@@ -337,9 +518,18 @@ export default function JobDetailsPage() {
                     <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
                       <HiCalendarDays className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
                       <span className="wrap-anywhere">
-                        {job.application_deadline ? new Date(job.application_deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Flexible'}
+                        {formatApplyDeadlineShort(job.application_deadline_at, job.application_deadline) ?? 'Flexible'}
                       </span>
                     </div>
+                    {!isExpired && (deadlineDateRaw || job.application_deadline_at) ? (
+                      <div className="flex items-center gap-2 mt-1 text-sm text-slate-600 font-semibold">
+                        <HiClock className="w-4 h-4 text-amber-600 shrink-0" />
+                        <ApplyDeadlineCountdown
+                          applicationDeadlineAt={job.application_deadline_at}
+                          applicationDeadlineDate={deadlineDateRaw}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                   {job.location && job.location !== '—' && (
                     <div className="flex flex-col gap-1 min-w-0">
@@ -353,60 +543,29 @@ export default function JobDetailsPage() {
                 </div>
 
                 <div className="space-y-8 min-w-0">
+                  {Array.isArray(job.key_skills) && job.key_skills.length > 0 && (
+                    <section className="min-w-0">
+                      <h2 className="text-xl font-bold text-slate-900 mb-3">Key skills</h2>
+                      <div className="flex flex-wrap gap-2">
+                        {job.key_skills.map((s) => (
+                          <span
+                            key={s}
+                            className="inline-flex items-center rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-800"
+                          >
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
+                  <LiveHiringActivitySection notices={jobNotices} shortlisted={jobShortlisted} />
+
                   <section className="min-w-0">
                     <h2 className="text-xl font-bold text-slate-900 mb-4">Job Description</h2>
                     <div className="prose prose-slate max-w-full text-slate-600 leading-relaxed whitespace-pre-wrap wrap-anywhere">
                       {job.description || 'No description provided.'}
                     </div>
-                  </section>
-
-                  <section className="min-w-0">
-                    <h2 className="text-xl font-bold text-slate-900 mb-4">Live Hiring Activity</h2>
-                    {hasActivity ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                          <h3 className="text-sm font-semibold text-slate-800 mb-3">Timeline Updates</h3>
-                          {jobNotices.length > 0 ? (
-                            <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
-                              {jobNotices.map((notice, idx) => (
-                                <div key={`notice-${idx}`} className="rounded-xl bg-white border border-slate-100 p-3">
-                                  <p className="text-sm text-slate-700 wrap-anywhere">{notice?.message ?? 'Update available'}</p>
-                                  {notice?.at && (
-                                    <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-400">{notice.at}</p>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-500">No timeline updates yet.</p>
-                          )}
-                        </div>
-
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                          <h3 className="text-sm font-semibold text-slate-800 mb-3">Selected Aspirants</h3>
-                          {jobShortlisted.length > 0 ? (
-                            <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                              {jobShortlisted.map((person, idx) => (
-                                <div key={`shortlisted-${idx}`} className="flex items-center justify-between gap-2 rounded-xl bg-white border border-slate-100 px-3 py-2">
-                                  <span className="text-sm font-medium text-slate-700 wrap-anywhere">
-                                    {person?.name || 'Candidate'}
-                                  </span>
-                                  <span className="text-xs text-slate-500 shrink-0">{person?.city || 'N/A'}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-slate-500">No shortlisted aspirants yet.</p>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                        <p className="text-sm text-slate-500">
-                          Activity will appear here once admins publish timeline updates or shortlisted candidates.
-                        </p>
-                      </div>
-                    )}
                   </section>
 
                   {job.requirements && job.requirements.length > 0 && (
@@ -490,7 +649,7 @@ export default function JobDetailsPage() {
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-indigo-200/50 min-w-0 overflow-hidden">
+                <div className="bg-linear-to-br from-indigo-600 to-violet-700 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-indigo-200/50 min-w-0 overflow-hidden">
                    <h3 className="text-lg font-bold mb-2">Want to boost your chances?</h3>
                    <p className="text-indigo-100 text-sm mb-6 leading-relaxed">
                      Get direct interview slots and expert mock interview practice with our Premium plans.

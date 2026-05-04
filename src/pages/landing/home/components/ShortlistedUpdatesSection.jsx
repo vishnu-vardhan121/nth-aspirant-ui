@@ -314,7 +314,7 @@ export default function ShortlistedUpdatesSection() {
                     to={`/jobs/${job.id}`}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-500 hover:text-indigo-700 transition-colors"
                   >
-                    View Role <HiArrowRight className="h-3 w-3" />
+                    Open role page
                   </Link>
                 </div>
               </div>

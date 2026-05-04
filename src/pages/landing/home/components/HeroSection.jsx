@@ -43,7 +43,7 @@ export default function HeroSection() {
               to="/early-access"
               className="group flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/85 bg-black/25 px-8 py-4 text-base font-bold tracking-tight text-white shadow-lg shadow-black/20 ring-1 ring-white/25 backdrop-blur-md transition-[background-color,box-shadow,border-color] duration-200 hover:border-white hover:bg-black/35 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:brightness-95 sm:min-h-15 sm:min-w-0 sm:flex-1 sm:max-w-[min(100%,20rem)] sm:px-10 sm:text-lg"
             >
-              Join the shortlist
+              Get matched by our team
             </Link>
           </div>
         </div>

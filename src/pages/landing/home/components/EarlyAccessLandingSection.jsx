@@ -43,32 +43,34 @@ export default function EarlyAccessLandingSection() {
           >
             <div className="inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-indigo-700 ring-1 ring-indigo-100 shadow-sm mb-5">
               <HiSparkles className="h-4 w-4 text-indigo-600 shrink-0" aria-hidden />
-              Verified shortlist
+              Recruiter-led matching
             </div>
             <h2
               id="early-access-heading"
               className="text-3xl sm:text-4xl md:text-[2.35rem] font-bold tracking-tight text-slate-900 leading-[1.15]"
             >
-              Opportunities that{' '}
-              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">come to you</span>
+              Beyond job portals -{' '}
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">
+                introductions when you fit
+              </span>
             </h2>
             <p className="mt-5 text-lg sm:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Your profile stays in our verified shortlist. When a company needs someone with your skills, we match and connect you
-              directly—no need to keep applying everywhere.
+              Add your profile once-we keep it on file for roles that truly fit. When a company needs your skills and experience, we introduce you
+              directly-without asking you to re-apply on every site.
             </p>
             <ul className="mt-8 space-y-3 max-w-xl">
               <li className="flex gap-3 text-slate-700">
                 <HiShieldCheck className="h-6 w-6 shrink-0 text-emerald-600 mt-0.5" aria-hidden />
                 <span className="text-[15px] sm:text-base leading-snug">
-                  <span className="font-semibold text-slate-900">Curated access.</span> Roles and intros we stand behind—not a bulk
-                  database blast.
+                  <span className="font-semibold text-slate-900">Human review.</span> We only reach out when there&apos;s a genuine
+                  role-not a mass mail blast.
                 </span>
               </li>
               <li className="flex gap-3 text-slate-700">
                 <HiShieldCheck className="h-6 w-6 shrink-0 text-emerald-600 mt-0.5" aria-hidden />
                 <span className="text-[15px] sm:text-base leading-snug">
-                  <span className="font-semibold text-slate-900">One profile.</span> Share your details once; we reach out when
-                  there&apos;s a real fit.
+                  <span className="font-semibold text-slate-900">One profile.</span> Same details power introductions to hiring teams;
+                  you skip repeating forms everywhere.
                 </span>
               </li>
             </ul>
@@ -77,8 +79,7 @@ export default function EarlyAccessLandingSection() {
                 to="/early-access"
                 className="group nth-btn-primary inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold shadow-lg shadow-indigo-200/60 cursor-pointer transition-all duration-200 hover:shadow-indigo-300/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                Join the shortlist
-                <HiArrowRight className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5" aria-hidden />
+                Share my profile
               </Link>
               <Link
                 to="/jobs"

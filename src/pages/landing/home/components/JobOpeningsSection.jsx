@@ -16,7 +16,12 @@ import {
   HiUserGroup,
 } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
+import ApplyDeadlineCountdown from '../../../../components/ApplyDeadlineCountdown';
 import { PageLoader } from '../../../../components/ui/Loader';
+import {
+  formatApplyDeadlineShort,
+  isApplyDeadlinePassed,
+} from '../../../../lib/jobApplicationDeadline';
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../../store/hooks';
 import { supabase } from '../../../../lib/supabase';
@@ -52,6 +57,27 @@ function parseSpotlightPayload(raw) {
   return [];
 }
 
+/** Admin `key_skills` (text[] or JSON); also tolerates legacy string lists. */
+function normalizeKeySkillsVal(value) {
+  if (value == null) return [];
+  if (Array.isArray(value)) {
+    return value.map((s) => String(s ?? '').trim()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    const t = value.trim();
+    if (!t) return [];
+    try {
+      return normalizeKeySkillsVal(JSON.parse(t));
+    } catch {
+      return t.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+    }
+  }
+  if (typeof value === 'object') {
+    return coerceJsonArray(value).map((s) => String(s ?? '').trim()).filter(Boolean);
+  }
+  return [];
+}
+
 function normalizeSpotlightJob(job) {
   if (!job || typeof job !== 'object' || !job.id) return null;
   return {
@@ -59,6 +85,10 @@ function normalizeSpotlightJob(job) {
     title: job.title ?? 'Hiring role',
     company: job.company_name ?? '',
     city: job.location ?? '—',
+    application_deadline: job.application_deadline ?? null,
+    application_deadline_at: job.application_deadline_at ?? null,
+    job_status: job.job_status ?? job.status ?? 'open',
+    key_skills: normalizeKeySkillsVal(job.key_skills),
     notices: coerceJsonArray(job.notices),
     shortlisted: coerceJsonArray(job.shortlisted),
   };
@@ -112,14 +142,14 @@ function AvatarChip({ name }) {
   const color = colors[(name?.charCodeAt(0) ?? 0) % colors.length];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border text-xs font-semibold ${color} whitespace-nowrap`}
+      className={`inline-flex items-center gap-1 pl-0.5 pr-2 py-0.5 rounded-full border text-[10px] font-semibold ${color} max-w-[160px] truncate`}
     >
       <span
-        className={`inline-flex items-center justify-center w-5 h-5 rounded-full bg-white/80 text-[10px] font-bold ${color.split(' ')[1]}`}
+        className={`inline-flex shrink-0 items-center justify-center w-4 h-4 rounded-full bg-white/80 text-[8px] font-bold ${color.split(' ')[1]}`}
       >
         {initials}
       </span>
-      {name ?? 'Candidate'}
+      <span className="min-w-0 truncate">{name ?? 'Candidate'}</span>
     </span>
   );
 }
@@ -127,13 +157,13 @@ function AvatarChip({ name }) {
 /* ─────────────────────────────────────── Badge ─── */
 function Badge({ free }) {
   return free ? (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-bold tracking-wide border border-indigo-200/70 uppercase">
-      <HiSparkles className="w-3 h-3 shrink-0" />
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-bold tracking-wide border border-indigo-200/80 uppercase">
+      <HiSparkles className="w-3 h-3 shrink-0 text-indigo-500" />
       Free
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-violet-50 text-violet-700 text-[11px] font-bold tracking-wide border border-violet-200/70 uppercase">
-      <HiBriefcase className="w-3 h-3 shrink-0" />
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-violet-50 text-violet-800 text-[10px] font-bold tracking-wide border border-violet-200/80 uppercase">
+      <HiBriefcase className="w-3 h-3 shrink-0 text-violet-500" />
       Premium
     </span>
   );
@@ -142,11 +172,13 @@ function Badge({ free }) {
 /* ─────────────────────────────────────── CTA button ─── */
 function CtaButton({ job, isAuthenticated, pricingTo }) {
   const canView = job.isFree || isAuthenticated;
+  const status = job.jobStatus ?? 'open';
+  const applyClosed = job.isExpired || status !== 'open';
 
-  if (job.isExpired) {
+  if (applyClosed) {
     return (
-      <div className="w-full text-center px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 bg-slate-50 border border-slate-200/80 cursor-not-allowed select-none">
-        {job.isUpdatesOnly ? 'Role no longer open' : 'Application closed'}
+      <div className="w-full text-center px-3 py-2 rounded-xl text-xs font-semibold text-slate-500 bg-slate-100/90 border border-slate-200 cursor-not-allowed select-none">
+        {job.isUpdatesOnly ? 'Role no longer open' : status === 'closed' ? 'Applications closed' : 'Application closed'}
       </div>
     );
   }
@@ -155,9 +187,9 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
       return (
         <Link
           to={`/jobs/${job.id}`}
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          View Role <HiArrowRight className="w-4 h-4 shrink-0" />
+          See hiring updates <HiArrowRight className="w-4 h-4 shrink-0" />
         </Link>
       );
     }
@@ -165,7 +197,7 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
       return (
         <Link
           to={`/jobs/${job.id}`}
-          className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
           Apply Now <HiArrowRight className="w-4 h-4 shrink-0" />
         </Link>
@@ -174,7 +206,7 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
     return (
       <Link
         to={pricingTo}
-        className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl font-semibold text-sm bg-violet-600 hover:bg-violet-700 text-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
+        className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-violet-600 hover:bg-violet-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-600"
       >
         View Plans to Apply <HiArrowRight className="w-4 h-4 shrink-0" />
       </Link>
@@ -183,7 +215,7 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
   return (
     <Link
       to={pricingTo}
-      className="flex items-center justify-center gap-2 w-full px-4 py-2.5 rounded-xl font-semibold text-sm border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 bg-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+      className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm border-2 border-indigo-200 text-indigo-700 hover:bg-indigo-50 bg-white transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
     >
       <HiLockClosed className="w-4 h-4 shrink-0" />
       Unlock Position
@@ -191,19 +223,93 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
   );
 }
 
+/* ─────────────────────────────────────── Apply deadline strip ─── */
+function DeadlineApplyStrip({ job, compact = false }) {
+  const hasDeadline =
+    job.applicationDeadlineRaw || job.applicationDeadline || job.applicationDeadlineAt;
+  if (!hasDeadline) return null;
+  const status = job.jobStatus ?? 'open';
+  const applyClosed = job.isExpired || status !== 'open';
+  const pad = compact ? 'px-2.5 py-2' : 'px-3 py-2.5';
+  const rounded = compact ? 'rounded-lg' : 'rounded-xl';
+
+  if (applyClosed) {
+    return (
+      <div
+        className={`${rounded} border border-slate-200/90 bg-slate-50/90 ${pad} ring-1 ring-slate-100/80`}
+      >
+        <p
+          className={`font-semibold uppercase tracking-wider text-slate-500 ${compact ? 'text-[9px] mb-0.5' : 'text-[10px] mb-1'}`}
+        >
+          Apply by
+        </p>
+        {job.applicationDeadline ? (
+          <p className={`font-semibold text-slate-800 ${compact ? 'text-[11px]' : 'text-sm'}`}>
+            {job.applicationDeadline}
+          </p>
+        ) : (
+          <p className={`text-slate-600 ${compact ? 'text-[11px]' : 'text-sm'}`}>Deadline was set</p>
+        )}
+        <p className={`text-slate-500 leading-snug ${compact ? 'text-[10px] mt-1' : 'text-xs mt-1.5'}`}>
+          {status !== 'open'
+            ? 'This role is not accepting new applications.'
+            : 'The apply window for this listing has ended.'}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={`${rounded} border border-amber-200/80 bg-linear-to-br from-amber-50/95 via-white to-orange-50/40 ${pad} shadow-sm shadow-amber-100/30 ring-1 ring-amber-100/50`}
+    >
+      <div className={`flex items-start justify-between gap-2 ${compact ? 'mb-1' : 'mb-1.5'}`}>
+        <p
+          className={`font-bold uppercase tracking-wider text-amber-900/85 ${compact ? 'text-[9px]' : 'text-[10px]'}`}
+        >
+          Apply closes
+        </p>
+        <span
+          className={`inline-flex shrink-0 items-center gap-1 rounded-lg border border-amber-200/70 bg-amber-100/70 font-semibold text-amber-900/90 ${compact ? 'text-[10px] px-1.5 py-0.5' : 'text-[11px] px-2 py-0.5'}`}
+        >
+          <HiClock className={compact ? 'w-3 h-3' : 'w-3.5 h-3.5'} aria-hidden />
+          IST
+        </span>
+      </div>
+      {job.applicationDeadline ? (
+        <p
+          className={`font-bold tabular-nums text-amber-950 ${compact ? 'text-[10px] mb-1' : 'text-sm mb-1.5'}`}
+        >
+          {job.applicationDeadline}
+        </p>
+      ) : null}
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 border-t border-amber-200/50 pt-1.5">
+        <span className={`font-medium text-amber-900/80 ${compact ? 'text-[9px]' : 'text-[10px]'}`}>
+          Time remaining
+        </span>
+        <ApplyDeadlineCountdown
+          applicationDeadlineAt={job.applicationDeadlineAt}
+          applicationDeadlineDate={job.applicationDeadlineRaw}
+          className={compact ? 'text-[10px]' : 'text-xs'}
+        />
+      </div>
+    </div>
+  );
+}
+
 /* ─────────────────────────────────────── Message bubble ─── */
 function MessageBubble({ text, index, timeLabel }) {
   return (
-    <li className="flex items-start gap-2.5">
-      <span className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-[10px] font-bold text-indigo-700">
-        {index + 1}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm text-slate-700 leading-snug">{text}</p>
+    <li className="flex gap-2">
+      <div className="flex shrink-0 flex-col items-center pt-0.5">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-600 text-[9px] font-bold text-white shadow-sm ring-1 ring-white">
+          {index + 1}
+        </span>
+      </div>
+      <div className="min-w-0 flex-1 rounded-lg border border-slate-100 bg-white px-2.5 py-1.5 shadow-sm">
+        <p className="text-xs leading-snug text-slate-700">{text}</p>
         {timeLabel ? (
-          <span className="mt-1 block text-[10px] text-slate-400 font-medium tabular-nums tracking-wide">
-            {timeLabel}
-          </span>
+          <p className="mt-1 text-[10px] font-medium tabular-nums text-slate-400">{timeLabel}</p>
         ) : null}
       </div>
     </li>
@@ -224,154 +330,172 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
     <article
       onMouseEnter={() => setHoveredId(job.id)}
       onMouseLeave={() => setHoveredId(null)}
-      className={`relative w-full rounded-2xl overflow-hidden border transition-all duration-200 bg-white
-        ${job.isFree ? 'border-indigo-100 hover:border-indigo-200' : 'border-violet-100 hover:border-violet-200'}
-        ${isHovered ? 'shadow-xl shadow-indigo-100/40 ring-1 ring-indigo-100' : 'shadow-md shadow-slate-100/60'}
+      className={`relative w-full overflow-hidden rounded-2xl border bg-white transition-all duration-200
+        ${job.isFree ? 'border-slate-200/90 hover:border-indigo-200' : 'border-slate-200/90 hover:border-violet-200'}
+        ${isHovered ? 'shadow-lg shadow-indigo-200/20 ring-1 ring-indigo-100/70' : 'shadow-md shadow-slate-200/30'}
       `}
     >
-      {/* top accent line */}
-      <div className={`h-1 w-full ${job.isFree ? 'bg-gradient-to-r from-indigo-500 to-indigo-400' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
+      <div
+        className={`h-1 w-full ${job.isFree ? 'bg-linear-to-r from-indigo-600 via-indigo-500 to-violet-500' : 'bg-linear-to-r from-violet-600 via-violet-500 to-fuchsia-500'}`}
+      />
 
-      {/* 2-column body */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
-
-        {/* LEFT: job info */}
-        <div className="lg:col-span-5 p-5 sm:p-6 flex flex-col gap-4">
-          {/* row: badge + experience */}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-2 flex-wrap">
+      <div className="grid grid-cols-1 divide-y divide-slate-100 lg:grid-cols-12 lg:divide-x lg:divide-y-0">
+        {/* LEFT: role summary */}
+        <div className="flex flex-col gap-3 bg-white p-4 sm:p-5 lg:col-span-5">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1.5">
               <Badge free={job.isFree} />
               {job.isUpdatesOnly && (
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 text-[11px] font-bold uppercase">
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-800">
                   Spotlight
                 </span>
               )}
+              {((job.jobStatus ?? 'open') !== 'open' || job.isExpired) && (
+                <span className="inline-flex items-center gap-0.5 rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-600">
+                  Apply closed
+                </span>
+              )}
             </div>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+            <span className="rounded-full border border-slate-200/80 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
               {job.experience}
             </span>
           </div>
 
-          {/* title */}
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 leading-snug line-clamp-2 mb-1">
+          <div className="space-y-1">
+            <h3 className="line-clamp-2 text-lg font-bold leading-snug tracking-tight text-slate-900 sm:text-xl">
               {job.title}
             </h3>
             {canView ? (
-              <p className="text-sm font-semibold text-indigo-600">{job.company || 'NTH Hiring Partner'}</p>
+              <p className="text-xs font-semibold text-indigo-600">{job.company || 'NTH Hiring Partner'}</p>
             ) : (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-500 font-medium">
-                <HiLockClosed className="w-3.5 h-3.5 shrink-0" />
-                Premium Members Only
+              <div className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600">
+                <HiLockClosed className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                Premium members only
               </div>
             )}
           </div>
 
-          {/* meta */}
-          <div className="flex flex-col gap-1.5 text-sm text-slate-600">
-            {job.city && job.city !== '—' && (
-              <span className="flex items-center gap-1.5">
-                <HiMapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                {job.city}
-              </span>
-            )}
-            {job.applicationDeadline && (
-              <span className="flex items-center gap-1.5">
-                <HiClock className="w-4 h-4 text-slate-400 shrink-0" />
-                Apply by {job.applicationDeadline}
-              </span>
-            )}
-          </div>
-
-          {/* requirements */}
           {job.requirements?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {job.requirements.slice(0, 4).map((req) => (
-                <span key={req} className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-700 text-xs font-medium border border-slate-200">
-                  {req}
-                </span>
-              ))}
-              {job.requirements.length > 4 && (
-                <span className="px-2.5 py-1 rounded-lg bg-slate-50 text-slate-500 text-xs font-medium">
-                  +{job.requirements.length - 4} more
-                </span>
-              )}
-            </div>
-          )}
-
-          {/* CTA */}
-          <div className="mt-auto pt-2">
-            <CtaButton job={job} isAuthenticated={isAuthenticated} pricingTo={pricingTo} />
-          </div>
-        </div>
-
-        {/* RIGHT: updates */}
-        <div className="lg:col-span-7 p-5 sm:p-6 flex flex-col gap-4 bg-slate-50/50">
-          {/* header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Live Updates</p>
-            </div>
-            <div className="flex items-center gap-3 text-[11px] font-semibold text-slate-400">
-              {hasMessages && (
-                <span className="flex items-center gap-1">
-                  <HiChatBubbleLeftRight className="w-3.5 h-3.5" />
-                  {recentNotices.length} msg{recentNotices.length !== 1 ? 's' : ''}
-                </span>
-              )}
-              {hasCandidates && (
-                <span className="flex items-center gap-1">
-                  <HiUserGroup className="w-3.5 h-3.5" />
-                  {shortlisted.length} shortlisted
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* messages */}
-          {hasMessages ? (
-            <ul className="space-y-3">
-              {recentNotices.map((item, i) => (
-                <MessageBubble
-                  key={`${job.id}-m-${i}`}
-                  text={item?.message ?? ''}
-                  index={i}
-                  timeLabel={formatNoticeTimeLabel(item)}
-                />
-              ))}
-            </ul>
-          ) : (
-            <div className="flex-1 min-h-[64px] flex flex-col items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/70 py-5 sm:py-6 gap-1.5">
-              <HiChatBubbleLeftRight className="w-8 h-8 text-indigo-200" />
-              <p className="text-xs text-slate-400 font-medium">No messages yet</p>
-            </div>
-          )}
-
-          {/* shortlisted */}
-          {hasCandidates && (
-            <div className="rounded-xl border border-indigo-100 bg-white p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <HiCheckBadge className="w-4 h-4 text-indigo-500 shrink-0" />
-                <p className="text-xs font-bold uppercase tracking-widest text-indigo-700">Shortlisted</p>
-                <span className="ml-auto text-[11px] text-slate-400 font-semibold">{shortlisted.length} candidate{shortlisted.length !== 1 ? 's' : ''}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {shortlisted.slice(0, 24).map((person, i) => (
-                  <AvatarChip key={`${job.id}-s-${i}`} name={person?.name} />
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Key skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {job.requirements.slice(0, 8).map((req) => (
+                  <span
+                    key={req}
+                    className="rounded-full border border-indigo-100 bg-indigo-50/90 px-2 py-0.5 text-[11px] font-semibold text-indigo-900"
+                  >
+                    {req}
+                  </span>
                 ))}
-                {shortlisted.length > 24 && (
-                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 border border-indigo-200 text-xs font-bold text-indigo-800">
-                    +{shortlisted.length - 24} more
+                {job.requirements.length > 8 && (
+                  <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                    +{job.requirements.length - 8}
                   </span>
                 )}
               </div>
             </div>
           )}
 
-          <p className="text-[11px] text-slate-400 leading-relaxed mt-auto">
-            Open the role for the full hiring timeline →
-          </p>
+          <div className="flex flex-col gap-2 text-xs text-slate-600">
+            {job.city && job.city !== '—' && (
+              <span className="inline-flex items-center gap-1.5 text-slate-700">
+                <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                  <HiMapPin className="h-3.5 w-3.5" aria-hidden />
+                </span>
+                <span className="font-medium">{job.city}</span>
+              </span>
+            )}
+            <DeadlineApplyStrip job={job} />
+          </div>
+
+          <div className="mt-auto border-t border-slate-100 pt-3">
+            <CtaButton job={job} isAuthenticated={isAuthenticated} pricingTo={pricingTo} />
+          </div>
+        </div>
+
+        {/* RIGHT: hiring timeline */}
+        <div className="flex flex-col gap-3 bg-linear-to-b from-indigo-50/30 via-white to-slate-50/35 p-4 sm:p-5 lg:col-span-7">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <div className="mb-0 flex items-center gap-1.5">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-35" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                </span>
+                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">Hiring timeline</p>
+              </div>
+              <p className="text-[10px] text-slate-500">Updates from the hiring team</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {hasMessages && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                  <HiChatBubbleLeftRight className="h-3 w-3 text-indigo-500" />
+                  {recentNotices.length} update{recentNotices.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              {hasCandidates && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50/80 px-2 py-0.5 text-[10px] font-semibold text-indigo-800">
+                  <HiUserGroup className="h-3 w-3" />
+                  {shortlisted.length} shortlisted
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="max-h-[200px] min-h-0 flex-1 overflow-y-auto rounded-xl border border-slate-100/90 bg-white/90 shadow-inner shadow-slate-100/50">
+            {hasMessages ? (
+              <ul className="space-y-1.5 p-2.5 sm:p-3">
+                {recentNotices.map((item, i) => (
+                  <MessageBubble
+                    key={`${job.id}-m-${i}`}
+                    text={item?.message ?? ''}
+                    index={i}
+                    timeLabel={formatNoticeTimeLabel(item)}
+                  />
+                ))}
+              </ul>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-1.5 px-3 py-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-300 ring-1 ring-indigo-100/80">
+                  <HiChatBubbleLeftRight className="h-5 w-5" aria-hidden />
+                </span>
+                <p className="text-center text-xs font-medium text-slate-500">No timeline messages yet</p>
+                <p className="max-w-[240px] text-center text-[10px] leading-relaxed text-slate-400">
+                  Updates appear when the team posts hiring news.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {hasCandidates && (
+            <div className="rounded-xl border border-indigo-100/90 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center gap-1.5">
+                <HiCheckBadge className="h-4 w-4 shrink-0 text-indigo-500" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-800">Shortlisted</p>
+                <span className="ml-auto text-[10px] font-semibold text-slate-400">
+                  {shortlisted.length} candidate{shortlisted.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {shortlisted.slice(0, 24).map((person, i) => (
+                  <AvatarChip key={`${job.id}-s-${i}`} name={person?.name} />
+                ))}
+                {shortlisted.length > 24 && (
+                  <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-800">
+                    +{shortlisted.length - 24}
+            </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <Link
+            to={`/jobs/${job.id}`}
+            className="mt-auto inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2.5 text-xs font-bold text-indigo-800 shadow-sm transition-[background-color,border-color,box-shadow,color] duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+            Open full role & hiring updates
+            <HiArrowRight className="h-4 w-4 shrink-0" aria-hidden />
+          </Link>
         </div>
       </div>
     </article>
@@ -390,101 +514,115 @@ function JobCardDirectory({ job, hoveredId, setHoveredId, isAuthenticated, prici
     <article
       onMouseEnter={() => setHoveredId(job.id)}
       onMouseLeave={() => setHoveredId(null)}
-      className={`relative self-start flex flex-col rounded-2xl overflow-hidden border bg-white transition-all duration-200
-        ${job.isFree ? 'border-indigo-100 hover:border-indigo-200' : 'border-violet-100 hover:border-violet-200'}
-        ${isHovered ? 'shadow-xl shadow-indigo-100/40 ring-1 ring-indigo-100' : 'shadow-sm'}
+      className={`relative flex flex-col self-start overflow-hidden rounded-2xl border bg-white transition-all duration-200
+        ${job.isFree ? 'border-slate-200/90 hover:border-indigo-200' : 'border-slate-200/90 hover:border-violet-200'}
+        ${isHovered ? 'shadow-lg shadow-indigo-200/15 ring-1 ring-indigo-100/60' : 'shadow-md shadow-slate-200/30'}
       `}
     >
-      <div className={`h-1 w-full ${job.isFree ? 'bg-gradient-to-r from-indigo-500 to-indigo-400' : 'bg-gradient-to-r from-violet-500 to-violet-400'}`} />
+      <div
+        className={`h-1 w-full ${job.isFree ? 'bg-linear-to-r from-indigo-600 to-indigo-400' : 'bg-linear-to-r from-violet-600 to-violet-400'}`}
+      />
 
-      <div className="p-5 flex flex-col gap-4 flex-1">
-        {/* header */}
-        <div className="flex items-start justify-between gap-2">
-          <Badge free={job.isFree} />
-          <span className="text-[11px] font-semibold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg whitespace-nowrap">
+      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-4">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge free={job.isFree} />
+            {((job.jobStatus ?? 'open') !== 'open' || job.isExpired) && (
+              <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
+                Apply closed
+              </span>
+            )}
+          </div>
+          <span className="whitespace-nowrap rounded-full border border-slate-200/80 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
             {job.experience}
           </span>
         </div>
 
-        {/* title + company */}
         <div>
-          <h3 className="text-base font-bold text-slate-900 leading-snug line-clamp-2 mb-1">
-            {job.title}
-          </h3>
+          <h3 className="mb-0.5 line-clamp-2 text-base font-bold leading-snug tracking-tight text-slate-900">
+          {job.title}
+        </h3>
           {job.isUpdatesOnly && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold uppercase mb-1">
+            <span className="mb-1 inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
               Spotlight
             </span>
           )}
           {canView ? (
             <p className="text-xs font-semibold text-indigo-600">{job.company || 'NTH Hiring Partner'}</p>
           ) : (
-            <div className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-[11px] text-slate-500 font-medium">
-              <HiLockClosed className="w-3 h-3 shrink-0" />
+            <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-500">
+              <HiLockClosed className="h-3 w-3 shrink-0" />
               Premium only
+            </div>
+          )}
+          {job.requirements?.length > 0 && (
+            <div className="mt-2.5">
+              <p className="mb-1.5 text-[9px] font-semibold uppercase tracking-wider text-slate-400">Key skills</p>
+              <div className="flex flex-wrap gap-1.5">
+                {job.requirements.slice(0, 5).map((req) => (
+                  <span
+                    key={req}
+                    className="rounded-full border border-indigo-100 bg-indigo-50/90 px-2 py-0.5 text-[11px] font-semibold text-indigo-900"
+                  >
+                    {req}
+                  </span>
+                ))}
+                {job.requirements.length > 5 && (
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
+                    +{job.requirements.length - 5}
+                  </span>
+                )}
+              </div>
             </div>
           )}
         </div>
 
-        {/* meta */}
-        <div className="flex flex-col gap-1 text-xs text-slate-600">
+        <div className="flex flex-col gap-2 text-[11px] text-slate-600">
           {job.city && job.city !== '—' && (
-            <span className="flex items-center gap-1.5">
-              <HiMapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+            <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
+              <HiMapPin className="h-3 w-3 shrink-0 text-slate-400" />
               {job.city}
             </span>
           )}
-          {job.applicationDeadline && (
-            <span className="flex items-center gap-1.5">
-              <HiClock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-              Apply by {job.applicationDeadline}
-            </span>
-          )}
+          <DeadlineApplyStrip job={job} compact />
         </div>
 
-        {/* activity */}
         {hasActivity && (
-          <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 space-y-2.5">
-            <div className="flex items-center justify-between">
+          <div className="max-h-[180px] space-y-2 overflow-y-auto rounded-xl border border-slate-100 bg-linear-to-b from-slate-50/80 to-white p-2.5">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Hiring Activity</p>
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Hiring activity</p>
               </div>
-              <span className="text-[10px] text-slate-400">{notices.length + shortlisted.length} updates</span>
+              <span className="text-[9px] font-semibold text-slate-400">
+                {notices.length + shortlisted.length} updates
+              </span>
             </div>
 
             {notices.length > 0 && (
               <ul className="space-y-1.5">
-                {notices.slice(0, 3).map((item, i) => {
-                  const timeLbl = formatNoticeTimeLabel(item);
-                  return (
-                    <li key={i} className="flex items-start gap-2 text-[11px] text-slate-700 leading-snug">
-                      <span className="mt-0.5 w-4 h-4 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-bold flex-shrink-0">
-                        {i + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <span className="block">{item?.message ?? ''}</span>
-                        {timeLbl ? (
-                          <span className="mt-0.5 block text-[9px] text-slate-400 font-medium tabular-nums">{timeLbl}</span>
-                        ) : null}
-                      </div>
-                    </li>
-                  );
-                })}
+                {notices.slice(0, 3).map((item, i) => (
+                  <MessageBubble
+                    key={i}
+                    text={item?.message ?? ''}
+                    index={i}
+                    timeLabel={formatNoticeTimeLabel(item)}
+                  />
+                ))}
               </ul>
             )}
 
             {shortlisted.length > 0 && (
               <div>
-                <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">Shortlisted</p>
+                <p className="mb-1 text-[9px] font-semibold uppercase tracking-wide text-slate-400">Shortlisted</p>
                 <div className="flex flex-wrap gap-1">
                   {shortlisted.slice(0, 6).map((person, i) => (
                     <AvatarChip key={i} name={person?.name} />
                   ))}
                   {shortlisted.length > 6 && (
-                    <span className="px-2 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-[10px] font-bold text-indigo-700">
+                    <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold text-indigo-800">
                       +{shortlisted.length - 6}
-                    </span>
+              </span>
                   )}
                 </div>
               </div>
@@ -492,22 +630,7 @@ function JobCardDirectory({ job, hoveredId, setHoveredId, isAuthenticated, prici
           </div>
         )}
 
-        {/* requirements */}
-        {job.requirements?.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {job.requirements.slice(0, 3).map((req) => (
-              <span key={req} className="px-2 py-0.5 rounded-lg bg-slate-50 text-slate-700 text-[11px] font-medium border border-slate-200">
-                {req}
-              </span>
-            ))}
-            {job.requirements.length > 3 && (
-              <span className="px-2 py-0.5 rounded-lg bg-slate-50 text-slate-500 text-[11px]">+{job.requirements.length - 3}</span>
-            )}
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="mt-auto pt-2 border-t border-slate-100">
+        <div className="mt-auto border-t border-slate-100 pt-3">
           <CtaButton job={job} isAuthenticated={isAuthenticated} pricingTo={pricingTo} />
         </div>
       </div>
@@ -537,28 +660,31 @@ export default function JobOpeningsSection({
       const d = new Date(dateStr);
       return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     };
-    const isExpired = (deadlineStr) => {
-      if (!deadlineStr) return false;
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      const deadline = new Date(deadlineStr); deadline.setHours(0, 0, 0, 0);
-      return today > deadline;
-    };
     const mapLandingJobs = (data) => data.map((j) => {
-      const tracks = Array.isArray(j.audience_tracks) ? j.audience_tracks : [];
-      const hasFresher = tracks.includes('fresher');
-      const hasExperienced = tracks.includes('experienced');
-      const experienceLabel = hasFresher && hasExperienced
-        ? 'Fresher & Experienced'
+          const tracks = Array.isArray(j.audience_tracks) ? j.audience_tracks : [];
+          const hasFresher = tracks.includes('fresher');
+          const hasExperienced = tracks.includes('experienced');
+          const experienceLabel = hasFresher && hasExperienced
+            ? 'Fresher & Experienced'
         : hasFresher ? 'Fresher' : hasExperienced ? 'Experienced' : 'Fresher';
-      return {
+      const rawDeadline = j.application_deadline != null ? String(j.application_deadline).slice(0, 10) : null;
+      const jobStatus = j.status ?? 'open';
+          return {
         id: j.id, title: j.title, company: j.company_name ?? '', city: j.location ?? '—',
-        experience: experienceLabel, requirements: [],
-        isFree: !(j.allowed_plans && j.allowed_plans.length),
-        applyLink: j.apply_link || '/dashboard/jobs',
-        applicationDeadline: formatDate(j.application_deadline),
-        walkInDate: formatDate(j.walk_in_date),
-        address: j.address ?? '',
-        isExpired: isExpired(j.application_deadline),
+            experience: experienceLabel,
+        requirements: normalizeKeySkillsVal(j.key_skills),
+            isFree: !(j.allowed_plans && j.allowed_plans.length),
+            applyLink: j.apply_link || '/dashboard/jobs',
+        applicationDeadline: formatApplyDeadlineShort(j.application_deadline_at, j.application_deadline),
+        applicationDeadlineRaw: rawDeadline,
+        applicationDeadlineAt: j.application_deadline_at ?? null,
+            walkInDate: formatDate(j.walk_in_date),
+            address: j.address ?? '',
+        jobStatus,
+        isExpired: isApplyDeadlinePassed({
+          application_deadline_at: j.application_deadline_at,
+          application_deadline: j.application_deadline,
+        }),
         activity: null, isUpdatesOnly: false,
       };
     });
@@ -566,7 +692,7 @@ export default function JobOpeningsSection({
     const fetchJobs = async () => {
       const { data, error } = await supabase
         .from('jobs')
-        .select('id, title, company_name, location, audience_tracks, allowed_plans, application_deadline, walk_in_date, address, apply_link')
+        .select('id, title, company_name, location, audience_tracks, allowed_plans, application_deadline, application_deadline_at, walk_in_date, address, apply_link, status, key_skills')
         .eq('show_on_landing', true)
         .order('created_at', { ascending: false });
 
@@ -577,21 +703,50 @@ export default function JobOpeningsSection({
       const spotlightJobs = parseSpotlightPayload(spotlightData).map(normalizeSpotlightJob).filter(Boolean);
       const spotlightById = new Map(spotlightJobs.map((job) => [job.id, job]));
 
-      const mergedJobs = baseJobs.map((job) => ({
-        ...job,
-        activity: spotlightById.get(job.id) ?? null,
-      }));
+      const mergedJobs = baseJobs.map((job) => {
+        const spot = spotlightById.get(job.id);
+        const fromSpot = spot?.key_skills?.length ? spot.key_skills : [];
+        const requirements = job.requirements?.length ? job.requirements : fromSpot;
+        const at = job.applicationDeadlineAt ?? spot?.application_deadline_at ?? null;
+        return {
+          ...job,
+          requirements,
+          activity: spot ?? null,
+          applicationDeadlineAt: at,
+          applicationDeadline: formatApplyDeadlineShort(at, job.applicationDeadlineRaw),
+        };
+      });
 
       const updatesOnly = spotlightJobs
         .filter((job) => !baseJobs.some((b) => b.id === job.id))
         .filter((job) => job.notices.length > 0 || job.shortlisted.length > 0)
-        .map((job) => ({
-          id: job.id, title: job.title, company: job.company || 'NTH Hiring Partner',
-          city: job.city || '—', experience: 'Hiring Update', requirements: [],
-          isFree: true, applyLink: `/jobs/${job.id}`,
-          applicationDeadline: null, walkInDate: null, address: '',
-          isExpired: false, activity: job, isUpdatesOnly: true,
-        }));
+        .map((job) => {
+          const rawDl = job.application_deadline != null ? String(job.application_deadline).slice(0, 10) : null;
+          const at = job.application_deadline_at ?? null;
+          const st = job.job_status ?? 'open';
+          return {
+            id: job.id,
+            title: job.title,
+            company: job.company || 'NTH Hiring Partner',
+            city: job.city || '—',
+            experience: 'Hiring Update',
+            requirements: job.key_skills ?? [],
+            isFree: true,
+            applyLink: `/jobs/${job.id}`,
+            applicationDeadline: formatApplyDeadlineShort(at, job.application_deadline),
+            applicationDeadlineRaw: rawDl,
+            applicationDeadlineAt: at,
+            walkInDate: null,
+            address: '',
+            jobStatus: st,
+            isExpired: isApplyDeadlinePassed({
+              application_deadline_at: job.application_deadline_at,
+              application_deadline: job.application_deadline,
+            }),
+            activity: job,
+            isUpdatesOnly: true,
+          };
+        });
 
       setLandingJobs([...mergedJobs, ...updatesOnly]);
       setLoading(false);
@@ -650,13 +805,13 @@ export default function JobOpeningsSection({
       }}
     >
       {/* subtle dot grid bg */}
-      <div
+        <div
         className="absolute inset-0 pointer-events-none opacity-20"
-        style={{
+          style={{
           backgroundImage: 'radial-gradient(circle at 1.5px 1.5px, #6366f1 1px, transparent 0)',
-          backgroundSize: '28px 28px',
-        }}
-      />
+            backgroundSize: '28px 28px',
+          }}
+        />
 
       <SectionContainer useGrid wider className="relative z-10">
 
@@ -670,11 +825,11 @@ export default function JobOpeningsSection({
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3 leading-tight">
             {isDirectory ? (
               <>Browse every{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">open position</span>
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">open position</span>
               </>
             ) : (
               <>Find your next{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">career opportunity</span>
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">career opportunity</span>
               </>
             )}
           </h2>
@@ -711,7 +866,7 @@ export default function JobOpeningsSection({
                   <span className={`text-[11px] px-1.5 py-0.5 rounded-full font-bold
                     ${activeTab === key ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'}`}>
                     {count}
-                  </span>
+                    </span>
                 </button>
               ))}
             </div>

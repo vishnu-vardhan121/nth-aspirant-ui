@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { formatApplyDeadlineShort } from '../../lib/jobApplicationDeadline';
 import { PageLoader } from '../../components/ui/Loader';
 import {
   HiPlus,
@@ -68,6 +69,7 @@ function JobDetailModal({ job, onClose }) {
   if (!job) return null;
 
   const requirements = Array.isArray(job.requirements) ? job.requirements : [];
+  const keySkills = Array.isArray(job.key_skills) ? job.key_skills : [];
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 overflow-hidden overscroll-none">
@@ -133,7 +135,10 @@ function JobDetailModal({ job, onClose }) {
             {detailBlock('Tier / plans', formatPlans(job.allowed_plans))}
             {detailBlock('Job type', job.job_type)}
             {detailBlock('Salary range', job.salary_range)}
-            {detailBlock('Application deadline', formatDate(job.application_deadline))}
+            {detailBlock(
+              'Application deadline',
+              formatApplyDeadlineShort(job.application_deadline_at, job.application_deadline) ?? formatDate(job.application_deadline),
+            )}
             {detailBlock('Walk-in date', formatDate(job.walk_in_date))}
             {detailBlock(
               'Public application limit',
@@ -169,6 +174,22 @@ function JobDetailModal({ job, onClose }) {
               {job.description || '—'}
             </div>
           </div>
+
+          {keySkills.length > 0 ? (
+            <div className="mt-8">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Key skills (landing)</h3>
+              <div className="flex flex-wrap gap-2">
+                {keySkills.map((s) => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-800"
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           {requirements.length > 0 ? (
             <div className="mt-8">
