@@ -22,6 +22,15 @@ export default function InstituteAdModal({ open, onClose, ad }) {
     if (open && isFallback) setDontShowAgain(false);
   }, [open, isFallback]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (!open || !ad) return null;
 
   const finishClose = (opts) => {
@@ -30,14 +39,14 @@ export default function InstituteAdModal({ open, onClose, ad }) {
 
   return (
     <div
-      className="fixed inset-0 z-200 flex items-center justify-center bg-slate-900/55 p-4"
+      className="fixed inset-0 z-200 flex items-center justify-center bg-slate-950/40 p-2 backdrop-blur-md sm:p-4"
       onClick={() => finishClose({ dontShowAgain: isFallback ? dontShowAgain : false })}
       role="dialog"
       aria-modal="true"
       aria-label={isFallback ? 'Hiring and promotions with Naveen Talent Hub' : 'Sponsor advertisement'}
     >
       <div
-        className={`pointer-events-auto relative ${isFallback ? 'w-full max-w-xl' : 'flex h-full min-h-0 w-full max-w-[80vw] max-h-[80vh] items-center justify-center'}`}
+        className={`pointer-events-auto relative ${isFallback ? 'w-full max-w-xl' : 'flex h-full min-h-0 w-full max-w-none max-h-none items-center justify-center sm:max-w-[80vw] sm:max-h-[80vh]'}`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -49,7 +58,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
           className={
             isFallback
               ? 'absolute right-4 top-4 z-10 flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500'
-              : 'absolute right-3 top-3 z-201 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-black/55 text-[1.7rem] font-black leading-none text-white shadow-lg transition-colors hover:bg-black/75 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white'
+              : 'fixed right-[max(0.75rem,env(safe-area-inset-right,0px))] top-[max(0.75rem,env(safe-area-inset-top,0px))] z-203 flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-white/30 bg-black/70 text-[1.8rem] font-black leading-none text-white shadow-xl transition-colors hover:bg-black/85 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:absolute sm:right-3 sm:top-3 sm:z-201 sm:h-10 sm:w-10 sm:bg-black/60 sm:text-[1.7rem]'
           }
           aria-label="Close"
         >
@@ -146,7 +155,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
             </div>
           </div>
         ) : (
-          <div className="relative inline-flex max-h-full max-w-full items-start justify-center">
+          <div className="relative inline-flex max-h-full max-w-full items-center justify-center pt-14 sm:pt-0">
             {ad.linkUrl ? (
               <a
                 href={ad.linkUrl}
@@ -157,14 +166,14 @@ export default function InstituteAdModal({ open, onClose, ad }) {
                 <img
                   src={ad.imageUrl}
                   alt=""
-                  className="max-h-[80vh] max-w-[80vw] h-auto w-auto rounded-lg object-contain shadow-2xl"
+                  className="max-h-[calc(100dvh-10.5rem)] max-w-[94vw] h-auto w-auto rounded-lg object-contain shadow-2xl sm:max-h-[80vh] sm:max-w-[80vw]"
                 />
               </a>
             ) : (
               <img
                 src={ad.imageUrl}
                 alt=""
-                className="max-h-[80vh] max-w-[80vw] h-auto w-auto rounded-lg object-contain shadow-2xl"
+                className="max-h-[calc(100dvh-10.5rem)] max-w-[94vw] h-auto w-auto rounded-lg object-contain shadow-2xl sm:max-h-[80vh] sm:max-w-[80vw]"
               />
             )}
             <a

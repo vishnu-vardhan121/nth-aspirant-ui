@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
+import HelpDeskModal from '../pages/landing/home/components/HelpDeskModal';
 
 const STATIC_LINKS = [
   { label: 'How It Works', to: '#how-it-works' },
@@ -48,13 +49,20 @@ function NavLink({ label, to, showLightNav }) {
   );
 }
 
-export default function Navbar() {
+export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpModalOpenChange, disableHelpTrigger = false }) {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => !!state.auth.user);
   const isLanding = location.pathname === '/';
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [localHelpModalOpen, setLocalHelpModalOpen] = useState(false);
+  const helpModalOpen = typeof controlledHelpModalOpen === 'boolean' ? controlledHelpModalOpen : localHelpModalOpen;
+
+  const setHelpModalOpen = (nextOpen) => {
+    if (onHelpModalOpenChange) onHelpModalOpenChange(nextOpen);
+    if (typeof controlledHelpModalOpen !== 'boolean') setLocalHelpModalOpen(nextOpen);
+  };
 
   const authLinks = isAuthenticated
     ? [{ label: 'Dashboard', to: '/dashboard' }]
@@ -149,6 +157,20 @@ export default function Navbar() {
               )}
             </li>
           ))}
+          <li>
+            <button
+              type="button"
+              disabled={disableHelpTrigger}
+              onClick={() => setHelpModalOpen(true)}
+              className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${
+                showLightStyle
+                  ? 'text-slate-800 hover:text-[hsl(var(--nth-primary))]'
+                  : 'text-white/90 hover:text-white'
+              } ${disableHelpTrigger ? 'cursor-not-allowed opacity-50' : ''}`}
+            >
+              Help
+            </button>
+          </li>
         </ul>
 
         <motion.button
@@ -253,10 +275,28 @@ export default function Navbar() {
                   )}
                 </li>
               ))}
+              <li>
+                <button
+                  type="button"
+                  disabled={disableHelpTrigger}
+                  className={`w-full text-left px-4 py-3 rounded-xl font-medium transition-colors ${
+                    showLightStyle
+                      ? 'text-slate-800 hover:bg-slate-50 hover:text-[hsl(var(--nth-primary))]'
+                      : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                  } ${disableHelpTrigger ? 'cursor-not-allowed opacity-50' : ''}`}
+                  onClick={() => {
+                    setIsMobileMenuOpen(false);
+                    setHelpModalOpen(true);
+                  }}
+                >
+                  Help
+                </button>
+              </li>
             </ul>
           </motion.div>
         )}
       </nav>
+      <HelpDeskModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
     </motion.header>
   );
 }
