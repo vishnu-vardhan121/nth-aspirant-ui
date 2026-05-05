@@ -1,8 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useAppSelector } from '../../store/hooks';
+import { HiArrowLeft } from 'react-icons/hi2';
 import { supabase } from '../../lib/supabase';
+import { buildApplicationDeadlineAtIsoIst, parseDeadlineAtForForm } from '../../lib/jobApplicationDeadline';
 import { PageLoader, ButtonLoader } from '../../components/ui/Loader';
+import {
+  jobCheckboxClass,
+  jobHintClass,
+  jobInputClass,
+  jobLabelClass,
+  jobSectionCard,
+  jobSectionHint,
+  jobSectionTitle,
+  jobSelectClass,
+  jobTextareaClass,
+} from './jobFormStyles';
 
 const JOB_TYPES = ['Full-time', 'Part-time', 'Internship', 'Contract'];
 const TRACK_OPTIONS = [
@@ -40,6 +52,7 @@ export default function EditJobPage() {
     salary_range: '',
     apply_link: '',
     application_deadline: '',
+    application_deadline_time: '',
     walk_in_date: '',
     audience_tracks: ['fresher'],
     job_tier: 'free',
@@ -47,6 +60,7 @@ export default function EditJobPage() {
     show_on_landing: false,
     status: 'open',
     application_limit: '',
+    key_skills: '',
   });
 
   const toggleTrack = (track) => {
@@ -81,6 +95,9 @@ export default function EditJobPage() {
         return;
       }
       if (data) {
+        const deadlineParts = data.application_deadline_at
+          ? parseDeadlineAtForForm(data.application_deadline_at)
+          : { date: data.application_deadline ?? '', time: '' };
         setForm({
           title: data.title ?? '',
           company_name: data.company_name ?? '',
@@ -90,7 +107,8 @@ export default function EditJobPage() {
           job_type: data.job_type ?? 'Full-time',
           salary_range: data.salary_range ?? '',
           apply_link: data.apply_link ?? '',
-          application_deadline: data.application_deadline ?? '',
+          application_deadline: deadlineParts.date,
+          application_deadline_time: deadlineParts.time,
           walk_in_date: data.walk_in_date ?? '',
           audience_tracks: Array.isArray(data.audience_tracks) && data.audience_tracks.length ? data.audience_tracks : ['fresher'],
           job_tier: (data.allowed_plans && data.allowed_plans.length) ? 'premium' : 'free',
@@ -98,6 +116,9 @@ export default function EditJobPage() {
           show_on_landing: data.show_on_landing ?? false,
           status: data.status ?? 'open',
           application_limit: data.application_limit ?? '',
+          key_skills: Array.isArray(data.key_skills) && data.key_skills.length
+            ? data.key_skills.join(', ')
+            : '',
         });
       }
       setLoading(false);
@@ -134,6 +155,10 @@ export default function EditJobPage() {
     }
     setSubmitting(true);
     try {
+      const keySkillsParsed = String(form.key_skills ?? '')
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const { error } = await supabase
         .from('jobs')
         .update({
@@ -146,12 +171,21 @@ export default function EditJobPage() {
           salary_range: form.salary_range.trim() || null,
           apply_link: applyT ? (applyT.startsWith('http') ? applyT : `https://${applyT}`) : null,
           application_deadline: form.application_deadline || null,
+          application_deadline_at: form.application_deadline
+            ? buildApplicationDeadlineAtIsoIst(form.application_deadline, form.application_deadline_time)
+            : null,
           walk_in_date: form.walk_in_date || null,
           audience_tracks: form.audience_tracks,
           allowed_plans: form.job_tier === 'premium' && form.allowed_plans.length ? form.allowed_plans : null,
           show_on_landing: form.show_on_landing,
           status: form.status,
-          application_limit: form.application_limit ? parseInt(form.application_limit, 10) : null,
+          application_limit: (() => {
+            const s = String(form.application_limit ?? '').trim();
+            if (s === '') return null;
+            const n = parseInt(s, 10);
+            return Number.isFinite(n) ? n : null;
+          })(),
+          key_skills: keySkillsParsed.length ? keySkillsParsed : [],
         })
         .eq('id', id);
       if (error) throw error;
@@ -166,220 +200,310 @@ export default function EditJobPage() {
   if (loading) return <PageLoader size="md" label="Loading job…" className="py-12" />;
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto pb-12">
       <button
         type="button"
         onClick={() => navigate('/admin/jobs')}
-        className="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900 text-sm mb-6"
+        className="mb-6 inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-slate-600 ring-1 ring-slate-200 bg-white hover:bg-slate-50 transition-colors"
       >
+        <HiArrowLeft className="h-4 w-4" />
         Back to jobs
       </button>
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Edit job</h1>
 
-      <form onSubmit={handleSubmit} className="max-w-md space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Title *</label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
-            required
-            minLength={2}
-            maxLength={200}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="e.g. Frontend Developer"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Company name *</label>
-          <input
-            type="text"
-            value={form.company_name}
-            onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
-            required
-            minLength={2}
-            maxLength={150}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="Company name"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Description</label>
-          <textarea
-            value={form.description}
-            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-            rows={4}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="Job description"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Location</label>
-          <input
-            type="text"
-            value={form.location}
-            onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="e.g. Bangalore, Remote"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Address / Venue</label>
-          <textarea
-            value={form.address}
-            onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
-            rows={2}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="Full address for interview or work location"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Last date to apply</label>
-          <input
-            type="date"
-            value={form.application_deadline}
-            onChange={(e) => setForm((p) => ({ ...p, application_deadline: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Walk-in date</label>
-          <input
-            type="date"
-            value={form.walk_in_date}
-            onChange={(e) => setForm((p) => ({ ...p, walk_in_date: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Job type</label>
-          <select
-            value={form.job_type}
-            onChange={(e) => setForm((p) => ({ ...p, job_type: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-          >
-            {JOB_TYPES.map((t) => (
-              <option key={t} value={t}>{t}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Salary range</label>
-          <input
-            type="text"
-            value={form.salary_range}
-            onChange={(e) => setForm((p) => ({ ...p, salary_range: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="e.g. ₹X–Y LPA"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Apply / Job link</label>
-          <input
-            type="url"
-            value={form.apply_link}
-            onChange={(e) => setForm((p) => ({ ...p, apply_link: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="https://… (URL for Apply button)"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Audience tracks *</label>
-          <p className="text-xs text-slate-500 mb-2">Select one or both.</p>
-          <div className="flex flex-wrap gap-4">
-            {TRACK_OPTIONS.map((o) => (
-              <label key={o.value} className="inline-flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.audience_tracks.includes(o.value)}
-                  onChange={() => toggleTrack(o.value)}
-                  className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                />
-                <span className="text-sm font-medium text-slate-700">{o.label}</span>
-              </label>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Job tier</label>
-          <select
-            value={form.job_tier}
-            onChange={(e) => setForm((p) => ({ ...p, job_tier: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
-          >
-            {JOB_TIER_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-        {form.job_tier === 'premium' && (
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Allowed plans (Premium)</label>
-            <p className="text-xs text-slate-500 mb-2">Select one or more.</p>
-            <div className="flex flex-wrap gap-4">
-              {PLAN_OPTIONS.map((o) => (
-                <label key={o.value} className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.allowed_plans.includes(o.value)}
-                    onChange={() => togglePlan(o.value)}
-                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm font-medium text-slate-700">{o.label}</span>
-                </label>
-              ))}
+      <div className="mb-8">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600">Edit listing</p>
+        <h1 className="mt-1 text-3xl font-black text-slate-900 tracking-tight">Edit job</h1>
+        <p className={jobSectionHint}>
+          Updates apply to the dashboard and the public job page. Premium tier still controls who can apply
+          from the app; the public cap only affects the website form.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <section className={jobSectionCard}>
+          <h2 className={jobSectionTitle}>Role basics</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className={jobLabelClass}>Title *</label>
+              <input
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                required
+                minLength={2}
+                maxLength={200}
+                className={jobInputClass}
+                placeholder="e.g. Frontend Developer"
+              />
+            </div>
+            <div>
+              <label className={jobLabelClass}>Company name *</label>
+              <input
+                type="text"
+                value={form.company_name}
+                onChange={(e) => setForm((p) => ({ ...p, company_name: e.target.value }))}
+                required
+                minLength={2}
+                maxLength={150}
+                className={jobInputClass}
+                placeholder="Employer name"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Description</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                rows={5}
+                className={jobTextareaClass}
+                placeholder="Role summary, expectations, stack…"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Key skills (landing page)</label>
+              <p className={jobHintClass}>Comma-separated tags shown on the public home jobs section.</p>
+              <input
+                type="text"
+                value={form.key_skills}
+                onChange={(e) => setForm((p) => ({ ...p, key_skills: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. DevOps, Kubernetes, CI/CD"
+              />
             </div>
           </div>
-        )}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="edit_show_on_landing"
-            checked={form.show_on_landing}
-            onChange={(e) => setForm((p) => ({ ...p, show_on_landing: e.target.checked }))}
-            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-          />
-          <label htmlFor="edit_show_on_landing" className="text-sm font-medium text-slate-700">
-            Show on landing page
-          </label>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Application limit</label>
-          <input
-            type="number"
-            min="1"
-            value={form.application_limit}
-            onChange={(e) => setForm((p) => ({ ...p, application_limit: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-            placeholder="e.g. 200 (optional)"
-          />
-          <p className="text-xs text-slate-500 mt-1">Leave blank for no limit.</p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
-          <select
-            value={form.status}
-            onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+        </section>
+
+        <section className={jobSectionCard}>
+          <h2 className={jobSectionTitle}>Location &amp; compensation</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className={jobLabelClass}>Location</label>
+              <input
+                type="text"
+                value={form.location}
+                onChange={(e) => setForm((p) => ({ ...p, location: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. Bangalore, Remote"
+              />
+            </div>
+            <div>
+              <label className={jobLabelClass}>Job type</label>
+              <select
+                value={form.job_type}
+                onChange={(e) => setForm((p) => ({ ...p, job_type: e.target.value }))}
+                className={jobSelectClass}
+              >
+                {JOB_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Address / venue</label>
+              <textarea
+                value={form.address}
+                onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                rows={2}
+                className={jobTextareaClass}
+                placeholder="Interview address or office location (optional)"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Salary range</label>
+              <input
+                type="text"
+                value={form.salary_range}
+                onChange={(e) => setForm((p) => ({ ...p, salary_range: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. ₹X–Y LPA"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className={jobSectionCard}>
+          <h2 className={jobSectionTitle}>Dates &amp; apply flow</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className={jobLabelClass}>Last date to apply</label>
+              <input
+                type="date"
+                value={form.application_deadline}
+                onChange={(e) => setForm((p) => ({ ...p, application_deadline: e.target.value }))}
+                className={jobInputClass}
+              />
+              <p className={jobHintClass}>
+                Leave time empty for end of that day (11:59:59 PM IST). Times are wall clock in India (IST).
+              </p>
+            </div>
+            <div>
+              <label className={jobLabelClass}>Apply closes at (IST, optional)</label>
+              <input
+                type="time"
+                value={form.application_deadline_time}
+                onChange={(e) => setForm((p) => ({ ...p, application_deadline_time: e.target.value }))}
+                disabled={!form.application_deadline}
+                className={jobInputClass}
+              />
+            </div>
+            <div>
+              <label className={jobLabelClass}>Walk-in date</label>
+              <input
+                type="date"
+                value={form.walk_in_date}
+                onChange={(e) => setForm((p) => ({ ...p, walk_in_date: e.target.value }))}
+                className={jobInputClass}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>External apply link</label>
+              <input
+                type="url"
+                value={form.apply_link}
+                onChange={(e) => setForm((p) => ({ ...p, apply_link: e.target.value }))}
+                className={jobInputClass}
+                placeholder="https://… (optional — overrides built-in apply form)"
+              />
+              <p className={jobHintClass}>
+                If set, the job page &quot;Apply&quot; button opens this URL instead of your on-site form.
+              </p>
+            </div>
+            <div className="md:col-span-2">
+              <label className={jobLabelClass}>Public application limit (job page)</label>
+              <input
+                type="number"
+                min="0"
+                value={form.application_limit}
+                onChange={(e) => setForm((p) => ({ ...p, application_limit: e.target.value }))}
+                className={jobInputClass}
+                placeholder="e.g. 200 (optional)"
+              />
+              <p className={jobHintClass}>
+                Caps submissions from the public job page only. Leave blank for unlimited. Use 0 to disable
+                public applies while keeping the listing visible.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className={jobSectionCard}>
+          <h2 className={jobSectionTitle}>Audience &amp; visibility</h2>
+          <div className="space-y-6">
+            <div>
+              <label className={jobLabelClass}>Audience tracks *</label>
+              <p className={jobHintClass + ' mb-3'}>At least one track required.</p>
+              <div className="flex flex-wrap gap-5">
+                {TRACK_OPTIONS.map((o) => (
+                  <label key={o.value} className="inline-flex items-center gap-2.5 cursor-pointer font-medium text-slate-800">
+                    <input
+                      type="checkbox"
+                      checked={form.audience_tracks.includes(o.value)}
+                      onChange={() => toggleTrack(o.value)}
+                      className={jobCheckboxClass}
+                    />
+                    {o.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div>
+                <label className={jobLabelClass}>Job tier</label>
+                <select
+                  value={form.job_tier}
+                  onChange={(e) => setForm((p) => ({ ...p, job_tier: e.target.value }))}
+                  className={jobSelectClass}
+                >
+                  {JOB_TIER_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className={jobLabelClass}>Status</label>
+                <select
+                  value={form.status}
+                  onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
+                  className={jobSelectClass}
+                >
+                  {STATUS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {form.job_tier === 'premium' && (
+              <div className="rounded-2xl border border-violet-100 bg-violet-50/40 p-5">
+                <label className={jobLabelClass}>Allowed plans (Premium)</label>
+                <p className={jobHintClass + ' mb-3'}>Only these plans can view and apply from the dashboard.</p>
+                <div className="flex flex-wrap gap-5">
+                  {PLAN_OPTIONS.map((o) => (
+                    <label key={o.value} className="inline-flex items-center gap-2.5 cursor-pointer font-medium text-slate-800">
+                      <input
+                        type="checkbox"
+                        checked={form.allowed_plans.includes(o.value)}
+                        onChange={() => togglePlan(o.value)}
+                        className={jobCheckboxClass}
+                      />
+                      {o.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+            <label className="flex items-start gap-3 cursor-pointer rounded-xl border border-slate-100 bg-slate-50/50 p-4">
+              <input
+                type="checkbox"
+                id="edit_show_on_landing"
+                checked={form.show_on_landing}
+                onChange={(e) => setForm((p) => ({ ...p, show_on_landing: e.target.checked }))}
+                className={jobCheckboxClass + ' mt-0.5'}
+              />
+              <span>
+                <span className="font-bold text-slate-900">Show on landing page</span>
+                <span className={jobHintClass + ' block mt-0.5'}>
+                  Controls visibility on the marketing jobs section.
+                </span>
+              </span>
+            </label>
+
+          </div>
+        </section>
+
+        {message.text ? (
+          <div
+            className={`rounded-2xl px-4 py-3 text-sm font-semibold ${
+              message.type === 'error' ? 'bg-red-50 text-red-800 ring-1 ring-red-100' : 'bg-emerald-50 text-emerald-900 ring-1 ring-emerald-100'
+            }`}
           >
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-        {message.text && (
-          <p className={message.type === 'error' ? 'text-red-600 text-sm' : 'text-emerald-600 text-sm'}>
             {message.text}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="nth-btn-primary px-4 py-2 font-medium disabled:opacity-50 disabled:transform-none"
-        >
-          {submitting ? <ButtonLoader label="Saving…" /> : 'Save changes'}
-        </button>
+          </div>
+        ) : null}
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/admin/jobs')}
+            className="rounded-xl px-5 py-3.5 text-sm font-bold text-slate-600 ring-1 ring-slate-200 bg-white hover:bg-slate-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="nth-btn-primary inline-flex items-center justify-center gap-2 rounded-xl px-8 py-3.5 text-sm font-bold shadow-lg shadow-indigo-300/40 disabled:opacity-50 min-h-[3rem]"
+          >
+            {submitting ? <ButtonLoader label="Saving…" /> : 'Save changes'}
+          </button>
+        </div>
       </form>
+
     </div>
   );
 }

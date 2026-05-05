@@ -12,6 +12,8 @@ dist
 dist-ssr
 *.local
 .env
+# Tracked: `.env.development` / `.env.production` so Cloudflare can run
+# `npm run build:dev` / `npm run build:prod` with the right Vite mode.
 .env.local
 .env.*.local
 

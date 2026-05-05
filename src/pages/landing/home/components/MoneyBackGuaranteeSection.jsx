@@ -12,12 +12,12 @@ export default function MoneyBackGuaranteeSection() {
   return (
     <section
       id="money-back-guarantee"
-      className="relative py-6 sm:py-7 md:py-10 overflow-hidden bg-[rgb(var(--nth-bg-light))]"
+      className="relative nth-section-y-compact overflow-hidden bg-[rgb(var(--nth-bg-light))] border-t border-slate-100"
     >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_30%_50%,rgba(99,102,241,0.08)_0%,transparent_50%)] pointer-events-none" />
 
       <SectionContainer className="relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Content */}
           <motion.div
             className="order-2 lg:order-1 text-center lg:text-left"
@@ -44,7 +44,7 @@ export default function MoneyBackGuaranteeSection() {
 
             <Link
               to="/pricing?from=/"
-              className="nth-cta-gradient inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+              className="nth-cta-gradient cursor-pointer inline-flex items-center justify-center px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Claim Your Risk-Free Slot
             </Link>

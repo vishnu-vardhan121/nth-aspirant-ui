@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto } from 'react-icons/hi2';
+import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 
@@ -97,6 +97,13 @@ export default function AdminLayout() {
             Leads
           </Link>
           <Link
+            to="/admin/talent-pool"
+            className={navLinkClass(isActive('/admin/talent-pool'))}
+          >
+            <HiQueueList className="w-5 h-5 shrink-0" />
+            Matching (profiles)
+          </Link>
+          <Link
             to="/admin/institute-ads"
             className={navLinkClass(isActive('/admin/institute-ads'))}
           >
@@ -115,7 +122,7 @@ export default function AdminLayout() {
             className={navLinkClass(isActive('/admin/todays-interviews'))}
           >
             <HiCalendarDays className="w-5 h-5 shrink-0" />
-            Today&apos;s Interviews
+            Hero interviews
           </Link>
           <Link
             to="/admin/settings"

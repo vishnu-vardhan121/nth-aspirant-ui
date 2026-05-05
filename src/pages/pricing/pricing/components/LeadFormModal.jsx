@@ -185,7 +185,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60"
+        className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -193,244 +193,144 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col rounded-2xl bg-slate-900 border border-white/10 shadow-xl overflow-hidden"
+          className="w-full max-w-md max-h-[calc(100dvh-1.5rem)] sm:max-h-[90vh] flex flex-col bg-slate-900 border border-white/10 shadow-2xl rounded-2xl relative overflow-hidden"
         >
-          {/* Fixed header: logo left, title centered, close right */}
-          <div className="relative flex-shrink-0 flex items-center justify-between gap-3 px-4 sm:px-5 py-4 sm:py-5 border-b border-white/10">
-            <img
-              src="/white-logo.png"
-              alt="Naveen Talent Hub"
-              className="h-7 w-auto object-contain shrink-0 sm:h-8"
-            />
-            <h2 className="absolute left-1/2 -translate-x-1/2 text-lg sm:text-xl font-semibold text-white tracking-tight whitespace-nowrap">
-              Enroll in {plan?.name ?? 'Plan'}
-            </h2>
+          {/* Header Block */}
+          <div className="relative flex-shrink-0 flex items-center justify-between gap-3 px-6 py-6 border-b border-white/10 bg-white/5">
+             <div className="flex flex-col gap-1">
+               <h2 className="text-xl font-bold text-white tracking-tight">
+                 Enroll in {plan?.name ?? 'Plan'}
+               </h2>
+             </div>
+
             <button
               type="button"
               onClick={onClose}
-              className="shrink-0 p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 touch-manipulation transition-colors"
+              className="shrink-0 p-2 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors border border-white/10 shadow-xs"
               aria-label="Close"
             >
               <HiXMark className="w-5 h-5 sm:w-6 sm:h-6" />
             </button>
           </div>
-          {/* Scrollable form body */}
-          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+
+          {/* Form Content Area */}
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-6 custom-scrollbar">
             {registrationAllowed === false ? (
-              <div className="p-4 sm:p-5 space-y-4">
-                <p className="text-slate-200 text-center py-6">
-                  {limitMessage}
-                </p>
+              <div className="py-12 space-y-6 text-center">
+                <div className="inline-block p-4 bg-red-500/10 border border-red-500/20 rounded-xl mb-4">
+                  <p className="text-red-400 text-sm font-medium tracking-wide">
+                    {limitMessage}
+                  </p>
+                </div>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="w-full py-3 sm:py-2.5 rounded-xl font-semibold text-white text-sm sm:text-base touch-manipulation"
-                  style={{
-                    background: 'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
-                  }}
+                  className="w-full py-4 bg-indigo-500 text-white font-bold rounded-xl hover:bg-indigo-400 transition-colors shadow-lg shadow-indigo-500/20"
                 >
-                  OK
+                  Confirm
                 </button>
               </div>
             ) : registrationAllowed === null ? (
-              <div className="p-4 sm:p-5 py-12 text-center text-slate-400 text-sm">
-                Checking…
+              <div className="py-20 text-center flex flex-col items-center gap-4">
+                <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                <span className="font-mono text-[10px] text-slate-500 uppercase tracking-[0.3em]">Querying Database…</span>
               </div>
             ) : (
-            <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4 pb-2">
-            {/* 1. Name */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Name *</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, name: e.target.value }));
-                  clearFieldError('name');
-                }}
-                required
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                  fieldErrors.name ? 'border-red-400/60' : 'border-white/10'
-                }`}
-                placeholder="Your name"
-              />
-              {fieldErrors.name && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.name}</p>
-              )}
-            </div>
-            {/* 2. Email */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={handleEmailChange}
-                required
-                autoComplete="email"
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                  fieldErrors.email ? 'border-red-400/60' : 'border-white/10'
-                }`}
-                placeholder="you@example.com"
-              />
-              {fieldErrors.email && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.email}</p>
-              )}
-            </div>
-            {/* 3. Contact number */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Contact number *</label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                value={form.contact_number}
-                onChange={handleContactChange}
-                required
-                maxLength={10}
-                autoComplete="tel"
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                  fieldErrors.contact_number ? 'border-red-400/60' : 'border-white/10'
-                }`}
-                placeholder="10-digit mobile (e.g. 9876543210)"
-              />
-              {fieldErrors.contact_number && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.contact_number}</p>
-              )}
-            </div>
-            {/* 4. Looking for role */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Looking for which role? *</label>
-              <input
-                type="text"
-                value={form.looking_for_role}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, looking_for_role: e.target.value }));
-                  clearFieldError('looking_for_role');
-                }}
-                required
-                className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                  fieldErrors.looking_for_role ? 'border-red-400/60' : 'border-white/10'
-                }`}
-                placeholder="e.g. Frontend Developer, Data Analyst"
-              />
-              {fieldErrors.looking_for_role && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.looking_for_role}</p>
-              )}
-            </div>
-            {/* 5. Graduation pass */}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Graduation pass (year) *</label>
-              <input
-                type="text"
-                value={form.graduation_pass}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, graduation_pass: e.target.value }));
-                  clearFieldError('graduation_pass');
-                }}
-                required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                  fieldErrors.graduation_pass ? 'border-red-400/60' : 'border-white/10'
-                }`}
-                placeholder="e.g. 2023"
-              />
-              {fieldErrors.graduation_pass && (
-                <p className="mt-1 text-xs text-red-400">{fieldErrors.graduation_pass}</p>
-              )}
-            </div>
-            {isExperienced && (
-              <>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Current company *</label>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Field Groups */}
+              {[
+                { label: 'Name', name: 'name', type: 'text', placeholder: 'Enter your name' },
+                { label: 'Email', name: 'email', type: 'email', placeholder: 'you@domain.com' },
+                { label: 'Contact Number', name: 'contact_number', type: 'tel', placeholder: '10-digit mobile number', maxLength: 10 },
+                { label: 'Role Target', name: 'looking_for_role', type: 'text', placeholder: 'Which role are you targeting?' },
+                { label: 'Graduation Year', name: 'graduation_pass', type: 'text', placeholder: 'e.g., 2024' },
+              ].map((field) => (
+                <div key={field.name} className="relative">
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">{field.label} <span className="text-indigo-400">*</span></label>
                   <input
-                    type="text"
-                    value={form.current_company}
+                    type={field.type}
+                    value={form[field.name]}
                     onChange={(e) => {
-                      setForm((f) => ({ ...f, current_company: e.target.value }));
-                      clearFieldError('current_company');
+                      if (field.name === 'contact_number') handleContactChange(e);
+                      else {
+                        setForm((f) => ({ ...f, [field.name]: e.target.value }));
+                        clearFieldError(field.name);
+                      }
                     }}
                     required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                      fieldErrors.current_company ? 'border-red-400/60' : 'border-white/10'
+                    maxLength={field.maxLength}
+                    className={`w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 focus:border-indigo-500 transition-all ${
+                      fieldErrors[field.name] ? 'border-red-400/60' : ''
                     }`}
-                    placeholder="Company name"
+                    placeholder={field.placeholder}
                   />
-                  {fieldErrors.current_company && (
-                    <p className="mt-1 text-xs text-red-400">{fieldErrors.current_company}</p>
+                  {fieldErrors[field.name] && (
+                    <p className="mt-1 text-xs text-red-400 font-medium">{fieldErrors[field.name]}</p>
                   )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Years of experience *</label>
-                  <input
-                    type="text"
-                    value={form.experience_years}
-                    onChange={(e) => {
-                      setForm((f) => ({ ...f, experience_years: e.target.value }));
-                      clearFieldError('experience_years');
-                    }}
-                    required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                      fieldErrors.experience_years ? 'border-red-400/60' : 'border-white/10'
-                    }`}
-                    placeholder="e.g. 3"
-                  />
-                  {fieldErrors.experience_years && (
-                    <p className="mt-1 text-xs text-red-400">{fieldErrors.experience_years}</p>
-                  )}
+              ))}
+
+              {isExperienced && (
+                <div className="pt-4 space-y-6 border-t border-white/10">
+                  <span className="block text-sm font-bold text-indigo-400 uppercase tracking-widest mb-4">Professional Information</span>
+                  {[
+                    { label: 'Current Company', name: 'current_company', placeholder: 'Where do you work now?' },
+                    { label: 'Years of Experience', name: 'experience_years', placeholder: 'e.g., 2.5' },
+                    { label: 'Current CTC', name: 'current_ctc', placeholder: 'Current compensation' },
+                  ].map((field) => (
+                    <div key={field.name}>
+                      <label className="block text-sm font-semibold text-slate-300 mb-2">{field.label} <span className="text-indigo-400">*</span></label>
+                      <input
+                        type="text"
+                        value={form[field.name]}
+                        onChange={(e) => {
+                          setForm((f) => ({ ...f, [field.name]: e.target.value }));
+                          clearFieldError(field.name);
+                        }}
+                        required
+                        className={`w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 focus:border-indigo-500 transition-all ${
+                          fieldErrors[field.name] ? 'border-red-400/60' : ''
+                        }`}
+                        placeholder={field.placeholder}
+                      />
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-300 mb-1">Current CTC *</label>
-                  <input
-                    type="text"
-                    value={form.current_ctc}
-                    onChange={(e) => {
-                      setForm((f) => ({ ...f, current_ctc: e.target.value }));
-                      clearFieldError('current_ctc');
-                    }}
-                    required
-                    className={`w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent text-base min-h-[44px] sm:min-h-0 ${
-                      fieldErrors.current_ctc ? 'border-red-400/60' : 'border-white/10'
-                    }`}
-                    placeholder="e.g. 8 LPA"
-                  />
-                  {fieldErrors.current_ctc && (
-                    <p className="mt-1 text-xs text-red-400">{fieldErrors.current_ctc}</p>
-                  )}
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-2">Additional Comments (Optional)</label>
+                <textarea
+                  value={form.message}
+                  onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:bg-white/10 focus:border-indigo-500 transition-all resize-none"
+                  placeholder="Anything else we should know?"
+                />
+              </div>
+
+              {message.text && (
+                <div className={`p-4 rounded-xl border ${message.type === 'error' ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'} text-xs font-medium`}>
+                  {message.text}
                 </div>
-              </>
-            )}
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1">Anything you’d like to say?</label>
-              <textarea
-                value={form.message}
-                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
-                rows={3}
-                className="w-full px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent resize-none text-base min-h-[80px] sm:min-h-0"
-                placeholder="Optional message…"
-              />
-            </div>
-            {message.text && (
-              <p className={`text-sm ${message.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
-                {message.text}
-              </p>
-            )}
-            <div className="flex gap-3 pt-2 pb-1">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-3 sm:py-2.5 rounded-xl border border-white/20 text-slate-300 hover:bg-white/5 text-sm sm:text-base font-medium touch-manipulation"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={submitting}
-                className="flex-1 py-3 sm:py-2.5 rounded-xl font-semibold text-white disabled:opacity-60 text-sm sm:text-base touch-manipulation"
-                style={{
-                  background: 'linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)',
-                }}
-              >
-                {submitting ? 'Submitting…' : 'Submit'}
-              </button>
-            </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 pb-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 py-3.5 border border-white/10 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 font-semibold transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex-1 py-3.5 bg-indigo-500 text-white font-semibold rounded-xl hover:bg-indigo-400 disabled:opacity-50 transition-all shadow-lg shadow-indigo-500/20"
+                >
+                  {submitting ? 'Submitting...' : 'Submit Form'}
+                </button>
+              </div>
             </form>
             )}
           </div>

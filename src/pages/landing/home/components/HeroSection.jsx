@@ -1,98 +1,58 @@
-import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { supabase } from '../../../../lib/supabase';
+import { HiArrowRight } from 'react-icons/hi2';
+import WeeklyInterviewsMarquee from '../../../../components/WeeklyInterviewsMarquee';
 
 export default function HeroSection() {
-  const [interviews, setInterviews] = useState([]);
-
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from('todays_interviews')
-        .select('id, name, role, level')
-        .order('display_order');
-      setInterviews(data ?? []);
-    };
-    load();
-  }, []);
-
-  const list = interviews.length > 0 ? [...interviews, ...interviews] : [];
-
   return (
     <section id="hero" className="relative min-h-dvh flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
       {/* Background: static image + overlay */}
-      <div
-        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: "url('/hero-section/hero-image.jpg')" }}
-      >
+      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-[url('/hero-section/hero-image.jpg')]">
         <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.25) 100%)',
-          }}
+          className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25"
           aria-hidden
         />
       </div>
 
-      {/* Content */}
-      <div className="relative z-10 flex-1 flex flex-col px-4 sm:px-6 lg:px-8 text-center max-w-6xl mx-auto w-full items-center mt-16 sm:mt-12 md:mt-10 lg:mt-7 mb-16">
-        <h1 className="text-5xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-6xl font-bold tracking-tight leading-[1.05] mb-5 sm:mb-6 lg:mb-8 text-white drop-shadow-lg">
-          Direct Interviews with Companies
-        </h1>
+      {/* Content: center headline block; marquee sits below without stretching empty space */}
+      <div className="relative z-10 flex-1 flex flex-col px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full pb-6 sm:pb-8">
+        <div className="flex-1 flex flex-col justify-center items-center text-center min-h-0 py-5 sm:py-7">
+          <div className="max-w-4xl space-y-4 sm:space-y-5">
+            <h1 className="text-pretty text-[2rem] leading-[1.08] font-extrabold tracking-[-0.02em] text-white sm:text-5xl sm:leading-[1.06] md:text-5xl lg:text-6xl lg:leading-[1.05] [text-shadow:0_2px_28px_rgba(0,0,0,0.55)]">
+              Direct Interviews with Companies
+            </h1>
 
-        <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-white max-w-4xl mx-auto mb-8 sm:mb-10 font-medium [text-shadow:0_2px_4px_rgba(0,0,0,0.8)]">
-          No need to apply on job portals. Connect directly with hiring managers.
-        </p>
+            <p className="text-pretty mx-auto max-w-2xl text-base leading-relaxed text-white/90 sm:text-lg lg:text-xl font-normal [text-shadow:0_1px_16px_rgba(0,0,0,0.45)]">
+              No need to apply on job portals. Connect directly with hiring managers.
+            </p>
+          </div>
 
-        <div className="cta-moving-border animate-cta-pulse">
-          <Link
-            to={`/pricing?from=${encodeURIComponent('/')}`}
-            className="bg-white min-w-[280px] text-lg sm:text-xl font-bold py-4 sm:py-5 px-8 sm:px-10 rounded-full transition-all inline-flex items-center justify-center hover:-translate-y-0.5 active:translate-y-0 shadow-lg !text-slate-900 hover:!text-slate-900 hover:bg-slate-50"
+          <div
+            className="mt-8 flex w-full max-w-lg flex-col items-stretch justify-center gap-3 sm:mt-9 sm:max-w-2xl sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
+            role="group"
+            aria-label="Primary actions"
           >
-            Start Your Interviews
-          </Link>
+            <div className="cta-moving-border animate-cta-pulse motion-reduce:animate-none sm:min-w-0 sm:flex-1 sm:max-w-[min(100%,20rem)]">
+              <Link
+                to={`/pricing?from=${encodeURIComponent('/')}`}
+                className="relative z-10 flex min-h-14 w-full cursor-pointer items-center justify-center rounded-full bg-white px-8 py-4 text-base font-bold tracking-tight text-slate-900 shadow-lg shadow-black/25 transition-[box-shadow,background-color,filter] duration-200 hover:bg-slate-50 hover:shadow-xl hover:shadow-black/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:brightness-[0.97] sm:min-h-15 sm:px-10 sm:text-lg"
+              >
+                Start Your Interviews
+              </Link>
+            </div>
+            <Link
+              to="/early-access"
+              className="group flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/85 bg-black/25 px-8 py-4 text-base font-bold tracking-tight text-white shadow-lg shadow-black/20 ring-1 ring-white/25 backdrop-blur-md transition-[background-color,box-shadow,border-color] duration-200 hover:border-white hover:bg-black/35 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:brightness-95 sm:min-h-15 sm:min-w-0 sm:flex-1 sm:max-w-[min(100%,20rem)] sm:px-10 sm:text-lg"
+            >
+              Get matched by our team
+            </Link>
+          </div>
         </div>
 
-        {/* Today's Interviews scroller – only when there is data for today */}
-        {list.length > 0 && (
-          <div className="mt-auto w-full text-left pt-8 sm:pt-10">
-            <div className="flex items-center justify-between px-1 sm:px-0 mb-3">
-              <h2 className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] uppercase text-white/60">
-                Today&apos;s Interviews
-              </h2>
-            </div>
-            <div className="w-screen relative left-1/2 -translate-x-1/2 overflow-hidden pb-4">
-              <div className="flex w-max animate-marquee gap-3 pl-4 sm:pl-6 lg:pl-8">
-                {list.map((item, i) => (
-                  <div
-                    key={`${item.id}-${i}`}
-                    className="min-w-[220px] sm:min-w-[240px] shrink-0 rounded-2xl border border-white/15 bg-black/30 px-4 py-3 sm:px-5 sm:py-4 flex flex-col gap-1.5 text-white/90 shadow-sm hover:bg-black/40 hover:border-white/30 transition-colors"
-                  >
-                    <p className="text-sm sm:text-base font-semibold truncate text-white">
-                      {item.name}
-                    </p>
-                    <p className="text-[12px] sm:text-sm text-white/80 truncate">
-                      {item.role}
-                    </p>
-                    <span
-                      className={`mt-1 inline-flex items-center self-start text-[10px] px-2 py-0.5 rounded-full font-semibold ${
-                        item.level === 'Fresher'
-                          ? 'bg-indigo-500/20 text-indigo-200 border border-indigo-400/40'
-                          : 'bg-emerald-500/20 text-emerald-200 border border-emerald-400/40'
-                      }`}
-                    >
-                      {item.level}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        <WeeklyInterviewsMarquee className="w-full text-left shrink-0 pt-3 sm:pt-5" />
       </div>
 
       <div
-        className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[rgb(var(--nth-bg-light))] to-transparent z-[5] pointer-events-none"
+        className="absolute bottom-0 left-0 right-0 h-24 sm:h-28 bg-linear-to-t from-[rgb(var(--nth-bg-light))] to-transparent z-5 pointer-events-none"
         aria-hidden
       />
     </section>

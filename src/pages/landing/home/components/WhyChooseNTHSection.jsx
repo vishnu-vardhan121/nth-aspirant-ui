@@ -31,19 +31,19 @@ const CARDS = [
 
 export default function WhyChooseNTHSection() {
   return (
-    <section id="why-choose-nth" className="py-5 sm:py-7 md:py-14 bg-white">
+    <section id="why-choose-nth" className="scroll-mt-24 nth-section-y-compact bg-slate-50/80 border-t border-slate-100">
       <SectionContainer>
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-[rgb(var(--nth-text-primary-light))] mb-6 sm:mb-8"
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-center text-[rgb(var(--nth-text-primary-light))] mb-7 sm:mb-9 tracking-tight"
         >
-          Why Choose <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Naveen Talent Hub?</span>
+          Why Choose <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">Naveen Talent Hub?</span>
         </motion.h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5 lg:gap-6">
           {CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -53,25 +53,25 @@ export default function WhyChooseNTHSection() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.35, delay: i * 0.08 }}
-                className="nth-card overflow-hidden group hover:nth-shadow transition-shadow duration-300 rounded-xl border border-slate-200 bg-white"
+                className="nth-card overflow-hidden group rounded-xl border border-slate-200 bg-white transition-[box-shadow,border-color] duration-200 hover:shadow-lg hover:border-slate-300/80"
               >
-                <div className="h-36 sm:h-40 md:h-44 overflow-hidden">
+                <div className="aspect-16/10 sm:h-40 sm:aspect-auto md:h-44 overflow-hidden">
                   <img
                     src={card.image}
                     alt={card.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                 </div>
-                <div className="p-3 sm:p-4">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0">
-                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
+                <div className="p-4 sm:p-5">
+                  <div className="flex items-start gap-3 mb-2">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-white" />
                     </div>
-                    <h3 className="font-bold text-[rgb(var(--nth-text-primary-light))] text-xs sm:text-sm leading-tight">
+                    <h3 className="font-bold text-[rgb(var(--nth-text-primary-light))] text-sm sm:text-base leading-snug">
                       {card.title}
                     </h3>
                   </div>
-                  <p className="text-xs sm:text-sm text-[rgb(var(--nth-text-secondary-light))] leading-snug">
+                  <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] leading-relaxed">
                     {card.description}
                   </p>
                 </div>

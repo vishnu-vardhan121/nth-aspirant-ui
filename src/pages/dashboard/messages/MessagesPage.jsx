@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
 import { isMessageSoundMuted, setMessageSoundMuted } from '../../../lib/messageSound';
-import { HiUserGroup, HiChatBubbleLeftRight, HiCheck, HiSpeakerWave, HiSpeakerXMark } from 'react-icons/hi2';
+import { HiUserGroup, HiChatBubbleLeftRight, HiCheck, HiSpeakerWave, HiSpeakerXMark, HiArrowLeft } from 'react-icons/hi2';
 
 const NTH_TEAM_KEY = '__nth_team__';
 
@@ -43,15 +43,15 @@ function buildChats(messages) {
     byKey.get(key).messages.push(m);
   }
 
-  // Sort messages inside each chat (newest last for chat view); compute unread per chat
+  // Newest first (feed-style) so latest updates appear at the top without scrolling down
   for (const chat of byKey.values()) {
-    chat.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    chat.messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     chat.unreadCount = chat.messages.filter((m) => !m.from_me && !m.read_at).length;
   }
 
   return Array.from(byKey.values()).sort((a, b) => {
-    const tA = a.messages[a.messages.length - 1]?.created_at || 0;
-    const tB = b.messages[b.messages.length - 1]?.created_at || 0;
+    const tA = a.messages[0]?.created_at || 0;
+    const tB = b.messages[0]?.created_at || 0;
     return new Date(tB) - new Date(tA);
   });
 }
@@ -71,7 +71,7 @@ export default function MessagesPage() {
   const [messageUsage, setMessageUsage] = useState({ used: 0, limit: 0, active: false });
   const [flash, setFlash] = useState('');
   const [soundMuted, setSoundMuted] = useState(() => isMessageSoundMuted());
-  const chatEndRef = useRef(null);
+  const chatScrollRef = useRef(null);
 
   const toggleSoundMuted = () => {
     const next = !soundMuted;
@@ -110,8 +110,10 @@ export default function MessagesPage() {
   const selectedChat = selectedChatKey ? chats.find((c) => c.key === selectedChatKey) : null;
 
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [selectedChat?.messages?.length]);
+    const el = chatScrollRef.current;
+    if (!el) return;
+    el.scrollTop = 0;
+  }, [selectedChatKey, selectedChat?.messages?.length]);
 
   // Mark this chat as read when aspirant opens it (jobId from key so we don't depend on selectedChat)
   useEffect(() => {
@@ -139,6 +141,16 @@ export default function MessagesPage() {
       setFlash(data?.error || 'Failed to send');
     }
   };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendReply(e);
+    }
+  };
+
+  // On mobile: show chat list when no chat selected, show thread when a chat is selected
+  const showListOnMobile = !selectedChatKey;
 
   if (loading) return <PageLoader size="md" label="Loading messages…" className="py-8" />;
 
@@ -170,8 +182,8 @@ export default function MessagesPage() {
         </div>
       ) : (
         <div className="flex-1 flex min-h-0 rounded-xl border border-[rgb(var(--nth-border-light))] bg-white overflow-hidden shadow-sm">
-          {/* Left: chat list */}
-          <aside className="w-72 shrink-0 flex flex-col border-r border-[rgb(var(--nth-border-light))] bg-[rgb(var(--nth-bg-soft))]">
+          {/* Left: chat list — hidden on mobile when a chat is open */}
+          <aside className={`w-full sm:w-72 shrink-0 flex flex-col border-r border-[rgb(var(--nth-border-light))] bg-[rgb(var(--nth-bg-soft))] ${showListOnMobile ? 'flex' : 'hidden sm:flex'}`}>
             <div className="p-2 bg-white border-b border-[rgb(var(--nth-border-light))]">
               <p className="text-xs font-semibold text-[rgb(var(--nth-text-muted-light))] uppercase tracking-wider px-2 py-1">
                 Chats
@@ -179,7 +191,7 @@ export default function MessagesPage() {
             </div>
             <ul className="flex-1 overflow-auto">
               {chats.map((chat) => {
-                const last = chat.messages[chat.messages.length - 1];
+                const last = chat.messages[0];
                 const isSelected = selectedChat?.key === chat.key;
                 const Icon = chat.icon;
                 return (
@@ -218,7 +230,7 @@ export default function MessagesPage() {
           </aside>
 
           {/* Right: chat thread + reply or placeholder */}
-          <main className="flex-1 flex flex-col min-w-0 bg-[rgb(240,242,245)]">
+          <main className={`flex-1 flex flex-col min-w-0 bg-[rgb(240,242,245)] ${showListOnMobile ? 'hidden sm:flex' : 'flex'}`}>
             {!selectedChat ? (
               <div className="flex-1 flex items-center justify-center p-8">
                 <div className="text-center text-[rgb(var(--nth-text-muted-light))]">
@@ -229,8 +241,16 @@ export default function MessagesPage() {
               </div>
             ) : (
               <>
-                <header className="shrink-0 px-4 py-3 bg-white border-b border-[rgb(var(--nth-border-light))] flex items-center gap-3">
-                  <span className="w-9 h-9 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center">
+                <header className="shrink-0 px-3 sm:px-4 py-3 bg-white border-b border-[rgb(var(--nth-border-light))] flex items-center gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedChatKey(null)}
+                    className="sm:hidden p-1.5 -ml-1 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                    aria-label="Back to chats"
+                  >
+                    <HiArrowLeft className="w-5 h-5" />
+                  </button>
+                  <span className="w-9 h-9 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
                     {selectedChat.key === NTH_TEAM_KEY ? (
                       <HiChatBubbleLeftRight className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
                     ) : (
@@ -238,10 +258,10 @@ export default function MessagesPage() {
                     )}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h2 className="font-semibold text-[rgb(var(--nth-text-primary-light))] truncate">
+                    <h2 className="font-semibold text-[rgb(var(--nth-text-primary-light))] truncate text-sm sm:text-base">
                       {selectedChat.label}
                     </h2>
-                    <p className="text-xs text-[rgb(var(--nth-text-muted-light))]">
+                    <p className="text-[10px] sm:text-xs text-[rgb(var(--nth-text-muted-light))]">
                       {messageUsage.limit >= 0
                         ? `${messageUsage.used} / ${messageUsage.limit} replies today`
                         : 'Replies allowed'}
@@ -249,7 +269,7 @@ export default function MessagesPage() {
                   </div>
                 </header>
 
-                <div className="flex-1 overflow-auto p-4 space-y-2 flex flex-col">
+                <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-2 flex flex-col">
                   {selectedChat.messages.map((m) => (
                     <div key={m.id} className={m.from_me ? 'flex justify-end' : 'flex justify-start'}>
                       <div className="max-w-[85%] sm:max-w-[75%]">
@@ -280,29 +300,29 @@ export default function MessagesPage() {
                       </div>
                     </div>
                   ))}
-                  <div ref={chatEndRef} />
                 </div>
 
                 {flash && (
                   <div className="shrink-0 px-4 py-2 text-sm text-red-600 bg-red-50">{flash}</div>
                 )}
 
-                <form onSubmit={handleSendReply} className="shrink-0 p-3 bg-white border-t border-[rgb(var(--nth-border-light))]">
+                <form onSubmit={handleSendReply} className="shrink-0 p-2 sm:p-3 bg-white border-t border-[rgb(var(--nth-border-light))]">
                   <div className="flex gap-2 items-end">
                     <textarea
                       value={replyBody}
                       onChange={(e) => setReplyBody(e.target.value)}
-                      placeholder={canReply ? 'Type a reply...' : messageUsage.active ? 'Daily limit reached. Try again tomorrow.' : 'Active plan required to reply.'}
-                      rows={2}
+                      onKeyDown={handleKeyDown}
+                      placeholder={canReply ? 'Type a reply... (Enter to send)' : messageUsage.active ? 'Daily limit reached. Try again tomorrow.' : 'Active plan required to reply.'}
+                      rows={1}
                       disabled={!canReply || sending}
-                      className="flex-1 min-w-0 px-3 py-2 border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))] resize-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-[hsl(var(--nth-primary))]"
+                      className="flex-1 min-w-0 px-3 py-2 text-sm sm:text-base border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))] resize-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-[hsl(var(--nth-primary))]"
                     />
                     <button
                       type="submit"
                       disabled={sending || !replyBody.trim() || !canReply}
-                      className="nth-btn-primary px-4 py-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="nth-btn-primary px-3 sm:px-4 py-2 text-sm sm:text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {sending ? 'Sending…' : 'Send'}
+                      {sending ? '…' : 'Send'}
                     </button>
                   </div>
                 </form>
