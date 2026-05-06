@@ -25,6 +25,7 @@ export default function LandingPage() {
   const [activeAd, setActiveAd] = useState(null);
   const [adFetchComplete, setAdFetchComplete] = useState(false);
   const [instituteAdOpen, setInstituteAdOpen] = useState(false);
+  const [helpDeskOpen, setHelpDeskOpen] = useState(false);
   const [adDelayPassed, setAdDelayPassed] = useState(false);
   const [adScrollPassed, setAdScrollPassed] = useState(false);
   const adTimerRef = useRef(null);
@@ -78,7 +79,7 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (adHasOpenedRef.current || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
+    if (adHasOpenedRef.current || helpDeskOpen || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
     if (!activeAd) {
       try {
         if (typeof window !== 'undefined' && window.localStorage.getItem(LANDING_INSTITUTE_AD_DISMISS_KEY) === '1') return;
@@ -88,7 +89,7 @@ export default function LandingPage() {
     }
     adHasOpenedRef.current = true;
     setInstituteAdOpen(true);
-  }, [activeAd, adFetchComplete, adDelayPassed, adScrollPassed]);
+  }, [activeAd, adFetchComplete, adDelayPassed, adScrollPassed, helpDeskOpen]);
 
   const handleAdModalClose = useCallback((opts) => {
     setInstituteAdOpen(false);
@@ -116,7 +117,11 @@ export default function LandingPage() {
           logo: `${SITE_URL}/favicon.png`,
         }}
       />
-      <Navbar />
+      <Navbar
+        helpModalOpen={helpDeskOpen}
+        onHelpModalOpenChange={setHelpDeskOpen}
+        disableHelpTrigger={instituteAdOpen}
+      />
       <HeroSection />
       <div className="nth-landing-grid">
         <JobOpeningsSection variant="landing" previewLimit={6} viewAllTo="/jobs" />
