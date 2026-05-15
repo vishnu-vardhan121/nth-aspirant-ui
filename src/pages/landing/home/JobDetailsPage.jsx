@@ -175,7 +175,7 @@ function LiveHiringActivitySection({ notices, shortlisted }) {
                   <div className="min-h-0">
                     {nLen > 5 ? (
                       <p className="mb-2 text-[11px] font-medium text-slate-500">
-                        Showing first rows — scroll for all {nLen} updates
+                        Showing first rows - scroll for all {nLen} updates
                       </p>
                     ) : null}
                     <div
@@ -223,7 +223,7 @@ function LiveHiringActivitySection({ notices, shortlisted }) {
                   <div className="min-h-0">
                     {sLen > 5 ? (
                       <p className="mb-2 text-[11px] font-medium text-slate-500">
-                        Showing first rows — scroll for all {sLen} shortlisted
+                        Showing first rows - scroll for all {sLen} shortlisted
                       </p>
                     ) : null}
                     <div
@@ -242,7 +242,7 @@ function LiveHiringActivitySection({ notices, shortlisted }) {
                             </span>
                             <div className="min-w-0 flex-1">
                               <p className="truncate text-sm font-semibold text-slate-900">{person?.name || 'Candidate'}</p>
-                              <p className="truncate text-xs text-slate-500">{person?.city || '—'}</p>
+                              <p className="truncate text-xs text-slate-500">{person?.city || '-'}</p>
                             </div>
                           </li>
                         ))}
@@ -361,7 +361,7 @@ export default function JobDetailsPage() {
               id: j.id,
               title: j.title,
               company: j.company_name ?? '',
-              city: j.location ?? '—',
+              city: j.location ?? '-',
               experience: experienceLabel,
               isFree: !(j.allowed_plans && j.allowed_plans.length),
               applicationDeadline: formatApplyDeadlineShort(j.application_deadline_at, j.application_deadline),
@@ -483,7 +483,7 @@ export default function JobDetailsPage() {
                           {job.company_name}
                         </p>
                         <span className="w-1 h-1 rounded-full bg-slate-300 hidden md:block shrink-0" />
-                        {job.location && job.location !== '—' && (
+                        {job.location && job.location !== '-' && (
                           <div className="flex items-start gap-1.5 min-w-0 max-w-full">
                             <HiMapPin className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                             <span className="wrap-anywhere">{job.location}</span>
@@ -531,7 +531,7 @@ export default function JobDetailsPage() {
                       </div>
                     ) : null}
                   </div>
-                  {job.location && job.location !== '—' && (
+                  {job.location && job.location !== '-' && (
                     <div className="flex flex-col gap-1 min-w-0">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Location</span>
                       <div className="flex items-start gap-2 text-slate-800 font-bold min-w-0">
@@ -697,7 +697,7 @@ export default function JobDetailsPage() {
                       {j.title}
                     </h3>
                     <p className="text-sm font-medium text-indigo-600 mb-1">{j.company}</p>
-                    {j.city && j.city !== '—' && (
+                    {j.city && j.city !== '-' && (
                       <p className="text-xs text-slate-500 flex items-center gap-1">
                         <HiMapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                         {j.city}

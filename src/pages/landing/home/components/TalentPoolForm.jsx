@@ -663,7 +663,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
                     setCurrentSalary(e.target.value);
                     clearFieldError('salaryRange');
                   }}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="numeric"
                 />
               </div>
@@ -682,7 +682,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
                     setSalaryMin(e.target.value);
                     clearFieldError('salaryRange');
                   }}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="numeric"
                 />
               </div>
@@ -701,7 +701,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
                     setSalaryMax(e.target.value);
                     clearFieldError('salaryRange');
                   }}
-                  placeholder="—"
+                  placeholder="-"
                   inputMode="numeric"
                 />
               </div>
@@ -735,7 +735,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
                     clearFieldError('primarySkills');
                   }
                 }}
-                placeholder="e.g. Java — Enter to add"
+                placeholder="e.g. Java - Enter to add"
                 aria-invalid={fieldErrors.primarySkills ? true : undefined}
                 aria-describedby={fieldErrors.primarySkills ? 'tp-primary-skills-error' : undefined}
               />
@@ -788,7 +788,7 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
                     addSkill(secondarySkillInput, secondarySkills, setSecondarySkills, setSecondarySkillInput);
                   }
                 }}
-                placeholder="Optional — Enter to add"
+                placeholder="Optional - Enter to add"
               />
               <button
                 type="button"

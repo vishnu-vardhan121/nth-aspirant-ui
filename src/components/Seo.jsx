@@ -1,28 +1,52 @@
 import { useEffect } from 'react';
 
+const SITE_ORIGIN = 'https://naveentalenthub.in';
+
 /**
  * Lightweight head manager (no external deps).
- * Sets title/description/OG/Twitter/canonical/robots and optional JSON-LD.
+ * Sets title, meta, OG/Twitter, canonical, optional keywords/geo, and JSON-LD.
  */
 export default function Seo({
   title,
   description,
+  keywords,
+  author,
+  geoRegion,
+  geoPlacename,
   canonicalPath,
+  canonicalUrl,
   ogImage,
+  ogTitle,
+  ogDescription,
+  ogUrl,
+  twitterTitle,
+  twitterDescription,
   noIndex = false,
   jsonLd,
 }) {
   useEffect(() => {
     const doc = document;
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const canonicalUrl = canonicalPath
-      ? new URL(canonicalPath, origin || 'https://example.com').toString()
-      : origin
-        ? new URL(window.location.pathname + window.location.search, origin).toString()
-        : undefined;
+    const origin = typeof window !== 'undefined' ? window.location.origin : SITE_ORIGIN;
+    const resolvedCanonical =
+      canonicalUrl ||
+      (canonicalPath
+        ? new URL(canonicalPath, origin || SITE_ORIGIN).toString()
+        : typeof window !== 'undefined'
+          ? new URL(window.location.pathname + window.location.search, origin).toString()
+          : undefined);
+
+    const resolvedOgImage = ogImage
+      ? ogImage.startsWith('http')
+        ? ogImage
+        : new URL(ogImage, origin || SITE_ORIGIN).toString()
+      : undefined;
 
     const setMeta = (attr, key, value) => {
-      if (!value) return;
+      if (value === undefined || value === null || value === '') {
+        const existing = doc.head.querySelector(`[${attr}="${key}"][data-nth-seo="true"]`);
+        if (existing) existing.remove();
+        return;
+      }
       let el = doc.head.querySelector(`[${attr}="${key}"][data-nth-seo="true"]`);
       if (!el) el = doc.head.querySelector(`meta[${attr}="${key}"]`);
       if (!el) {
@@ -35,23 +59,32 @@ export default function Seo({
     };
 
     if (title) doc.title = title;
-    if (description) setMeta('name', 'description', description);
+    setMeta('name', 'description', description || null);
+    setMeta('name', 'keywords', keywords || null);
+    setMeta('name', 'author', author || null);
+    setMeta('name', 'geo.region', geoRegion || null);
+    setMeta('name', 'geo.placename', geoPlacename || null);
 
-    // Open Graph & Twitter
-    setMeta('property', 'og:title', title || '');
-    setMeta('property', 'og:description', description || '');
+    const ogTitleVal = ogTitle ?? title ?? '';
+    const ogDescVal = ogDescription ?? description ?? '';
+    const twitterTitleVal = twitterTitle ?? ogTitleVal;
+    const twitterDescVal = twitterDescription ?? ogDescription ?? description ?? '';
+    const ogUrlVal = ogUrl ?? resolvedCanonical ?? '';
+
+    setMeta('property', 'og:title', ogTitleVal || null);
+    setMeta('property', 'og:description', ogDescVal || null);
     setMeta('property', 'og:type', 'website');
-    if (canonicalUrl) setMeta('property', 'og:url', canonicalUrl);
+    setMeta('property', 'og:url', ogUrlVal || null);
     setMeta('name', 'twitter:card', 'summary_large_image');
-    setMeta('name', 'twitter:title', title || '');
-    setMeta('name', 'twitter:description', description || '');
-    if (ogImage) {
-      setMeta('property', 'og:image', ogImage);
-      setMeta('name', 'twitter:image', ogImage);
+    setMeta('name', 'twitter:title', twitterTitleVal || null);
+    setMeta('name', 'twitter:description', twitterDescVal || null);
+
+    if (resolvedOgImage) {
+      setMeta('property', 'og:image', resolvedOgImage);
+      setMeta('name', 'twitter:image', resolvedOgImage);
     }
 
-    // Canonical link
-    if (canonicalUrl) {
+    if (resolvedCanonical) {
       let link = doc.head.querySelector('link[rel="canonical"][data-nth-seo="true"]');
       if (!link) link = doc.head.querySelector('link[rel="canonical"]');
       if (!link) {
@@ -60,36 +93,26 @@ export default function Seo({
         doc.head.appendChild(link);
       }
       link.setAttribute('data-nth-seo', 'true');
-      link.setAttribute('href', canonicalUrl);
+      link.setAttribute('href', resolvedCanonical);
     }
 
-    // Robots
     const robots =
       doc.head.querySelector('meta[name="robots"][data-nth-seo="true"]') ||
       doc.head.querySelector('meta[name="robots"]');
-    if (noIndex) {
-      if (!robots) {
-        const el = doc.createElement('meta');
-        el.setAttribute('name', 'robots');
-        el.setAttribute('content', 'noindex,nofollow');
-        el.setAttribute('data-nth-seo', 'true');
-        doc.head.appendChild(el);
-      } else {
-        robots.setAttribute('data-nth-seo', 'true');
-        robots.setAttribute('content', 'noindex,nofollow');
-      }
-    } else if (robots) {
+    const robotsContent = noIndex ? 'noindex,nofollow' : 'index,follow';
+    if (!robots) {
+      const el = doc.createElement('meta');
+      el.setAttribute('name', 'robots');
+      el.setAttribute('content', robotsContent);
+      el.setAttribute('data-nth-seo', 'true');
+      doc.head.appendChild(el);
+    } else {
       robots.setAttribute('data-nth-seo', 'true');
-      robots.setAttribute('content', 'index,follow');
+      robots.setAttribute('content', robotsContent);
     }
 
-    // JSON-LD
     const jsonLdStr =
-      typeof jsonLd === 'string'
-        ? jsonLd
-        : jsonLd
-          ? JSON.stringify(jsonLd)
-          : null;
+      typeof jsonLd === 'string' ? jsonLd : jsonLd ? JSON.stringify(jsonLd) : null;
     let ldEl = doc.head.querySelector('script[type="application/ld+json"][data-nth-seo="true"]');
     if (jsonLdStr) {
       if (!ldEl) {
@@ -102,7 +125,24 @@ export default function Seo({
     } else if (ldEl) {
       ldEl.remove();
     }
-  }, [title, description, canonicalPath, ogImage, noIndex, jsonLd]);
+  }, [
+    title,
+    description,
+    keywords,
+    author,
+    geoRegion,
+    geoPlacename,
+    canonicalPath,
+    canonicalUrl,
+    ogImage,
+    ogTitle,
+    ogDescription,
+    ogUrl,
+    twitterTitle,
+    twitterDescription,
+    noIndex,
+    jsonLd,
+  ]);
 
   return null;
 }

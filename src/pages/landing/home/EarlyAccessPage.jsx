@@ -11,7 +11,7 @@ const TRUST_ITEMS = [
   {
     icon: HiClock,
     title: 'About 4 minutes',
-    text: 'Save your profile once—no account required to submit.',
+    text: 'Save your profile once-no account required to submit.',
   },
   {
     icon: HiLockClosed,
@@ -20,8 +20,8 @@ const TRUST_ITEMS = [
   },
   {
     icon: HiShieldCheck,
-    title: 'Relevant outreach only',
-    text: 'We contact you when there is a real match—not bulk mail.',
+    title: 'Up to one month',
+    text: 'We use your profile for matching for 30 days-resubmit anytime if you are still job hunting.',
   },
 ];
 
@@ -47,7 +47,7 @@ export default function EarlyAccessPage() {
       />
       <Seo
         title="Share your profile for recruiter matching | Naveen Talent Hub"
-        description="One form: your skills and resume stay on file with our team. When a hiring team needs someone like you, Naveen Talent Hub introduces you directly-no spam, no re-applying on ten portals."
+        description="One form: your skills and resume stay active with our team for up to one month. When a hiring team needs someone like you, Naveen Talent Hub introduces you directly-no spam, no re-applying on ten portals."
         canonicalPath="/early-access"
         ogImage="/hero-section/hero-image.jpg"
       />
@@ -90,8 +90,9 @@ export default function EarlyAccessPage() {
                   </span>
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                  Your details stay on file with our recruiters. When a team is hiring for your skills, we connect you
-                  directly-so you are not re-uploading the same CV on every job board.
+                  Your details stay active with our recruiters for up to one month while we search for a fit. When a
+                  team is hiring for your skills, we connect you directly-so you are not re-uploading the same CV on every
+                  job board.
                 </p>
               </header>
 
@@ -135,13 +136,21 @@ export default function EarlyAccessPage() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">
                         2
                       </span>
-                      <span className="pt-0.5">List your strongest skills first—we use them for matching.</span>
+                      <span className="pt-0.5">List your strongest skills first-we use them for matching.</span>
                     </li>
                     <li className="flex gap-3">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">
                         3
                       </span>
                       <span className="pt-0.5">Be honest about communication confidence; it helps us place you well.</span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">
+                        4
+                      </span>
+                      <span className="pt-0.5">
+                        Your profile stays active for up to one month. Still looking after that? Submit again anytime.
+                      </span>
                     </li>
                   </ol>
                   <div className="mt-6 border-t border-slate-100 pt-5">

@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HiMegaphone, HiEnvelope } from 'react-icons/hi2';
 
-export const ADS_CONTACT_EMAIL = 'admin@naveentalenthub.in';
+export const ADS_CONTACT_EMAIL = 'hello@naveentalenthub.in';
 
 /** Persisted when visitor checks “Don’t show again” on the promo fallback. */
 export const LANDING_INSTITUTE_AD_DISMISS_KEY = 'nth_landing_institute_promo_modal_dismiss_v1';
@@ -103,7 +103,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
                 If you have open roles, a campaign, or something valuable to share with our audience, feel free to reach out.
               </p>
               <p className="mt-3 text-center text-sm leading-relaxed text-slate-600">
-                Our team handles all hiring partnerships and promotions through a single point of contact—so you always know
+                Our team handles all hiring partnerships and promotions through a single point of contact-so you always know
                 where to connect.
               </p>
 
@@ -178,7 +178,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
             )}
             <a
               href={MAILTO_TEAM}
-              title={`${ADS_CONTACT_EMAIL} — ads & sponsorships`}
+              title={`${ADS_CONTACT_EMAIL} - ads & sponsorships`}
               aria-label={`Email ${ADS_CONTACT_EMAIL} about ads and sponsorships`}
               onClick={(e) => e.stopPropagation()}
               className="pointer-events-auto absolute bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] left-[max(0.5rem,env(safe-area-inset-left,0px))] right-[max(0.5rem,env(safe-area-inset-right,0px))] z-202 flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-white/12 bg-black/70 px-2.5 py-1.5 text-[10px] leading-tight text-white shadow-md backdrop-blur-md transition-colors hover:border-white/25 hover:bg-black/80 sm:bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] sm:left-auto sm:right-[max(0.75rem,env(safe-area-inset-right,0px))] sm:min-h-0 sm:w-max sm:max-w-[min(100%,13.5rem)] sm:justify-start sm:gap-2 sm:rounded-md sm:px-2 sm:py-1.5 sm:text-[10px] md:text-[11px]"
