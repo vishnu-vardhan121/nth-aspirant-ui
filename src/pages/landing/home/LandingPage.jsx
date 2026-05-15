@@ -105,16 +105,36 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
       <Seo
-        title="Naveen Talent Hub | Mock Interviews, Direct Slots, and Career Support"
-        description="Naveen Talent Hub gives you mock interviews with industry professionals, direct interview slots, and offer-negotiation support backed by a 100% refund guarantee."
-        canonicalPath="/"
-        ogImage="/hero-section/hero-image.jpg"
+        title="Naveen Talent Hub | Mock Interviews, Direct Interview Slots & Career Support in India"
+        description="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
+        keywords="Naveen Talent Hub, NTH, Naveen Talent Hub NTH, Naveen Hub, Naveen Talent, Talent Hub, NTH career Hyderabad, NTH mock interviews, NTH connect, mock interviews India, direct company interviews, tech interview preparation, IT job support India, fresher job placement, experienced IT jobs, career support platform, interview coaching India, job placement Hyderabad, tech career mentorship"
+        author="Naveen Talent Hub"
+        geoRegion="IN-TG"
+        geoPlacename="Hyderabad, Telangana, India"
+        canonicalUrl="https://naveentalenthub.in/"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
+        ogTitle="Naveen Talent Hub | Mock Interviews & Direct Interview Slots"
+        ogDescription="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
+        ogUrl="https://naveentalenthub.in/"
+        twitterTitle="Naveen Talent Hub | Mock Interviews & Direct Interview Slots"
+        twitterDescription="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
           name: 'Naveen Talent Hub',
-          url: typeof window !== 'undefined' ? window.location.origin : SITE_URL,
-          logo: `${SITE_URL}/favicon.png`,
+          alternateName: ['NTH', 'Naveen Talent Hub NTH', 'Naveen Hub', 'Naveen Talent', 'Talent Hub', 'NTH Connect'],
+          url: SITE_URL,
+          logo: `${SITE_URL}/hero-section/hero-image.webp`,
+          description:
+            'Naveen Talent Hub provides mock interviews, direct company interview slots, resume support, and career mentorship for tech job aspirants in India.',
+          email: 'hello@naveentalenthub.in',
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: 'Hyderabad',
+            addressRegion: 'Telangana',
+            addressCountry: 'IN',
+          },
+          sameAs: [],
         }}
       />
       <Navbar

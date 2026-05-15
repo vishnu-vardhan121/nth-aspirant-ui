@@ -39,7 +39,7 @@ export default function MoneyBackGuaranteeSection() {
             </h2>
 
             <p className="text-base sm:text-lg text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8">
-              After eligibility review and profile approval, if we fail to deliver — your entire service fee is refunded. No fine print, no hassle.
+              After eligibility review and profile approval, if we fail to deliver - your entire service fee is refunded. No fine print, no hassle.
             </p>
 
             <Link
@@ -61,7 +61,7 @@ export default function MoneyBackGuaranteeSection() {
             {!imageError ? (
               <img
                 src={IMAGE_SRC}
-                alt="Risk-free interview slot — 100% money-back guarantee"
+                alt="Risk-free interview slot - 100% money-back guarantee"
                 className="w-full h-full object-cover absolute inset-0"
                 onError={() => setImageError(true)}
               />

@@ -1,12 +1,12 @@
 import { Link } from 'react-router-dom';
-import { HiArrowRight } from 'react-icons/hi2';
 import WeeklyInterviewsMarquee from '../../../../components/WeeklyInterviewsMarquee';
 
 export default function HeroSection() {
   return (
     <section id="hero" className="relative min-h-dvh flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
-      {/* Background: static image + overlay */}
-      <div className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-[url('/hero-section/hero-image.jpg')]">
+      {/* Background: dark fill + full artwork (contain avoids cover cropping top/bottom) + overlay */}
+      <div className="absolute inset-0 z-0 bg-slate-950" aria-hidden />
+      <div className="absolute inset-0 z-0 bg-contain bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]">
         <div
           className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25"
           aria-hidden
@@ -43,7 +43,7 @@ export default function HeroSection() {
               to="/early-access"
               className="group flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/85 bg-black/25 px-8 py-4 text-base font-bold tracking-tight text-white shadow-lg shadow-black/20 ring-1 ring-white/25 backdrop-blur-md transition-[background-color,box-shadow,border-color] duration-200 hover:border-white hover:bg-black/35 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:brightness-95 sm:min-h-15 sm:min-w-0 sm:flex-1 sm:max-w-[min(100%,20rem)] sm:px-10 sm:text-lg"
             >
-              Get matched by our team
+              Save your profile with us
             </Link>
           </div>
         </div>

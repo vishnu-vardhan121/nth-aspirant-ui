@@ -55,8 +55,8 @@ export default function EarlyAccessLandingSection() {
               </span>
             </h2>
             <p className="mt-5 text-lg sm:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Add your profile once-we keep it on file for roles that truly fit. When a company needs your skills and experience, we introduce you
-              directly-without asking you to re-apply on every site.
+              Add your profile once-we use it for up to one month while we look for roles that truly fit. When a company needs your skills and
+              experience, we introduce you directly-without asking you to re-apply on every site.
             </p>
             <ul className="mt-8 space-y-3 max-w-xl">
               <li className="flex gap-3 text-slate-700">
@@ -69,8 +69,8 @@ export default function EarlyAccessLandingSection() {
               <li className="flex gap-3 text-slate-700">
                 <HiShieldCheck className="h-6 w-6 shrink-0 text-emerald-600 mt-0.5" aria-hidden />
                 <span className="text-[15px] sm:text-base leading-snug">
-                  <span className="font-semibold text-slate-900">One profile.</span> Same details power introductions to hiring teams;
-                  you skip repeating forms everywhere.
+                  <span className="font-semibold text-slate-900">One profile, one month.</span> Same details power introductions for up to
+                  30 days-you skip repeating forms everywhere, and you can resubmit anytime if you&apos;re still looking.
                 </span>
               </li>
             </ul>
@@ -79,7 +79,7 @@ export default function EarlyAccessLandingSection() {
                 to="/early-access"
                 className="group nth-btn-primary inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-4 text-base font-bold shadow-lg shadow-indigo-200/60 cursor-pointer transition-all duration-200 hover:shadow-indigo-300/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
               >
-                Share my profile
+                Save your profile with us
               </Link>
               <Link
                 to="/jobs"
@@ -110,13 +110,24 @@ export default function EarlyAccessLandingSection() {
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
                     2
                   </span>
-                  <span>We review your skills and preferences against active and upcoming hiring needs.</span>
+                  <span>
+                    For up to one month, we review your skills and preferences against active and upcoming hiring needs.
+                  </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
                     3
                   </span>
-                  <span>If there&apos;s a match, we connect you directly with the opportunity—no endless forms.</span>
+                  <span>If there&apos;s a match, we connect you directly with the opportunity-no endless forms.</span>
+                </li>
+                <li className="flex gap-3">
+                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
+                    4
+                  </span>
+                  <span>
+                    After one month, your profile is no longer used for matching-you can submit again anytime if you&apos;re
+                    still looking.
+                  </span>
                 </li>
               </ol>
             </div>

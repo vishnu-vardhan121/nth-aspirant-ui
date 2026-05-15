@@ -479,7 +479,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
                     onChange={(e) => setSkillInput(e.target.value)}
                     onKeyDown={handleSkillKeyDown}
                     className={`${inputClass} sm:flex-1`}
-                    placeholder="e.g. React — press Enter to add"
+                    placeholder="e.g. React - press Enter to add"
                   />
                   <button
                     type="button"

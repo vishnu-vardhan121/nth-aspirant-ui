@@ -1,5 +1,5 @@
 /**
- * JobOpeningsSection — redesigned with polished UI
+ * JobOpeningsSection - redesigned with polished UI
  * Shared by landing (`variant="landing"`) and `/jobs` (`variant="directory"`).
  */
 
@@ -84,7 +84,7 @@ function normalizeSpotlightJob(job) {
     id: job.id,
     title: job.title ?? 'Hiring role',
     company: job.company_name ?? '',
-    city: job.location ?? '—',
+    city: job.location ?? '-',
     application_deadline: job.application_deadline ?? null,
     application_deadline_at: job.application_deadline_at ?? null,
     job_status: job.job_status ?? job.status ?? 'open',
@@ -397,7 +397,7 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
           )}
 
           <div className="flex flex-col gap-2 text-xs text-slate-600">
-            {job.city && job.city !== '—' && (
+            {job.city && job.city !== '-' && (
               <span className="inline-flex items-center gap-1.5 text-slate-700">
                 <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
                   <HiMapPin className="h-3.5 w-3.5" aria-hidden />
@@ -578,7 +578,7 @@ function JobCardDirectory({ job, hoveredId, setHoveredId, isAuthenticated, prici
         </div>
 
         <div className="flex flex-col gap-2 text-[11px] text-slate-600">
-          {job.city && job.city !== '—' && (
+          {job.city && job.city !== '-' && (
             <span className="inline-flex items-center gap-1.5 font-medium text-slate-700">
               <HiMapPin className="h-3 w-3 shrink-0 text-slate-400" />
               {job.city}
@@ -670,7 +670,7 @@ export default function JobOpeningsSection({
       const rawDeadline = j.application_deadline != null ? String(j.application_deadline).slice(0, 10) : null;
       const jobStatus = j.status ?? 'open';
           return {
-        id: j.id, title: j.title, company: j.company_name ?? '', city: j.location ?? '—',
+        id: j.id, title: j.title, company: j.company_name ?? '', city: j.location ?? '-',
             experience: experienceLabel,
         requirements: normalizeKeySkillsVal(j.key_skills),
             isFree: !(j.allowed_plans && j.allowed_plans.length),
@@ -728,7 +728,7 @@ export default function JobOpeningsSection({
             id: job.id,
             title: job.title,
             company: job.company || 'NTH Hiring Partner',
-            city: job.city || '—',
+            city: job.city || '-',
             experience: 'Hiring Update',
             requirements: job.key_skills ?? [],
             isFree: true,
@@ -836,7 +836,7 @@ export default function JobOpeningsSection({
 
           <p className="text-slate-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
             {isDirectory
-              ? 'All curated roles — free and premium — in one place.'
+              ? 'All curated roles - free and premium - in one place.'
               : 'Hand-picked positions with live hiring updates. Your perfect role is waiting.'}
           </p>
         </div>

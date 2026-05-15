@@ -142,7 +142,7 @@ export default function ChoiceScreen({ onSelect }) {
           </h1>
           
           <p className="text-slate-400 text-base sm:text-xl font-medium max-w-2xl mx-auto leading-relaxed">
-            We take care of your profile personally—for tech guidance and interviews.
+            We take care of your profile personally-for tech guidance and interviews.
           </p>
         </motion.header>
 
