@@ -10,7 +10,7 @@ export default function PublicJobsPage() {
         title="Open roles | Naveen Talent Hub"
         description="Browse every role we are hiring for on the landing page-free and premium openings in one place."
         canonicalPath="/jobs"
-        ogImage="/hero-section/hero-image.jpg"
+        ogImage="/hero-section/hero-image.webp"
       />
       <Navbar />
       <main className="pt-28 sm:pt-32 lg:pt-36 min-w-0">

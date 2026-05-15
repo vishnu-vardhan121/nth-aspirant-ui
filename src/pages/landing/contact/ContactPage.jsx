@@ -104,7 +104,7 @@ export default function ContactPage() {
         description="Contact Naveen Talent Hub for mock interview bookings, pricing enquiries, refunds, billing, or general questions. Email hello@naveentalenthub.in or use our contact form. Response within 1–3 business days."
         keywords="contact Naveen Talent Hub, contact NTH, Naveen Hub contact, mock interview support, career support contact India, Hyderabad career platform, NTH Hyderabad"
         canonicalUrl="https://naveentalenthub.in/contact"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
       <Navbar />
 

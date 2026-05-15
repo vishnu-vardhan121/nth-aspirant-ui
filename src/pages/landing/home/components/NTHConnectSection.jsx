@@ -3,12 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { HiArrowRight } from 'react-icons/hi2';
 import SectionContainer from '../../../../components/SectionContainer';
 
-const BANNER_SRC = '/hero-section/nth-connect-banner.png';
+const BANNER_SRC = '/hero-section/nth-connect-banner.webp';
 
 /**
- * NTH Connect - visual story (crowded applications vs direct company access) + headline/CTA.
- * Mobile: framed image first (highlighted), copy below on solid surface so type wraps cleanly.
- * Desktop: full-bleed art with a left-weighted scrim so the right side of the frame stays visible.
+ * NTH Connect — crowded applications vs direct company access + headline/CTA.
+ * Two-column layout on large screens; stacked on small. Illustration uses object-contain
+ * so the full artwork stays visible, with fluid max-heights for alignment.
  */
 export default function NTHConnectSection() {
   const location = useLocation();
@@ -25,57 +25,37 @@ export default function NTHConnectSection() {
     : {
         initial: { opacity: 0, y: 16 },
         whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, margin: '-40px' },
+        viewport: { once: true, margin: '-48px' },
         transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
       };
+
+  const imgFluid =
+    'mx-auto w-full max-w-full h-auto object-contain object-center sm:object-center lg:object-right' +
+    ' max-h-[min(42svh,26rem)] sm:max-h-[min(46svh,28rem)] md:max-h-[min(48svh,30rem)]' +
+    ' lg:max-h-[min(58svh,34rem)] xl:max-h-[min(60svh,38rem)] 2xl:max-h-[40rem]';
 
   return (
     <section
       id="nth-connect"
-      className="relative overflow-hidden bg-slate-950 nth-section-y"
+      className="relative overflow-x-hidden bg-slate-950 nth-section-y"
       aria-labelledby="nth-connect-heading"
     >
-      {/* Desktop / large tablet: full-bleed banner - scrim heavy on the left only so the art stays visible on the right */}
-      <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden>
-        <img
-          src={BANNER_SRC}
-          alt=""
-          className="h-full w-full object-cover object-[58%_center]"
-        />
-        <div className="absolute inset-0 bg-linear-to-r from-slate-950 from-0% via-slate-950/82 via-48% to-slate-950/10" />
-        <div className="absolute inset-0 bg-linear-to-t from-slate-950/25 via-transparent to-transparent" />
-      </div>
-
       <SectionContainer className="relative z-10 w-full min-w-0">
-        <div className="flex min-w-0 flex-col gap-7 lg:min-h-[min(52vh,520px)] lg:justify-center">
-          {/* Mobile / tablet: framed art first - focal crop shows the “portals vs direct” story */}
-          <figure className="order-1 w-full min-w-0 lg:hidden">
-            <div className="relative overflow-hidden rounded-2xl ring-2 ring-white/20 shadow-[0_28px_90px_-24px_rgba(0,0,0,0.75)]">
-              <div className="relative aspect-5/6 w-full max-h-[min(52vh,480px)] sm:aspect-16/10 sm:max-h-[min(44vh,420px)]">
-                <img
-                  src={BANNER_SRC}
-                  alt="Illustration contrasting crowded job applications with a direct path to employers through Naveen Talent Hub"
-                  className="h-full w-full object-cover object-[80%_38%] sm:object-[76%_42%]"
-                  sizes="(max-width: 640px) 100vw, 640px"
-                  loading="lazy"
-                />
-                <div
-                  className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-indigo-400/25"
-                  aria-hidden
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950 via-slate-950/70 to-transparent px-4 pb-3.5 pt-14 sm:pt-16">
-                  <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-100/95 sm:text-xs">
-                    The old application maze - and the direct line NTH opens for you
-                  </p>
-                </div>
-              </div>
-            </div>
-          </figure>
-
-          {/* Copy + CTA - solid base on mobile; sits on left scrim on lg */}
-          <div className="order-2 min-w-0 w-full max-w-xl lg:max-w-104 xl:max-w-xl">
-            <motion.div {...fadeUp} className="min-w-0">
-              <p className="mb-4 inline-flex max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-300">
+        <div
+          className={
+            'grid min-w-0 grid-cols-1 items-center ' +
+            'gap-9 sm:gap-10 md:gap-11 ' +
+            'lg:grid-cols-2 lg:items-stretch lg:gap-x-10 lg:gap-y-0 ' +
+            'xl:gap-x-14 2xl:gap-x-16'
+          }
+        >
+          {/* Copy + CTA — vertically centred in row on desktop */}
+          <div className="order-2 flex min-h-0 min-w-0 w-full flex-col justify-center lg:order-1 lg:py-4 xl:py-6">
+            <motion.div
+              {...fadeUp}
+              className="mx-auto w-full max-w-xl text-center lg:mx-0 lg:text-left"
+            >
+              <p className="mb-4 inline-flex w-full max-w-full flex-wrap items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-300 lg:justify-start">
                 <span
                   className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400 shadow-[0_0_0_3px_rgba(129,140,248,0.35)]"
                   aria-hidden
@@ -97,15 +77,15 @@ export default function NTHConnectSection() {
                 </span>
               </h2>
 
-              <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-300 sm:mt-6 sm:text-lg">
+              <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-slate-300 sm:mt-6 sm:text-lg lg:mx-0">
                 Most candidates stay stuck in the endless application churn. NTH is different: we connect
-                you straight to hiring teams so your energy goes into real conversations-not endless forms.
+                you straight to hiring teams so your energy goes into real conversations—not endless forms.
               </p>
 
-              <div className="mt-7 sm:mt-8">
+              <div className="mt-7 flex justify-center sm:mt-8 lg:justify-start">
                 <Link
                   to={pricingTo}
-                  className="nth-cta-gradient group relative inline-flex w-full min-w-0 cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-950/40 transition-[box-shadow,filter] duration-200 hover:brightness-105 active:brightness-95 sm:inline-flex sm:w-auto sm:px-8 sm:py-4 sm:text-[1.05rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="nth-cta-gradient group relative inline-flex w-full min-w-0 max-w-md cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-950/40 transition-[box-shadow,filter] duration-200 hover:brightness-105 active:brightness-95 sm:w-auto sm:max-w-none sm:px-8 sm:py-4 sm:text-[1.05rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   <span className="relative z-10 min-w-0 text-center">Get fast-tracked</span>
                   <HiArrowRight
@@ -120,6 +100,36 @@ export default function NTHConnectSection() {
               </div>
             </motion.div>
           </div>
+
+          {/* Illustration */}
+          <figure className="order-1 flex min-h-0 min-w-0 w-full justify-center lg:order-2 lg:items-center lg:justify-end lg:py-4 xl:py-6">
+            <div className="relative w-full max-w-[min(100%,36rem)] lg:max-w-none">
+              <div className="relative overflow-hidden rounded-2xl bg-slate-900/50 ring-1 ring-white/12 shadow-[0_24px_80px_-20px_rgba(0,0,0,0.85)] sm:rounded-[1.25rem]">
+                <div className="relative flex w-full items-center justify-center px-3 py-5 sm:px-5 sm:py-6 md:px-6 md:py-7 lg:px-7 lg:py-8 xl:px-8 xl:py-9">
+                  <img
+                    src={BANNER_SRC}
+                    alt="Illustration contrasting crowded job applications with a direct path to employers through Naveen Talent Hub"
+                    width={1600}
+                    height={900}
+                    sizes="(max-width: 1023px) min(100vw, 36rem), 50vw"
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                    className={imgFluid}
+                  />
+                </div>
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-indigo-400/15 sm:rounded-[1.25rem]"
+                  aria-hidden
+                />
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950 from-5% via-slate-950/55 to-transparent px-3 pb-3 pt-14 sm:px-4 sm:pb-3.5 sm:pt-16">
+                  <p className="text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-indigo-100/95 sm:text-[11px] sm:tracking-[0.14em] md:text-xs">
+                    The old application maze — and the direct line NTH opens for you
+                  </p>
+                </div>
+              </div>
+            </div>
+          </figure>
         </div>
       </SectionContainer>
     </section>

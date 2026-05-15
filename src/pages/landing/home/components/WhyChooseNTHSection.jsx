@@ -4,25 +4,25 @@ import SectionContainer from '../../../../components/SectionContainer';
 
 const CARDS = [
   {
-    image: '/why-choose-nth/why-direct-tieups.jpg',
+    image: '/why-choose-nth/why-direct-tieups.webp',
     icon: HiBuildingOffice2,
     title: 'Direct Company Tie-Ups',
     description: 'We work directly with hiring team leads - no middlemen, no delays.',
   },
   {
-    image: '/why-choose-nth/why-no-fake-listings.jpg',
+    image: '/why-choose-nth/why-no-fake-listings.webp',
     icon: HiShieldCheck,
     title: 'No Fake Listings',
     description: 'Only real openings, shared by verified recruiters from trusted companies.',
   },
   {
-    image: '/why-choose-nth/why-interview-scheduling.jpg',
+    image: '/why-choose-nth/why-interview-scheduling.webp',
     icon: HiCalendarDays,
     title: 'Interview Scheduling Support',
     description: 'Preparation materials + guidance before every interview round.',
   },
   {
-    image: '/why-choose-nth/why-tech-support.jpg',
+    image: '/why-choose-nth/why-tech-support.webp',
     icon: HiAcademicCap,
     title: 'Dedicated Technical Support',
     description: 'Mock interviews, resume reviews, and communication guidance.',

@@ -112,7 +112,7 @@ export default function LandingPage() {
         geoRegion="IN-TG"
         geoPlacename="Hyderabad, Telangana, India"
         canonicalUrl="https://naveentalenthub.in/"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
         ogTitle="Naveen Talent Hub | Mock Interviews & Direct Interview Slots"
         ogDescription="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
         ogUrl="https://naveentalenthub.in/"
@@ -124,7 +124,7 @@ export default function LandingPage() {
           name: 'Naveen Talent Hub',
           alternateName: ['NTH', 'Naveen Talent Hub NTH', 'Naveen Hub', 'Naveen Talent', 'Talent Hub', 'NTH Connect'],
           url: SITE_URL,
-          logo: `${SITE_URL}/hero-section/hero-image.jpg`,
+          logo: `${SITE_URL}/hero-section/hero-image.webp`,
           description:
             'Naveen Talent Hub provides mock interviews, direct company interview slots, resume support, and career mentorship for tech job aspirants in India.',
           email: 'hello@naveentalenthub.in',

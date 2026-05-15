@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { HiArrowRight } from 'react-icons/hi2';
 import WeeklyInterviewsMarquee from '../../../../components/WeeklyInterviewsMarquee';
 
 export default function HeroSection() {
@@ -7,7 +6,7 @@ export default function HeroSection() {
     <section id="hero" className="relative min-h-dvh flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
       {/* Background: dark fill + full artwork (contain avoids cover cropping top/bottom) + overlay */}
       <div className="absolute inset-0 z-0 bg-slate-950" aria-hidden />
-      <div className="absolute inset-0 z-0 bg-contain bg-center bg-no-repeat bg-[url('/hero-section/hero-image.jpg')]">
+      <div className="absolute inset-0 z-0 bg-contain bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]">
         <div
           className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25"
           aria-hidden

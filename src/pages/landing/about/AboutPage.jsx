@@ -72,7 +72,7 @@ export default function AboutPage() {
         description="Learn about Naveen Talent Hub - mock interviews, direct company introductions, resume support, and mentorship for tech job aspirants in India. Based in Hyderabad."
         keywords="about Naveen Talent Hub, about NTH, Naveen Hub, tech career India, Hyderabad interview coaching"
         canonicalUrl="https://naveentalenthub.in/about"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
       <Navbar />
 
