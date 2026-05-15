@@ -6,14 +6,14 @@ import SectionContainer from '../../../../components/SectionContainer';
 const FEATURES = [
   {
     title: 'Verified Opportunities',
-    description: 'Every job is vetted by real HR and recruiters. No spam, no fake listings—only genuine roles.',
+    description: 'Every job is vetted by real HR and recruiters. No spam, no fake listings-only genuine roles.',
     icon: SiShieldsdotio,
     color: 'from-indigo-500 to-sky-500',
     shadow: 'shadow-indigo-500/20',
   },
   {
     title: 'Fresher to Senior',
-    description: 'Roles for every stage—from your first internship to leadership positions. One platform for your entire career.',
+    description: 'Roles for every stage-from your first internship to leadership positions. One platform for your entire career.',
     icon: SiGraphql,
     color: 'from-indigo-500 to-violet-500',
     shadow: 'shadow-indigo-500/20',

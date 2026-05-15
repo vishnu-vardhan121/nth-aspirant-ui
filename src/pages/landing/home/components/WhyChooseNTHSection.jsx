@@ -7,7 +7,7 @@ const CARDS = [
     image: '/why-choose-nth/why-direct-tieups.jpg',
     icon: HiBuildingOffice2,
     title: 'Direct Company Tie-Ups',
-    description: 'We work directly with hiring team leads — no middlemen, no delays.',
+    description: 'We work directly with hiring team leads - no middlemen, no delays.',
   },
   {
     image: '/why-choose-nth/why-no-fake-listings.jpg',

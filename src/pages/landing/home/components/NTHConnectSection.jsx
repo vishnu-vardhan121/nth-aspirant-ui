@@ -6,7 +6,7 @@ import SectionContainer from '../../../../components/SectionContainer';
 const BANNER_SRC = '/hero-section/nth-connect-banner.png';
 
 /**
- * NTH Connect — visual story (crowded applications vs direct company access) + headline/CTA.
+ * NTH Connect - visual story (crowded applications vs direct company access) + headline/CTA.
  * Mobile: framed image first (highlighted), copy below on solid surface so type wraps cleanly.
  * Desktop: full-bleed art with a left-weighted scrim so the right side of the frame stays visible.
  */
@@ -35,7 +35,7 @@ export default function NTHConnectSection() {
       className="relative overflow-hidden bg-slate-950 nth-section-y"
       aria-labelledby="nth-connect-heading"
     >
-      {/* Desktop / large tablet: full-bleed banner — scrim heavy on the left only so the art stays visible on the right */}
+      {/* Desktop / large tablet: full-bleed banner - scrim heavy on the left only so the art stays visible on the right */}
       <div className="pointer-events-none absolute inset-0 hidden lg:block" aria-hidden>
         <img
           src={BANNER_SRC}
@@ -48,7 +48,7 @@ export default function NTHConnectSection() {
 
       <SectionContainer className="relative z-10 w-full min-w-0">
         <div className="flex min-w-0 flex-col gap-7 lg:min-h-[min(52vh,520px)] lg:justify-center">
-          {/* Mobile / tablet: framed art first — focal crop shows the “portals vs direct” story */}
+          {/* Mobile / tablet: framed art first - focal crop shows the “portals vs direct” story */}
           <figure className="order-1 w-full min-w-0 lg:hidden">
             <div className="relative overflow-hidden rounded-2xl ring-2 ring-white/20 shadow-[0_28px_90px_-24px_rgba(0,0,0,0.75)]">
               <div className="relative aspect-5/6 w-full max-h-[min(52vh,480px)] sm:aspect-16/10 sm:max-h-[min(44vh,420px)]">
@@ -65,14 +65,14 @@ export default function NTHConnectSection() {
                 />
                 <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950 via-slate-950/70 to-transparent px-4 pb-3.5 pt-14 sm:pt-16">
                   <p className="text-center text-[11px] font-semibold uppercase tracking-[0.14em] text-indigo-100/95 sm:text-xs">
-                    The old application maze — and the direct line NTH opens for you
+                    The old application maze - and the direct line NTH opens for you
                   </p>
                 </div>
               </div>
             </div>
           </figure>
 
-          {/* Copy + CTA — solid base on mobile; sits on left scrim on lg */}
+          {/* Copy + CTA - solid base on mobile; sits on left scrim on lg */}
           <div className="order-2 min-w-0 w-full max-w-xl lg:max-w-104 xl:max-w-xl">
             <motion.div {...fadeUp} className="min-w-0">
               <p className="mb-4 inline-flex max-w-full flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-indigo-300">
@@ -99,7 +99,7 @@ export default function NTHConnectSection() {
 
               <p className="mt-5 max-w-lg text-base leading-relaxed text-slate-300 sm:mt-6 sm:text-lg">
                 Most candidates stay stuck in the endless application churn. NTH is different: we connect
-                you straight to hiring teams so your energy goes into real conversations—not endless forms.
+                you straight to hiring teams so your energy goes into real conversations-not endless forms.
               </p>
 
               <div className="mt-7 sm:mt-8">

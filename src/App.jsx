@@ -15,6 +15,8 @@ import PublicJobsPage from './pages/landing/home/PublicJobsPage';
 import JobDetailsPage from './pages/landing/home/JobDetailsPage';
 import PortfolioIndex from './pages/portfolio/PortfolioIndex';
 import PricingPage from './pages/pricing/pricing/PricingPage';
+import PrivacyPolicyPage from './pages/landing/legal/PrivacyPolicyPage';
+import TermsConditionsPage from './pages/landing/legal/TermsConditionsPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
@@ -45,7 +47,9 @@ import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
-import SuccessGuaranteePage from './pages/landing/guarantee/SuccessGuaranteePage';
+import RefundPolicyPage from './pages/landing/legal/RefundPolicyPage';
+import ContactPage from './pages/landing/contact/ContactPage';
+import AboutPage from './pages/landing/about/AboutPage';
 
 function App() {
   return (
@@ -59,8 +63,13 @@ function App() {
         <Route path="/jobs" element={<PublicJobsPage />} />
         <Route path="/jobs/:id" element={<JobDetailsPage />} />
         <Route path="/portfolio" element={<PortfolioIndex />} />
-        <Route path="/guarantee" element={<SuccessGuaranteePage />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/refund-policy" element={<RefundPolicyPage />} />
+        <Route path="/guarantee" element={<Navigate to="/refund-policy" replace />} />
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms-and-conditions" element={<TermsConditionsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

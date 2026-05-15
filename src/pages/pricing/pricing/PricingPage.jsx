@@ -66,7 +66,7 @@ export default function PricingPage() {
     >
       <Seo
         title="Pricing Plans | Naveen Talent Hub"
-        description="Choose Base, Silver, or Gold plans for mock interviews, direct interview slots, and 100% refund protection when milestones are met."
+        description="Choose Fresher or Experienced track, then Base, Silver, or Gold for mock interviews, interview opportunities, and career support-see each plan on the page for inclusions and notes."
         canonicalPath="/pricing"
         ogImage="/hero-section/hero-image.jpg"
       />
