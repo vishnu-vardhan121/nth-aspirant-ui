@@ -458,7 +458,7 @@ export default function JobDetailsPage() {
         title={`${job.title} at ${job.company_name} | Naveen Talent Hub`}
         description={seoDescription}
         canonicalPath={`/jobs/${id}`}
-        ogImage="/hero-section/hero-image.jpg"
+        ogImage="/hero-section/hero-image.webp"
       />
       <Navbar />
 

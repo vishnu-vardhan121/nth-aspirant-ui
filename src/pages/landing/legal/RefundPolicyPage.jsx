@@ -237,7 +237,7 @@ export default function RefundPolicyPage() {
         description="Naveen Talent Hub's refund and cancellation policy. Silver and Gold plan holders get a full refund if we don't arrange at least one interview. Read rules for cancellations, reschedules, and payment issues."
         keywords="Naveen Talent Hub refund policy, NTH refund, cancellation policy, mock interview refund, Naveen Hub refund, interview guarantee refund India"
         canonicalUrl="https://naveentalenthub.in/refund-policy"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
       <Navbar />
 

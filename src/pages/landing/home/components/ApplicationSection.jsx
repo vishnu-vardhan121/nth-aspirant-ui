@@ -56,7 +56,7 @@ export default function ApplicationSection() {
     >
       {/* Full-width professional briefcase background */}
       <div
-        className="absolute inset-0 w-full bg-cover bg-center bg-no-repeat pointer-events-none bg-[url('/hero-section/job-application-bg.jpg')]"
+        className="absolute inset-0 w-full bg-cover bg-center bg-no-repeat pointer-events-none bg-[url('/hero-section/job-application-bg.webp')]"
       />
       <div
         className="absolute inset-0 w-full bg-gradient-to-br from-white/75 via-white/60 to-slate-50/85 pointer-events-none"

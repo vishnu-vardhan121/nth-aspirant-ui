@@ -49,7 +49,7 @@ export default function EarlyAccessPage() {
         title="Share your profile for recruiter matching | Naveen Talent Hub"
         description="One form: your skills and resume stay active with our team for up to one month. When a hiring team needs someone like you, Naveen Talent Hub introduces you directly-no spam, no re-applying on ten portals."
         canonicalPath="/early-access"
-        ogImage="/hero-section/hero-image.jpg"
+        ogImage="/hero-section/hero-image.webp"
       />
       <Navbar />
       <main

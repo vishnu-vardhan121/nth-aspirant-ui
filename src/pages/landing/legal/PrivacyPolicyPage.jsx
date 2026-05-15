@@ -150,7 +150,7 @@ export default function PrivacyPolicyPage() {
         description="Read the Privacy Policy for Naveen Talent Hub. Learn what data we collect, how we use it, cookie usage, your rights, and how to contact us for access, correction, or deletion requests."
         keywords="Naveen Talent Hub privacy policy, NTH privacy, data protection, cookie policy, user data rights, Naveen Hub privacy"
         canonicalUrl="https://naveentalenthub.in/privacy-policy"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
       <Navbar />
 

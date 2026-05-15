@@ -180,7 +180,7 @@ export default function TermsConditionsPage() {
         description="Terms and Conditions for Naveen Talent Hub. Covers plan scope, pricing, payments, refunds, conduct, and what is included in Base, Silver, and Gold plans for Fresher and Experienced tracks."
         keywords="Naveen Talent Hub terms, NTH terms, Naveen Hub terms and conditions, career platform terms, mock interview terms, refund terms India"
         canonicalUrl="https://naveentalenthub.in/terms-and-conditions"
-        ogImage="https://naveentalenthub.in/hero-section/hero-image.jpg"
+        ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
       <Navbar />
 
