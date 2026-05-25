@@ -21,7 +21,7 @@ const TRUST_ITEMS = [
   {
     icon: HiShieldCheck,
     title: 'Up to one month',
-    text: 'We use your profile for matching for 30 days-resubmit anytime if you are still job hunting.',
+    text: 'We review your profile for career preparation updates for 30 days—resubmit anytime if your goals change.',
   },
 ];
 
@@ -46,8 +46,8 @@ export default function EarlyAccessPage() {
         aria-hidden
       />
       <Seo
-        title="Share your profile for recruiter matching | Naveen Talent Hub"
-        description="One form: your skills and resume stay active with our team for up to one month. When a hiring team needs someone like you, Naveen Talent Hub introduces you directly-no spam, no re-applying on ten portals."
+        title="Early access — career preparation updates | Naveen Talent Hub"
+        description="Join early access to receive career preparation updates, profile improvement guidance, and opportunity discovery support. One form, about four minutes."
         canonicalPath="/early-access"
         ogImage="/hero-section/hero-image.webp"
       />
@@ -81,18 +81,17 @@ export default function EarlyAccessPage() {
               <header className="mb-8 min-w-0 lg:mb-10">
                 <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-700 ring-1 ring-indigo-100">
                   <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" aria-hidden />
-                  Recruiter-led matching
+                  Early access
                 </p>
                 <h1 className="max-w-3xl text-pretty text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-                  Share your profile once-{' '}
+                  Join early access for{' '}
                   <span className="bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
-                    we handle introductions
+                    career preparation support
                   </span>
                 </h1>
                 <p className="mt-4 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
-                  Your details stay active with our recruiters for up to one month while we search for a fit. When a
-                  team is hiring for your skills, we connect you directly-so you are not re-uploading the same CV on every
-                  job board.
+                  Share your profile once for up to one month of career preparation updates, profile improvement
+                  guidance, and opportunity discovery support—without repeating the same details on every portal.
                 </p>
               </header>
 
@@ -136,13 +135,13 @@ export default function EarlyAccessPage() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">
                         2
                       </span>
-                      <span className="pt-0.5">List your strongest skills first-we use them for matching.</span>
+                      <span className="pt-0.5">List your strongest skills first—we use them for career preparation guidance.</span>
                     </li>
                     <li className="flex gap-3">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">
                         3
                       </span>
-                      <span className="pt-0.5">Be honest about communication confidence; it helps us place you well.</span>
+                      <span className="pt-0.5">Be honest about communication confidence; it helps us tailor coaching feedback.</span>
                     </li>
                     <li className="flex gap-3">
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/25">

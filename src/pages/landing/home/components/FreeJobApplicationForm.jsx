@@ -403,7 +403,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
                   />
                 </div>
                 <p className="text-xs font-medium text-slate-500">
-                  Shown when you are shortlisted so recruiters see where you are based.
+                  Shown when you are shortlisted so reviewers see where you are based.
                 </p>
               </div>
 
@@ -509,7 +509,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs font-medium text-slate-500">Add at least one skill recruiters can scan quickly.</p>
+                  <p className="text-xs font-medium text-slate-500">Add at least one skill reviewers can scan quickly.</p>
                 )}
               </div>
 

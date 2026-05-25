@@ -105,19 +105,19 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
       <Seo
-        title="Naveen Talent Hub | Mock Interviews, Direct Interview Slots & Career Support in India"
-        description="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
-        keywords="Naveen Talent Hub, NTH, Naveen Talent Hub NTH, Naveen Hub, Naveen Talent, Talent Hub, NTH career Hyderabad, NTH mock interviews, NTH connect, mock interviews India, direct company interviews, tech interview preparation, IT job support India, fresher job placement, experienced IT jobs, career support platform, interview coaching India, job placement Hyderabad, tech career mentorship"
+        title="Naveen Talent Hub | Resume Support, Mock Interviews & Career Guidance"
+        description="Naveen Talent Hub provides resume support, mock interview practice, communication feedback, profile improvement, and interview preparation guidance for students and professionals."
+        keywords="resume support, resume review, mock interview, interview preparation, career guidance, communication coaching, profile improvement, LinkedIn profile review, portfolio review, job readiness, career support, Naveen Talent Hub, NTH, Hyderabad"
         author="Naveen Talent Hub"
         geoRegion="IN-TG"
         geoPlacename="Hyderabad, Telangana, India"
         canonicalUrl="https://naveentalenthub.in/"
         ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
-        ogTitle="Naveen Talent Hub | Mock Interviews & Direct Interview Slots"
-        ogDescription="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
+        ogTitle="Naveen Talent Hub | Career Support & Interview Preparation"
+        ogDescription="Improve your resume, profile, communication, and interview confidence with guided career support and mock interview practice."
         ogUrl="https://naveentalenthub.in/"
-        twitterTitle="Naveen Talent Hub | Mock Interviews & Direct Interview Slots"
-        twitterDescription="Naveen Talent Hub helps tech job aspirants crack interviews with mock interviews, direct company interview slots, resume support, and mentorship. Refund guaranteed if we don't arrange at least one interview on eligible plans."
+        twitterTitle="Naveen Talent Hub | Career Support & Interview Preparation"
+        twitterDescription="Improve your resume, profile, communication, and interview confidence with guided career support and mock interview practice."
         jsonLd={{
           '@context': 'https://schema.org',
           '@type': 'Organization',
@@ -126,7 +126,7 @@ export default function LandingPage() {
           url: SITE_URL,
           logo: `${SITE_URL}/hero-section/hero-image.webp`,
           description:
-            'Naveen Talent Hub provides mock interviews, direct company interview slots, resume support, and career mentorship for tech job aspirants in India.',
+            'Naveen Talent Hub provides career support, resume review, mock interview practice, communication coaching, and interview preparation guidance services.',
           email: 'hello@naveentalenthub.in',
           address: {
             '@type': 'PostalAddress',

@@ -31,7 +31,7 @@ export default function WeeklyInterviewsMarquee({ className = '' }) {
     <div className={className}>
       <div className="flex items-center justify-between px-1 sm:px-0 mb-3">
         <h2 className="text-[11px] sm:text-xs font-semibold tracking-[0.22em] uppercase text-white/60">
-          This Week&apos;s Interviews
+          This Week&apos;s Mock Interviews
         </h2>
       </div>
       <div className="w-screen relative left-1/2 -translate-x-1/2 overflow-hidden pb-4">

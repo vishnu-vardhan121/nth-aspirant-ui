@@ -82,7 +82,7 @@ function normalizeSpotlightJob(job) {
   if (!job || typeof job !== 'object' || !job.id) return null;
   return {
     id: job.id,
-    title: job.title ?? 'Hiring role',
+    title: job.title ?? 'Open role',
     company: job.company_name ?? '',
     city: job.location ?? '-',
     application_deadline: job.application_deadline ?? null,
@@ -189,7 +189,7 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
           to={`/jobs/${job.id}`}
           className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
         >
-          See hiring updates <HiArrowRight className="w-4 h-4 shrink-0" />
+          See role updates <HiArrowRight className="w-4 h-4 shrink-0" />
         </Link>
       );
     }
@@ -366,7 +366,7 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
               {job.title}
             </h3>
             {canView ? (
-              <p className="text-xs font-semibold text-indigo-600">{job.company || 'NTH Hiring Partner'}</p>
+              <p className="text-xs font-semibold text-indigo-600">{job.company || 'Listed employer'}</p>
             ) : (
               <div className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600">
                 <HiLockClosed className="h-3.5 w-3.5 shrink-0 text-slate-500" />
@@ -422,9 +422,9 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-35" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-indigo-500" />
                 </span>
-                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">Hiring timeline</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate-500">Role timeline</p>
               </div>
-              <p className="text-[10px] text-slate-500">Updates from the hiring team</p>
+              <p className="text-[10px] text-slate-500">Public updates for this listing</p>
             </div>
             <div className="flex flex-wrap items-center gap-1.5">
               {hasMessages && (
@@ -461,7 +461,7 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
                 </span>
                 <p className="text-center text-xs font-medium text-slate-500">No timeline messages yet</p>
                 <p className="max-w-[240px] text-center text-[10px] leading-relaxed text-slate-400">
-                  Updates appear when the team posts hiring news.
+                  Updates appear when new information is posted for this role.
                 </p>
               </div>
             )}
@@ -493,7 +493,7 @@ function JobRowLanding({ job, hoveredId, setHoveredId, isAuthenticated, pricingT
             to={`/jobs/${job.id}`}
             className="mt-auto inline-flex w-full min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2.5 text-xs font-bold text-indigo-800 shadow-sm transition-[background-color,border-color,box-shadow,color] duration-150 hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
-            Open full role & hiring updates
+            Open full role & activity updates
             <HiArrowRight className="h-4 w-4 shrink-0" aria-hidden />
           </Link>
         </div>
@@ -548,7 +548,7 @@ function JobCardDirectory({ job, hoveredId, setHoveredId, isAuthenticated, prici
             </span>
           )}
           {canView ? (
-            <p className="text-xs font-semibold text-indigo-600">{job.company || 'NTH Hiring Partner'}</p>
+            <p className="text-xs font-semibold text-indigo-600">{job.company || 'Listed employer'}</p>
           ) : (
             <div className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-500">
               <HiLockClosed className="h-3 w-3 shrink-0" />
@@ -592,7 +592,7 @@ function JobCardDirectory({ job, hoveredId, setHoveredId, isAuthenticated, prici
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Hiring activity</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-500">Role activity</p>
               </div>
               <span className="text-[9px] font-semibold text-slate-400">
                 {notices.length + shortlisted.length} updates
@@ -727,9 +727,9 @@ export default function JobOpeningsSection({
           return {
             id: job.id,
             title: job.title,
-            company: job.company || 'NTH Hiring Partner',
+            company: job.company || 'Listed employer',
             city: job.city || '-',
-            experience: 'Hiring Update',
+            experience: 'Role update',
             requirements: job.key_skills ?? [],
             isFree: true,
             applyLink: `/jobs/${job.id}`,
@@ -819,7 +819,7 @@ export default function JobOpeningsSection({
         <div className="col-span-full text-center px-4">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold uppercase tracking-wide mb-3 sm:mb-4 border border-indigo-200/60">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-            {isDirectory ? 'All openings' : 'Currently Hiring'}
+            {isDirectory ? 'Opportunity discovery' : 'Curated opportunities'}
           </div>
 
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3 leading-tight">
@@ -837,7 +837,7 @@ export default function JobOpeningsSection({
           <p className="text-slate-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
             {isDirectory
               ? 'All curated roles - free and premium - in one place.'
-              : 'Hand-picked positions with live hiring updates. Your perfect role is waiting.'}
+              : 'Explore publicly available opportunities and prepare your application with better clarity.'}
           </p>
         </div>
 

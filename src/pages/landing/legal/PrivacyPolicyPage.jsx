@@ -69,12 +69,12 @@ const POLICY_SECTIONS = [
       {
         heading: 'Running the platform',
         body:
-          'Accounts, applications, mock interviews, mentor sessions, recruiter introductions you opt into, support replies, and service-related messages.',
+          'Accounts, applications, mock interviews, mentor sessions, career support sessions you book, support replies, and service-related messages.',
       },
       {
         heading: 'Partners',
         body:
-          'We use vendors for hosting, email, analytics, payments, and similar operations. When you pursue a role or session, limited profile data may go to recruiters, mentors, or interviewers involved in that step.',
+          'We use vendors for hosting, email, analytics, payments, and similar operations. When you book a session or submit an application, limited profile data may go to mentors, coaches, or reviewers involved in that step.',
       },
     ],
     bullets: ['We may use aggregated or de-identified data to improve the product.', 'We retain data only as long as needed for the purpose or as law requires.'],

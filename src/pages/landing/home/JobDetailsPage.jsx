@@ -137,7 +137,7 @@ function LiveHiringActivitySection({ notices, shortlisted }) {
                 <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-300/40">
                   <HiSparkles className="h-4 w-4" aria-hidden />
                 </span>
-                <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">Live hiring activity</h2>
+                <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">Role activity updates</h2>
               </div>
               <p className="max-w-xl text-sm leading-relaxed text-slate-600">
                 Timeline posts and shortlisted candidates shared for this role on the public job spotlight.
@@ -449,7 +449,7 @@ export default function JobDetailsPage() {
       : null;
   const seoDescription =
     trimText(job.description, 155) ||
-    `Apply for ${job.title} at ${job.company_name} with Naveen Talent Hub.`;
+    `Explore ${job.title} at ${job.company_name} and prepare your application with Naveen Talent Hub career support.`;
   const jobNotices = spotlightActivity.notices.length > 0 ? spotlightActivity.notices : toArray(job.notices);
   const jobShortlisted = spotlightActivity.shortlisted.length > 0 ? spotlightActivity.shortlisted : toArray(job.shortlisted);
   return (
@@ -644,7 +644,7 @@ export default function JobDetailsPage() {
                     </div>
                     <div className="flex items-center gap-2">
                        <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                       Direct connection with recruiters
+                       Application support and career guidance
                     </div>
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export default function JobDetailsPage() {
                 <div className="bg-linear-to-br from-indigo-600 to-violet-700 rounded-3xl p-5 sm:p-6 text-white shadow-xl shadow-indigo-200/50 min-w-0 overflow-hidden">
                    <h3 className="text-lg font-bold mb-2">Want to boost your chances?</h3>
                    <p className="text-indigo-100 text-sm mb-6 leading-relaxed">
-                     Get direct interview slots and expert mock interview practice with our Premium plans.
+                     Get mock interview practice, resume support, and interview preparation guidance with our Premium plans.
                    </p>
                    <Link 
                      to={pricingTo}
