@@ -31,7 +31,7 @@ const QUICK_FACTS = [
     icon: ShieldAlert,
     title: 'Outcomes',
     value: 'No job guarantee',
-    detail: 'We support preparation and introductions; employers decide hiring.',
+    detail: 'Career support only; no job or placement guarantee.',
   },
 ];
 
@@ -63,23 +63,23 @@ const TERMS_SECTIONS = [
     eyebrow: 'Plans',
     title: 'Pricing page, plans, and service scope',
     intro:
-      'Paid mock and interview support is organised by track (Fresher or Experienced) and plan (Base, Silver, or Gold), as shown on the pricing page. The same page lists feature bullets and short notes under each card-those notes are part of how we describe the plan.',
+      'Paid career support is organised by track (Fresher or Experienced) and plan (Base, Silver, or Gold), as shown on the pricing page. The same page lists feature bullets and short notes under each card—those notes describe preparation services, not guaranteed outcomes.',
     blocks: [
       {
         heading: 'What the tiers generally include',
         body:
-          'Base lists essential mock interviews, feedback, technical suggestions, and free job links, with Base list prices ₹399 (Fresher) or ₹499 (Experienced) on the site. Silver and Gold add more mock interviews and “direct company interview” opportunities plus other items shown on the card (Gold also lists technical support, personal assistance, and two founder sessions on the pricing page). Silver and Gold rupee amounts may appear as a placeholder until we confirm them with you.',
+          'Base lists essential mock interview practice, resume/profile support, technical preparation suggestions, and curated opportunity discovery links, with list prices shown on the site. Silver and Gold add more mock practice, application support sessions, profile feedback, and other items on the card (Gold may also include technical support, personal assistance, and founder mentorship sessions). Silver and Gold rupee amounts may appear as a placeholder until confirmed with you.',
       },
       {
         heading: 'Plan notes (from the pricing cards)',
         body:
-          'Where the Base plan card mentions a score band on a mock for when a bonus interview applies, that rule only applies as written on the pricing page at the time you commit. Where Silver or Gold cards mention a bonus tied to not clearing final or HR rounds, that is also described on the pricing page-not a promise of any interview, offer, or job.',
+          'Where a plan card mentions a score band on a mock for bonus preparation support, that rule only applies as written on the pricing page at the time you commit. Any bonus described on Silver or Gold is preparation support—not a promise of any interview, offer, or job.',
       },
     ],
     bullets: [
-      '“Direct company interviews” means opportunities or introductions we work to arrange where appropriate; companies control their process.',
-      'Nothing on the pricing page overrides the fact that we do not guarantee employment, salary, or recruiter action.',
-      'Silver and Gold plan holders are eligible for a full refund if we do not arrange at least one direct company interview opportunity. See the Refund & Cancellation Policy for conditions.',
+      'Application support sessions help you prepare and apply with clarity; employers control their own process and decisions.',
+      'Nothing on the pricing page overrides the fact that we do not guarantee employment, salary, interviews, or employer responses.',
+      'Refunds apply only when paid services are not delivered as described. See the Refund & Cancellation Policy.',
     ],
   },
   {
@@ -109,7 +109,7 @@ const TERMS_SECTIONS = [
     eyebrow: 'Money & leads',
     title: 'Enquiries, payments, and refunds',
     intro:
-      'Choosing a plan on the pricing page opens a lead form-that is an enquiry, not a completed purchase until we confirm scope, price (especially if still placeholder), and payment with you.',
+      'Base plan checkout may be completed online where enabled. Silver and Gold may require contact to confirm scope and price before payment. All purchases are for career support services only.',
     blocks: [
       {
         heading: 'Daily limit',
@@ -119,7 +119,7 @@ const TERMS_SECTIONS = [
       {
         heading: 'Payment and refunds',
         body:
-          'Charges, taxes, and gateway rules follow what you agree to at payment. Refunds and cancellations follow the same written scope (plan text plus our confirmation), and whether a session or interview slot was already used or scheduled.',
+          'Charges, taxes, and gateway rules follow what you agree to at payment. Refunds and cancellations follow the written scope (plan text plus our confirmation), and whether a preparation session was already used or scheduled.',
       },
     ],
     bullets: ['Keep emails or invoices that describe what you bought.'],
@@ -140,7 +140,7 @@ const TERMS_SECTIONS = [
       {
         heading: 'Effect',
         body:
-          'Suspension can affect dashboards, bookings, and future eligibility. We are not liable for hiring outcomes, recruiter delays, or outages outside our reasonable control, to the extent the law allows.',
+          'Suspension can affect dashboards, bookings, and future eligibility. We are not liable for employer outcomes, third-party delays, or outages outside our reasonable control, to the extent the law allows.',
       },
     ],
     bullets: [],

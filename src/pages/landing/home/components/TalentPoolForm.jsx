@@ -372,9 +372,10 @@ export default function TalentPoolForm({ source = 'early_access_page', variant =
         <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-400 to-teal-600 text-white">
           <HiCheckCircle className="h-9 w-9" aria-hidden />
         </div>
-        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">You&apos;re registered for matching</h2>
+        <h2 className="text-2xl font-bold text-slate-900 tracking-tight">You&apos;re registered for early access</h2>
         <p className="mt-3 text-slate-600 leading-relaxed">
-          We&apos;ll contact you when a role fits your profile. You can still browse open jobs anytime.
+          We&apos;ll contact you with career preparation updates, profile improvement guidance, and opportunity
+          discovery support. You can still browse open jobs anytime.
         </p>
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
           <Link

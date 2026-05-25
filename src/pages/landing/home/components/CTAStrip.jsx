@@ -4,10 +4,10 @@ import { HiCheckCircle } from 'react-icons/hi';
 import SectionContainer from '../../../../components/SectionContainer';
 
 const HIGHLIGHTS = [
-  'Direct interviews with top companies',
-  'Skip the application queue',
-  'Mock interviews with IT professionals',
-  'Personalized career guidance',
+  'Resume and profile support',
+  'Mock interview practice with feedback',
+  'Communication coaching',
+  'Interview preparation guidance',
 ];
 
 export default function CTAStrip() {
@@ -16,7 +16,6 @@ export default function CTAStrip() {
 
   return (
     <section id="cta-strip" className="relative py-14 sm:py-16 md:py-20 lg:py-24 overflow-hidden bg-[rgb(var(--nth-bg-hero-start))]">
-      {/* Background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(79,70,229,0.25)_0%,transparent_50%)]" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-950/90" />
@@ -25,7 +24,6 @@ export default function CTAStrip() {
 
       <SectionContainer className="relative z-10">
         <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
-          {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -33,26 +31,24 @@ export default function CTAStrip() {
             transition={{ duration: 0.4 }}
             className="inline-flex px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/10 border border-white/20 text-indigo-200 text-[10px] sm:text-xs font-bold uppercase tracking-[0.2em] sm:tracking-[0.25em] mb-6 sm:mb-8"
           >
-            Get Started Today
+            Career preparation support
           </motion.div>
 
-          {/* Headline */}
           <motion.h2
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.05 }}
-            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-6xl font-bold text-white mb-4 sm:mb-5 tracking-tight leading-[1.1] px-4"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-5 tracking-tight leading-[1.1] px-4"
           >
-            Stop Applying,{' '}
+            Prepare Better,{' '}
             <span className="block sm:inline mt-1 sm:mt-0">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400">
-                Start Interviewing
+                Apply with Clarity
               </span>
             </span>
           </motion.h2>
 
-          {/* Subheadline */}
           <motion.p
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -60,11 +56,10 @@ export default function CTAStrip() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed px-4"
           >
-            Join thousands of successful candidates who landed their dream jobs
-            without the endless application process.
+            Build interview readiness with structured mock practice, resume support, and professional
+            guidance—then pursue opportunities on your own.
           </motion.p>
 
-          {/* Highlights - compact grid */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -80,14 +75,11 @@ export default function CTAStrip() {
                 <div className="shrink-0 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
                   <HiCheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-300" />
                 </div>
-                <span className="text-left text-sm sm:text-base font-medium text-white">
-                  {item}
-                </span>
+                <span className="text-left text-sm sm:text-base font-medium text-white">{item}</span>
               </div>
             ))}
           </motion.div>
 
-          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -99,35 +91,14 @@ export default function CTAStrip() {
               to={pricingTo}
               className="cta-strip-primary cursor-pointer inline-flex items-center justify-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl bg-gradient-to-r from-indigo-500 via-indigo-500 to-violet-500 font-bold text-base sm:text-lg text-white shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              View Pricing Plans
+              View Services
             </Link>
             <Link
               to="/contact"
               className="cta-strip-secondary cursor-pointer inline-flex items-center justify-center px-8 sm:px-10 py-3.5 sm:py-4 rounded-xl border-2 border-white/25 bg-white/5 font-bold text-base sm:text-lg text-white hover:bg-white/10 hover:border-white/40 transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
-              Contact Us
+              Contact Support
             </Link>
-          </motion.div>
-
-          {/* Trust footer - compact */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-12 sm:mt-14 pt-6 sm:pt-8 border-t border-white/10 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 px-4"
-          >
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              Trusted by 10,000+ candidates
-            </span>
-            <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-500" />
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              95% success rate
-            </span>
-            <span className="hidden sm:inline w-1 h-1 rounded-full bg-slate-500" />
-            <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest text-slate-400">
-              500+ partner companies
-            </span>
           </motion.div>
         </div>
       </SectionContainer>

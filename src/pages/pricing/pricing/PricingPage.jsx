@@ -66,7 +66,7 @@ export default function PricingPage() {
     >
       <Seo
         title="Pricing Plans | Naveen Talent Hub"
-        description="Choose Fresher or Experienced track, then Base, Silver, or Gold for mock interviews, interview opportunities, and career support-see each plan on the page for inclusions and notes."
+        description="Choose Fresher or Experienced track, then Base, Silver, or Gold for mock interview practice, resume support, profile feedback, and interview preparation guidance."
         canonicalPath="/pricing"
         ogImage="/hero-section/hero-image.webp"
       />

@@ -34,7 +34,7 @@ export default function PricingInterviewsMarquee({ className = '' }) {
     <div className={className}>
       <div className="flex items-center justify-between px-1 sm:px-0 mb-2.5">
         <h2 className="text-[10px] sm:text-[11px] font-semibold tracking-[0.18em] uppercase text-slate-400">
-          This week&apos;s interviews
+          This week&apos;s mock interviews
         </h2>
       </div>
       <div className="w-screen relative left-1/2 -translate-x-1/2 overflow-hidden pb-1">

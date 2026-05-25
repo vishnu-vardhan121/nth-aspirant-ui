@@ -6,7 +6,7 @@ import SectionContainer from '../../../../components/SectionContainer';
 const FEATURES = [
   {
     title: 'Verified Opportunities',
-    description: 'Every job is vetted by real HR and recruiters. No spam, no fake listings-only genuine roles.',
+    description: 'Publicly listed opportunities for discovery. No spam, no fake listings—apply independently when ready.',
     icon: SiShieldsdotio,
     color: 'from-indigo-500 to-sky-500',
     shadow: 'shadow-indigo-500/20',
@@ -19,8 +19,8 @@ const FEATURES = [
     shadow: 'shadow-indigo-500/20',
   },
   {
-    title: 'Direct Recruiter Access',
-    description: 'Connect directly with hiring teams. Get feedback, build your network, and accelerate your growth.',
+    title: 'Application Readiness',
+    description: 'Resume support, mock interview practice, and communication feedback so you can apply with more confidence.',
     icon: SiTarget,
     color: 'from-violet-500 to-indigo-500',
     shadow: 'shadow-violet-500/20',
@@ -77,8 +77,8 @@ export default function ApplicationSection() {
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed mb-6">
-              Naveen Talent Hub brings verified jobs and real recruiters into one seamless
-              ecosystem, so you can focus on growth, not guesswork.
+              Naveen Talent Hub combines career support services and curated opportunity
+              discovery so you can focus on preparation, not guesswork.
             </p>
             
             <Link

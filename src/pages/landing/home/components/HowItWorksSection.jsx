@@ -1,44 +1,47 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Users, Code, Calendar, Briefcase, Award } from 'lucide-react';
+import { ClipboardList, FileText, Users, Lightbulb, Send, RefreshCw } from 'lucide-react';
 import SectionContainer from '../../../../components/SectionContainer';
 
 const STEPS = [
   {
     step: '1',
-    title: 'Profile Screening',
-    description: 'We review your profile and experience to match you with the right opportunities.',
-    icon: Search,
+    title: 'Choose Your Support Plan',
+    description: 'Pick the career support plan that matches your preparation needs.',
+    icon: ClipboardList,
   },
   {
     step: '2',
-    title: 'Mock Interviews',
-    description: 'Practice with industry experts to sharpen your interview skills.',
-    icon: Users,
+    title: 'Profile & Resume Review',
+    description:
+      'We review your resume, projects, LinkedIn/GitHub/portfolio, and presentation quality.',
+    icon: FileText,
   },
   {
     step: '3',
-    title: 'Technical Support',
-    description: 'Get technical guidance and preparation tailored to your role.',
-    icon: Code,
+    title: 'Mock Interview Practice',
+    description:
+      'Practice interview-style questions with feedback on technical answers, communication, and confidence.',
+    icon: Users,
   },
   {
     step: '4',
-    title: 'Interview Scheduling',
-    description: 'We handle the logistics and seamlessly schedule your interviews.',
-    icon: Calendar,
+    title: 'Preparation Guidance',
+    description: 'Get improvement suggestions, preparation direction, and action points.',
+    icon: Lightbulb,
   },
   {
     step: '5',
-    title: 'Company Round',
-    description: 'Direct coordination with partner companies for technical rounds.',
-    icon: Briefcase,
+    title: 'Apply with Confidence',
+    description:
+      'Use your improved profile and preparation to apply for suitable opportunities independently.',
+    icon: Send,
   },
   {
     step: '6',
-    title: 'Offer Letter',
-    description: 'Celebrate your success as you receive your official offer letter.',
-    icon: Award,
+    title: 'Keep Improving',
+    description: 'Continue practicing and refining your profile based on feedback.',
+    icon: RefreshCw,
   },
 ];
 
@@ -65,7 +68,7 @@ export default function HowItWorksSection() {
             transition={{ duration: 0.5 }}
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4 tracking-tight"
           >
-            Our Direct Hiring Process
+            Our Career Preparation Process
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -74,7 +77,7 @@ export default function HowItWorksSection() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto"
           >
-            A clear, transparent, and proven path from your application to your offer letter.
+            A clear, structured path from profile review to mock practice and ongoing improvement.
           </motion.p>
         </div>
 
