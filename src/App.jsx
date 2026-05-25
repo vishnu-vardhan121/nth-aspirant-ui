@@ -37,6 +37,7 @@ import AdminMocksPage from './pages/admin/AdminMocksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
+import AdminNexaHiringLeadsPage from './pages/admin/AdminNexaHiringLeadsPage';
 import AdminHelpDeskPage from './pages/admin/AdminHelpDeskPage';
 import AdminTalentPoolPage from './pages/admin/AdminTalentPoolPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
@@ -104,6 +105,7 @@ function App() {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
+          <Route path="nexa-hiring-leads" element={<AdminNexaHiringLeadsPage />} />
           <Route path="help-desk" element={<AdminHelpDeskPage />} />
           <Route path="talent-pool" element={<AdminTalentPoolPage />} />
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
