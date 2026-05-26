@@ -12,12 +12,11 @@ const TRUST_POINTS = [
 export default function HeroSection() {
   return (
     <section id="hero" className="relative min-h-dvh flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
-      <div className="absolute inset-0 z-0 bg-slate-950" aria-hidden />
-      <div className="absolute inset-0 z-0 bg-contain bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]">
-        <div
-          className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25"
-          aria-hidden
-        />
+      <div
+        className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]"
+        aria-hidden
+      >
+        <div className="absolute inset-0 bg-slate-900/60" aria-hidden />
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto w-full pb-6 sm:pb-8">
