@@ -6,14 +6,14 @@ const CARDS = [
   {
     image: '/why-choose-nth/why-direct-tieups.webp',
     icon: HiBuildingOffice2,
-    title: 'Structured Career Support',
-    description: 'Clear preparation roadmaps with resume, profile, and interview guidance—not placement promises.',
+    title: 'Direct Company Tie-Ups',
+    description: 'We work directly with hiring team leads - no middlemen, no delays.',
   },
   {
     image: '/why-choose-nth/why-no-fake-listings.webp',
     icon: HiShieldCheck,
     title: 'No Fake Listings',
-    description: 'Curated opportunity discovery with publicly listed roles—no spam or fake listings.',
+    description: 'Only real openings, shared by verified recruiters from trusted companies.',
   },
   {
     image: '/why-choose-nth/why-interview-scheduling.webp',

@@ -22,6 +22,9 @@ import LegalSectionNav from './components/LegalSectionNav';
 const LAST_UPDATED = 'May 15, 2026';
 const SUPPORT_EMAIL = 'support@naveentalenthub.in';
 
+const DISCLAIMER =
+  'Naveen Talent Hub provides preparation, mentorship, and recruiter-facing support services. Payments are made for access to these services and operational effort, not for guaranteed hiring outcomes.';
+
 const QUICK_FACTS = [
   {
     icon: CalendarDays,
@@ -39,24 +42,13 @@ const QUICK_FACTS = [
 
 const REFUND_SECTIONS = [
   {
-    id: 'service-delivery-refund',
+    id: 'interview-guarantee',
     icon: BadgeCheck,
-    eyebrow: 'Eligibility',
-    title: 'Service Delivery & Refund Eligibility',
+    eyebrow: 'Guarantee',
+    title: 'Interview Guarantee',
     intro:
-      'Payments are for career support services only. Services may include mock interviews, resume/profile review, communication feedback, mentorship, and interview preparation guidance. We do not guarantee jobs, interviews, selections, salaries, offer letters, or employer responses.',
-    blocks: [
-      {
-        heading: 'When a refund may be considered',
-        body:
-          'Refunds may be considered when a paid service is not delivered as described in your plan or confirmation, when a duplicate payment occurs, or when payment fails but the amount is deducted. Completed or scheduled sessions already delivered are generally not refundable.',
-      },
-      {
-        heading: 'When refunds are not provided',
-        body:
-          'No refund is provided for lack of job selection, no employer response, interview rejection, salary mismatch, or any outcome you expected from applying independently after using our preparation services.',
-      },
-    ],
+      'If we are unable to arrange at least one direct company interview opportunity for you under your eligible plan, you are entitled to a full refund. This applies to Silver and Gold plans where interview introductions are included. Mock interviews and preparation services already delivered before the request are not counted toward this condition.',
+    blocks: [],
     bullets: [],
   },
   {
@@ -81,7 +73,7 @@ const REFUND_SECTIONS = [
     eyebrow: 'Overview',
     title: 'Introduction and scope',
     intro:
-      'This policy covers paid services: mock interviews, mentorship, interview preparation, resume/profile review, communication feedback, and related career readiness guidance. It works together with your plan, invoice, Terms & Conditions, and Privacy Policy.',
+      'This policy covers paid services: mock interviews, mentorship, interview prep, profile review, recruiter-facing support, and related training. It works together with your plan, invoice, Terms & Conditions, and Privacy Policy.',
     blocks: [
       {
         heading: 'How requests work',
@@ -91,7 +83,7 @@ const REFUND_SECTIONS = [
       {
         heading: 'What is not covered',
         body:
-          'Free resources, unpaid enquiries, and employer decisions outside our control. Silver and Gold plans may be confirmed after contact when prices are not yet listed online.',
+          'Free resources, unpaid pricing enquiries, and third-party hiring decisions. Pricing page selections are enquiries until payment and scope are confirmed in writing.',
       },
     ],
     bullets: [],
@@ -107,12 +99,12 @@ const REFUND_SECTIONS = [
       {
         heading: 'Consumed or scheduled work',
         body:
-          'Completed mocks, held calls, delivered reviews, and other scheduled sessions already taken are generally non-refundable. Confirmed slots and no-shows (especially without notice) may count as used service.',
+          'Completed mocks, held calls, delivered reviews, and recruiter-facing steps already taken are generally non-refundable. Confirmed slots and no-shows (especially without notice) may count as used service.',
       },
       {
         heading: 'Decisions',
         body:
-          'We use a reasonable operational review and reply by email with approval, partial credit, reschedule, or decline. No job, interview, selection, salary, or offer letter is guaranteed.',
+          'We use a reasonable operational review and reply by email with approval, partial credit, reschedule, or decline. No interview, offer, or placement is guaranteed.',
       },
     ],
     bullets: [],
@@ -147,7 +139,7 @@ const REFUND_SECTIONS = [
       {
         heading: 'Usually not refundable',
         body:
-          'Delivered services; missed sessions without notice; requests after plan validity; requests based solely on not receiving a job offer, interview invitation, or employer response; chargebacks without contacting us first.',
+          'Delivered services; missed sessions without notice; requests after plan validity; requests based solely on not receiving a job offer or interview invitation - our services cover preparation and introductions, not guaranteed outcomes; chargebacks without contacting us first.',
       },
       {
         heading: 'Failed or duplicate payments',
@@ -242,8 +234,8 @@ export default function RefundPolicyPage() {
       />
       <Seo
         title="Refund & Cancellation Policy | Naveen Talent Hub"
-        description="Refund and cancellation rules for Naveen Talent Hub career support services: mock interviews, resume review, and preparation guidance. No job or interview outcomes are guaranteed."
-        keywords="Naveen Talent Hub refund policy, NTH refund, cancellation policy, mock interview refund, career support refund India, service delivery refund"
+        description="Naveen Talent Hub's refund and cancellation policy. Silver and Gold plan holders get a full refund if we don't arrange at least one interview. Read rules for cancellations, reschedules, and payment issues."
+        keywords="Naveen Talent Hub refund policy, NTH refund, cancellation policy, mock interview refund, Naveen Hub refund, interview guarantee refund India"
         canonicalUrl="https://naveentalenthub.in/refund-policy"
         ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
       />
@@ -266,6 +258,11 @@ export default function RefundPolicyPage() {
             description="Operational rules for refunds, cancellations, reschedules, and payment issues on paid services."
             facts={QUICK_FACTS}
           />
+
+          <div className="rounded-2xl border border-amber-200/90 bg-linear-to-r from-amber-50/90 via-white to-orange-50/60 p-5 sm:p-6 shadow-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.1em] text-amber-800">Service clarification</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-700 sm:text-base">{DISCLAIMER}</p>
+          </div>
 
           <div className="xl:hidden">
             <LegalSectionNav

@@ -127,7 +127,7 @@ export default function ShortlistedUpdatesSection() {
       setLoading(false);
       if (cancelled) return;
       if (list.length === 0 && rpcError) {
-        setFetchError(rpcError.message || 'Could not load role spotlight.');
+        setFetchError(rpcError.message || 'Could not load hiring spotlight.');
       } else {
         setFetchError(null);
       }
@@ -164,10 +164,10 @@ export default function ShortlistedUpdatesSection() {
         </span>
       </div>
       <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-        Role <span className="text-indigo-600">Activity</span>
+        Live Hiring <span className="text-indigo-600">Activity</span>
       </h2>
       <p className="mt-2 text-sm text-slate-500 font-medium max-w-lg">
-        Public timeline updates and shortlisted candidates for highlighted opportunity listings.
+        Interview updates and shortlisted candidates for roles we're highlighting right now.
       </p>
     </motion.div>
   );
@@ -202,7 +202,7 @@ export default function ShortlistedUpdatesSection() {
             </div>
             <h3 className="text-base font-bold text-slate-900">No spotlight roles yet</h3>
             <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-              When an admin turns on <strong>role spotlight</strong> for an open listing, those updates and selected candidates will appear here automatically.
+              When an admin turns on <strong>Hiring spotlight</strong> for an open job, those updates and selected candidates will appear here automatically.
             </p>
             <Link to="/" className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition-colors">
               Browse open jobs <HiArrowRight className="h-3.5 w-3.5" />
@@ -406,7 +406,7 @@ export default function ShortlistedUpdatesSection() {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-6">
             <div className="text-center sm:text-left">
               <h3 className="text-lg font-extrabold text-white tracking-tight">
-                Stay ahead with better preparation
+                Stay entirely ahead in hiring
               </h3>
               <p className="text-sm text-slate-400 font-medium mt-0.5 max-w-sm">
                 Keep your profile updated and apply early for the roles that matter.
