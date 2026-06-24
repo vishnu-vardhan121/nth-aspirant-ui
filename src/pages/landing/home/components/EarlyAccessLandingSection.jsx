@@ -43,33 +43,34 @@ export default function EarlyAccessLandingSection() {
           >
             <div className="inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.14em] text-indigo-700 ring-1 ring-indigo-100 shadow-sm mb-5">
               <HiSparkles className="h-4 w-4 text-indigo-600 shrink-0" aria-hidden />
-              Early access
+              Recruiter-led matching
             </div>
             <h2
               id="early-access-heading"
               className="text-3xl sm:text-4xl md:text-[2.35rem] font-bold tracking-tight text-slate-900 leading-[1.15]"
             >
-              Career preparation updates &{' '}
+              Beyond job portals -{' '}
               <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-violet-600">
-                opportunity discovery
+                introductions when you fit
               </span>
             </h2>
             <p className="mt-5 text-lg sm:text-xl text-slate-600 leading-relaxed max-w-2xl">
-              Add your profile once for up to one month of profile improvement guidance and curated opportunity
-              discovery support—so you can prepare applications with more clarity.
+              Add your profile once-we use it for up to one month while we look for roles that truly fit. When a company needs your skills and
+              experience, we introduce you directly-without asking you to re-apply on every site.
             </p>
             <ul className="mt-8 space-y-3 max-w-xl">
               <li className="flex gap-3 text-slate-700">
                 <HiShieldCheck className="h-6 w-6 shrink-0 text-emerald-600 mt-0.5" aria-hidden />
                 <span className="text-[15px] sm:text-base leading-snug">
-                  <span className="font-semibold text-slate-900">Human review.</span> We focus on relevant preparation guidance—not mass outreach.
+                  <span className="font-semibold text-slate-900">Human review.</span> We only reach out when there&apos;s a genuine
+                  role-not a mass mail blast.
                 </span>
               </li>
               <li className="flex gap-3 text-slate-700">
                 <HiShieldCheck className="h-6 w-6 shrink-0 text-emerald-600 mt-0.5" aria-hidden />
                 <span className="text-[15px] sm:text-base leading-snug">
-                  <span className="font-semibold text-slate-900">One profile, one month.</span> Same details support updates for up to
-                  30 days—you can resubmit anytime if your goals change.
+                  <span className="font-semibold text-slate-900">One profile, one month.</span> Same details power introductions for up to
+                  30 days-you skip repeating forms everywhere, and you can resubmit anytime if you&apos;re still looking.
                 </span>
               </li>
             </ul>
@@ -110,22 +111,22 @@ export default function EarlyAccessLandingSection() {
                     2
                   </span>
                   <span>
-                    For up to one month, we review your skills and preferences for career preparation and opportunity discovery.
+                    For up to one month, we review your skills and preferences against active and upcoming hiring needs.
                   </span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
                     3
                   </span>
-                  <span>If relevant, we share opportunity discovery updates and preparation guidance—no endless forms.</span>
+                  <span>If there&apos;s a match, we connect you directly with the opportunity-no endless forms.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-800">
                     4
                   </span>
                   <span>
-                    After one month, your profile is used only for early access updates, career preparation guidance,
-                    and profile review support—you can submit again anytime if your goals change.
+                    After one month, your profile is no longer used for matching-you can submit again anytime if you&apos;re
+                    still looking.
                   </span>
                 </li>
               </ol>

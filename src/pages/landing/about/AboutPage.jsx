@@ -20,7 +20,7 @@ const ABOUT_SECTIONS = [
     eyebrow: 'Mission',
     title: 'What we do',
     intro:
-      'Naveen Talent Hub helps students and professionals prepare better for career opportunities through resume support, mock interviews, profile review, communication coaching, and interview preparation guidance.',
+      'Naveen Talent Hub is a career support platform for tech aspirants across India. We combine structured mock interviews with working IT professionals, direct company interview introductions, resume and profile support, and step-by-step mentorship - so candidates are prepared when it matters most.',
     blocks: [
       {
         heading: 'Freshers and experienced',
@@ -36,7 +36,7 @@ const ABOUT_SECTIONS = [
     eyebrow: 'Philosophy',
     title: 'Our approach',
     intro:
-      'We do not promise jobs, interviews, selections, salaries, or offer letters. We focus on preparation, honest feedback, and professional guidance so you can pursue opportunities independently with more confidence.',
+      'We do not promise jobs. We promise preparation, honest feedback, and the best possible introduction to companies where you are a fit. Hiring decisions belong to employers - our job is to make sure you show up ready.',
     blocks: [],
     bullets: [],
   },
@@ -69,7 +69,7 @@ export default function AboutPage() {
       />
       <Seo
         title="About Us | Naveen Talent Hub"
-        description="Learn about Naveen Talent Hub—resume support, mock interview practice, profile review, communication coaching, and interview preparation guidance in India. Based in Hyderabad."
+        description="Learn about Naveen Talent Hub - mock interviews, direct company introductions, resume support, and mentorship for tech job aspirants in India. Based in Hyderabad."
         keywords="about Naveen Talent Hub, about NTH, Naveen Hub, tech career India, Hyderabad interview coaching"
         canonicalUrl="https://naveentalenthub.in/about"
         ogImage="https://naveentalenthub.in/hero-section/hero-image.webp"
@@ -90,7 +90,7 @@ export default function AboutPage() {
                 </span>
               </>
             }
-            description="We help students and professionals build interview readiness through structured career support—not recruitment or placement services."
+            description="We help tech job aspirants in India get interview-ready, access real opportunities, and move through hiring with confidence."
             facts={[
               {
                 icon: Mail,

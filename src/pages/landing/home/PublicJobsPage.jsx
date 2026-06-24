@@ -7,8 +7,8 @@ export default function PublicJobsPage() {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       <Seo
-        title="Opportunity discovery | Naveen Talent Hub"
-        description="Explore publicly listed opportunities and prepare your application with better clarity—free and premium listings in one place."
+        title="Open roles | Naveen Talent Hub"
+        description="Browse every role we are hiring for on the landing page-free and premium openings in one place."
         canonicalPath="/jobs"
         ogImage="/hero-section/hero-image.webp"
       />

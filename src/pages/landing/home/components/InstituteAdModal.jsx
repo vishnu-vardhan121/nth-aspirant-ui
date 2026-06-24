@@ -11,8 +11,8 @@ export const ADS_CONTACT_EMAIL = 'hello@naveentalenthub.in';
 /** Persisted when visitor checks “Don’t show again” on the promo fallback. */
 export const LANDING_INSTITUTE_AD_DISMISS_KEY = 'nth_landing_institute_promo_modal_dismiss_v1';
 
-/** One inbox for partnerships, promotions, sponsorships, and other outreach. */
-const MAILTO_TEAM = `mailto:${ADS_CONTACT_EMAIL}?subject=${encodeURIComponent('Naveen Talent Hub – partnership, promotion, or sponsorship')}`;
+/** One inbox for hiring partners, promotions, sponsorships, and other outreach. */
+const MAILTO_TEAM = `mailto:${ADS_CONTACT_EMAIL}?subject=${encodeURIComponent('Naveen Talent Hub – hiring, promotion, or partnership')}`;
 
 export default function InstituteAdModal({ open, onClose, ad }) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -43,7 +43,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
       onClick={() => finishClose({ dontShowAgain: isFallback ? dontShowAgain : false })}
       role="dialog"
       aria-modal="true"
-      aria-label={isFallback ? 'Partnerships and promotions with Naveen Talent Hub' : 'Sponsor advertisement'}
+      aria-label={isFallback ? 'Hiring and promotions with Naveen Talent Hub' : 'Sponsor advertisement'}
     >
       <div
         className={`pointer-events-auto relative ${isFallback ? 'w-full max-w-xl' : 'flex h-full min-h-0 w-full max-w-none max-h-none items-center justify-center sm:max-w-[80vw] sm:max-h-[80vh]'}`}
@@ -93,18 +93,17 @@ export default function InstituteAdModal({ open, onClose, ad }) {
               </div>
 
               <h2 className="text-center text-lg font-bold text-slate-800 sm:text-xl">
-                Partnerships, promotions &amp; more with
+                Hiring, promotions &amp; more with
                 <span className="mt-1 block bg-linear-to-r from-indigo-600 to-violet-600 bg-clip-text text-2xl font-extrabold tracking-tight text-transparent sm:text-[1.65rem]">
                   Naveen Talent Hub
                 </span>
               </h2>
 
               <p className="mt-5 text-center text-sm leading-relaxed text-slate-600">
-                If you want to collaborate on student learning, brand visibility, workshops, or career awareness
-                campaigns, feel free to reach out.
+                If you have open roles, a campaign, or something valuable to share with our audience, feel free to reach out.
               </p>
               <p className="mt-3 text-center text-sm leading-relaxed text-slate-600">
-                Our team handles partnership and promotion inquiries through a single point of contact—so you always know
+                Our team handles all hiring partnerships and promotions through a single point of contact-so you always know
                 where to connect.
               </p>
 
@@ -132,7 +131,7 @@ export default function InstituteAdModal({ open, onClose, ad }) {
                       <HiEnvelope className="h-5 w-5" aria-hidden />
                     </span>
                     <p className="min-w-0 pt-0.5 text-sm leading-snug text-slate-600">
-                      <span className="text-slate-500">Same inbox for partnerships &amp; promotions</span>
+                      <span className="text-slate-500">Same inbox for hiring &amp; promotions</span>
                       <br />
                       <a
                         href={MAILTO_TEAM}

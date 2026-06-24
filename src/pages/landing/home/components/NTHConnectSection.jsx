@@ -60,7 +60,7 @@ export default function NTHConnectSection() {
                   className="h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400 shadow-[0_0_0_3px_rgba(129,140,248,0.35)]"
                   aria-hidden
                 />
-                Career support track
+                Direct hiring track
               </p>
 
               <h2
@@ -68,18 +68,18 @@ export default function NTHConnectSection() {
                 className="text-pretty font-bold tracking-tight text-white wrap-anywhere"
               >
                 <span className="block text-[1.625rem] leading-snug sm:text-3xl sm:leading-tight md:text-4xl md:leading-[1.12]">
-                  Stronger preparation for
+                  Connect directly with
                 </span>
                 <span className="mt-1 block text-[1.875rem] leading-[1.08] sm:mt-1.5 sm:text-4xl sm:leading-tight md:text-5xl md:leading-[1.08] lg:text-[3.25rem] lg:leading-[1.05]">
                   <span className="bg-linear-to-r from-white via-indigo-100 to-indigo-200 bg-clip-text text-transparent">
-                    real opportunities
+                    hiring managers
                   </span>
                 </span>
               </h2>
 
               <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-slate-300 sm:mt-6 sm:text-lg lg:mx-0">
-                Most applicants focus on volume. NTH helps you improve your resume, communication, and
-                interview readiness so you can pursue suitable roles with more clarity and confidence.
+                Most candidates stay stuck in the endless application churn. NTH is different: we connect
+                you straight to hiring teams so your energy goes into real conversations—not endless forms.
               </p>
 
               <div className="mt-7 flex justify-center sm:mt-8 lg:justify-start">
@@ -87,7 +87,7 @@ export default function NTHConnectSection() {
                   to={pricingTo}
                   className="nth-cta-gradient group relative inline-flex w-full min-w-0 max-w-md cursor-pointer items-center justify-center gap-2 rounded-xl bg-indigo-600 px-7 py-3.5 text-base font-semibold text-white shadow-lg shadow-indigo-950/40 transition-[box-shadow,filter] duration-200 hover:brightness-105 active:brightness-95 sm:w-auto sm:max-w-none sm:px-8 sm:py-4 sm:text-[1.05rem] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
-                  <span className="relative z-10 min-w-0 text-center">View career support</span>
+                  <span className="relative z-10 min-w-0 text-center">Get fast-tracked</span>
                   <HiArrowRight
                     className="relative z-10 h-5 w-5 shrink-0 opacity-90 transition-transform duration-200 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0"
                     aria-hidden
@@ -108,7 +108,7 @@ export default function NTHConnectSection() {
                 <div className="relative flex w-full items-center justify-center px-3 py-5 sm:px-5 sm:py-6 md:px-6 md:py-7 lg:px-7 lg:py-8 xl:px-8 xl:py-9">
                   <img
                     src={BANNER_SRC}
-                    alt="Illustration showing career preparation support versus unstructured job applications"
+                    alt="Illustration contrasting crowded job applications with a direct path to employers through Naveen Talent Hub"
                     width={1600}
                     height={900}
                     sizes="(max-width: 1023px) min(100vw, 36rem), 50vw"
@@ -124,7 +124,7 @@ export default function NTHConnectSection() {
                 />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-slate-950 from-5% via-slate-950/55 to-transparent px-3 pb-3 pt-14 sm:px-4 sm:pb-3.5 sm:pt-16">
                   <p className="text-center text-[10px] font-semibold uppercase leading-snug tracking-[0.12em] text-indigo-100/95 sm:text-[11px] sm:tracking-[0.14em] md:text-xs">
-                    From scattered applications to clearer career preparation support
+                    The old application maze — and the direct line NTH opens for you
                   </p>
                 </div>
               </div>

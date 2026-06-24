@@ -9,9 +9,9 @@ import SectionContainer from '../../../../components/SectionContainer';
 
 const TRUST_CARDS = [
   {
-    title: 'Curated Opportunity Discovery',
+    title: 'Verified Recruiter Network',
     description:
-      'Publicly listed roles and updates framed for application readiness—not placement services.',
+      'Opportunities shared directly by trusted HRs and hiring partners.',
     icon: HiShieldCheck,
     gradient: 'from-indigo-500 to-sky-500',
     border: 'group-hover:border-indigo-400',
@@ -32,9 +32,9 @@ const TRUST_CARDS = [
     border: 'group-hover:border-violet-400',
   },
   {
-    title: 'Industry-Led Guidance',
+    title: 'Influencer-Led Trust',
     description:
-      'Career preparation guidance backed by experienced mentors and coaches.',
+      'Backed by a hiring influencer with a proven industry network.',
     icon: HiUserGroup,
     gradient: 'from-violet-500 to-sky-500',
     border: 'group-hover:border-violet-400',
@@ -80,7 +80,7 @@ export default function TrustSection() {
             Why Professionals Trust Naveen Talent Hub
           </h2>
           <p className="text-lg sm:text-xl text-[rgb(var(--nth-text-secondary-light))] leading-relaxed max-w-2xl mx-auto">
-            Built on preparation-first services, not fake listings or mass postings.
+            Built on real recruiter networks, not fake listings or mass postings.
           </p>
         </motion.div>
 
