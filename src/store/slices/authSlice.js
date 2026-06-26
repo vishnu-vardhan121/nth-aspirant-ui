@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
+import { getEmailConfirmRedirectUrl } from '../../lib/authUtils';
 
 const initialState = {
   user: null,
@@ -25,7 +26,9 @@ export const signUp = createAsyncThunk(
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: options.redirectTo },
+      options: {
+        emailRedirectTo: options.emailRedirectTo ?? getEmailConfirmRedirectUrl(),
+      },
     });
     if (error) return rejectWithValue(error);
     return data;

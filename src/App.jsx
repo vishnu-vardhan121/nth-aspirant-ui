@@ -19,6 +19,8 @@ import PrivacyPolicyPage from './pages/landing/legal/PrivacyPolicyPage';
 import TermsConditionsPage from './pages/landing/legal/TermsConditionsPage';
 import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
+import VerifyEmailPage from './pages/auth/VerifyEmailPage';
+import ConfirmEmailPage from './pages/auth/ConfirmEmailPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import OnboardingPage from './pages/auth/OnboardingPage';
@@ -37,6 +39,7 @@ import AdminMocksPage from './pages/admin/AdminMocksPage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
+import AdminPaymentsPage from './pages/admin/AdminPaymentsPage';
 import AdminHelpDeskPage from './pages/admin/AdminHelpDeskPage';
 import AdminTalentPoolPage from './pages/admin/AdminTalentPoolPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
@@ -47,6 +50,7 @@ import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
+import InterviewerMessagesPage from './pages/interviewer/InterviewerMessagesPage';
 import RefundPolicyPage from './pages/landing/legal/RefundPolicyPage';
 import ContactPage from './pages/landing/contact/ContactPage';
 import AboutPage from './pages/landing/about/AboutPage';
@@ -72,6 +76,8 @@ function App() {
         <Route path="/terms-and-conditions" element={<TermsConditionsPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
+        <Route path="/auth/confirm" element={<ConfirmEmailPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
@@ -104,6 +110,7 @@ function App() {
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
+          <Route path="payments" element={<AdminPaymentsPage />} />
           <Route path="help-desk" element={<AdminHelpDeskPage />} />
           <Route path="talent-pool" element={<AdminTalentPoolPage />} />
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
@@ -123,6 +130,7 @@ function App() {
           <Route index element={<InterviewerOverviewPage />} />
           <Route path="slots" element={<InterviewerSlotsPage />} />
           <Route path="mocks" element={<InterviewerMocksPage />} />
+          <Route path="messages" element={<InterviewerMessagesPage />} />
         </Route>
         <Route
           path="/dashboard"

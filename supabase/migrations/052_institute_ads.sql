@@ -19,11 +19,13 @@ comment on column public.institute_ads.is_active is 'When true, this ad is shown
 alter table public.institute_ads enable row level security;
 
 -- Anon and everyone: can read the single active ad (for landing page).
+drop policy if exists "institute_ads_public_select_active" on public.institute_ads;
 create policy "institute_ads_public_select_active"
   on public.institute_ads for select
   using (is_active = true);
 
 -- Admin: full CRUD.
+drop policy if exists "institute_ads_admin_all" on public.institute_ads;
 create policy "institute_ads_admin_all"
   on public.institute_ads for all
   using (public.is_admin())

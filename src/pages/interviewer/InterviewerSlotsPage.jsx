@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useAppSelector } from '../../store/hooks';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, ButtonLoader } from '../../components/ui/Loader';
+import { HiPlus } from 'react-icons/hi2';
 
 function formatDateTime(iso) {
   if (!iso) return '—';
@@ -9,8 +11,19 @@ function formatDateTime(iso) {
 }
 
 export default function InterviewerSlotsPage() {
+  const userId = useAppSelector((state) => state.auth.user?.id);
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    date: '',
+    startTime: '10:00',
+    numSlots: 4,
+    durationPreset: '25',
+    durationCustom: 25,
+    meetLink: '',
+  });
+  const [createSaving, setCreateSaving] = useState(false);
   const [fromDate, setFromDate] = useState(() => {
     const d = new Date();
     return d.toISOString().slice(0, 10);
@@ -55,6 +68,41 @@ export default function InterviewerSlotsPage() {
       start: start.toISOString().slice(0, 16),
       end: end.toISOString().slice(0, 16),
     });
+  };
+
+  const handleCreateSlots = async (e) => {
+    e.preventDefault();
+    if (!userId) {
+      showFlash('error', 'Not signed in.');
+      return;
+    }
+    if (!createForm.date || !createForm.startTime || !createForm.numSlots || createForm.numSlots < 1) {
+      showFlash('error', 'Enter date, start time, and number of slots.');
+      return;
+    }
+    const durationMins =
+      createForm.durationPreset === 'custom'
+        ? Math.min(60, Math.max(15, Number(createForm.durationCustom) || 25))
+        : Number(createForm.durationPreset);
+    const startAt = new Date(`${createForm.date}T${createForm.startTime}:00`);
+    const endAt = new Date(startAt.getTime() + createForm.numSlots * durationMins * 60 * 1000);
+    setCreateSaving(true);
+    const { data } = await supabase.rpc('create_mock_slots', {
+      p_interviewer_id: userId,
+      p_start_at: startAt.toISOString(),
+      p_end_at: endAt.toISOString(),
+      p_slot_duration_mins: durationMins,
+      p_meet_link: createForm.meetLink?.trim() || null,
+    });
+    setCreateSaving(false);
+    if (data?.ok) {
+      setCreateOpen(false);
+      setCreateForm((f) => ({ ...f, date: '', meetLink: '' }));
+      showFlash('success', 'Availability published. Students can book these slots.');
+      loadSlots();
+    } else {
+      showFlash('error', data?.error ?? 'Failed to create slots.');
+    }
   };
 
   const handleRescheduleSubmit = async (e) => {
@@ -103,11 +151,23 @@ export default function InterviewerSlotsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">My Slots</h1>
-      <p className="text-sm text-slate-600">
-        Slots you are assigned. Booked slots show the aspirant (student) who booked; available slots are open for
-        booking. You can reschedule or cancel your booked slots.
-      </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">My availability</h1>
+          <p className="text-sm text-slate-600 mt-1 max-w-xl">
+            Add time when you are free for mocks. Students book open slots from their dashboard — no need to
+            wait for admin.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-500 shrink-0"
+        >
+          <HiPlus className="h-5 w-5" aria-hidden />
+          Add availability
+        </button>
+      </div>
 
       {flash.text && (
         <div
@@ -150,8 +210,15 @@ export default function InterviewerSlotsPage() {
       {loading ? (
         <PageLoader size="md" label="Loading slots…" className="py-8" />
       ) : slots.length === 0 ? (
-        <div className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-500">
-          No slots in this date range. Admin creates slots for you; check back later.
+        <div className="rounded-xl border border-dashed border-slate-200 bg-white p-8 text-center text-slate-500">
+          <p>No slots in this date range.</p>
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="mt-3 text-sm font-semibold text-indigo-600 hover:underline"
+          >
+            Add your availability
+          </button>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
@@ -223,6 +290,109 @@ export default function InterviewerSlotsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {createOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg font-semibold text-slate-900 mb-1">Add availability</h2>
+            <p className="text-sm text-slate-600 mb-4">
+              We split your window into bookable slots. Students see them on the Mocks page immediately.
+            </p>
+            <form onSubmit={handleCreateSlots} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Date</label>
+                <input
+                  type="date"
+                  value={createForm.date}
+                  min={new Date().toISOString().slice(0, 10)}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, date: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Start time</label>
+                <input
+                  type="time"
+                  value={createForm.startTime}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, startTime: e.target.value }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Number of slots</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={createForm.numSlots}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, numSlots: Number(e.target.value) }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Each slot (min)</label>
+                  <select
+                    value={createForm.durationPreset}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, durationPreset: e.target.value }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  >
+                    <option value="20">20</option>
+                    <option value="25">25</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </div>
+              </div>
+              {createForm.durationPreset === 'custom' ? (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Custom duration (15–60 min)</label>
+                  <input
+                    type="number"
+                    min={15}
+                    max={60}
+                    value={createForm.durationCustom}
+                    onChange={(e) => setCreateForm((f) => ({ ...f, durationCustom: Number(e.target.value) }))}
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  />
+                </div>
+              ) : null}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Meet link <span className="text-slate-400 font-normal">(optional, same for all slots)</span>
+                </label>
+                <input
+                  type="url"
+                  value={createForm.meetLink}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, meetLink: e.target.value }))}
+                  placeholder="https://meet.google.com/..."
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={createSaving}
+                  className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {createSaving ? <ButtonLoader className="inline h-4 w-4 text-white" /> : 'Publish slots'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCreateOpen(false)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 

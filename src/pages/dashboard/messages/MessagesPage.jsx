@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
-import { isMessageSoundMuted, setMessageSoundMuted } from '../../../lib/messageSound';
-import { HiUserGroup, HiChatBubbleLeftRight, HiCheck, HiSpeakerWave, HiSpeakerXMark, HiArrowLeft } from 'react-icons/hi2';
+import { isMessageSoundMuted, setMessageSoundMuted, playMessageSound, primeMessageSound } from '../../../lib/messageSound';
+import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
+import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
+import { HiUserGroup, HiChatBubbleLeftRight, HiCheck, HiSpeakerWave, HiSpeakerXMark, HiArrowLeft, HiAcademicCap } from 'react-icons/hi2';
 
 const NTH_TEAM_KEY = '__nth_team__';
+const INTERVIEWER_CHAT_PREFIX = '__interviewer__';
 
 function formatTime(createdAt) {
   if (!createdAt) return '';
@@ -31,27 +34,39 @@ function buildChats(messages) {
   const byKey = new Map();
 
   for (const m of messages) {
-    const key = m.source === 'job_group' && m.job_id ? m.job_id : NTH_TEAM_KEY;
+    const interviewerKey =
+      m.source === 'interviewer' && m.mock_registration_id
+        ? `${INTERVIEWER_CHAT_PREFIX}${m.mock_registration_id}`
+        : null;
+    const key = interviewerKey ?? (m.source === 'job_group' && m.job_id ? m.job_id : NTH_TEAM_KEY);
     if (!byKey.has(key)) {
       byKey.set(key, {
         key,
-        label: key === NTH_TEAM_KEY ? 'Naveen Talent Hub Team' : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
-        icon: key === NTH_TEAM_KEY ? HiChatBubbleLeftRight : HiUserGroup,
+        label:
+          key === NTH_TEAM_KEY
+            ? 'Naveen Talent Hub Team'
+            : interviewerKey
+              ? (m.interviewer_name ? `Mock: ${m.interviewer_name}` : 'Mock interviewer')
+              : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
+        icon:
+          key === NTH_TEAM_KEY ? HiChatBubbleLeftRight : interviewerKey ? HiAcademicCap : HiUserGroup,
         messages: [],
+        isInterviewerChat: !!interviewerKey,
       });
     }
     byKey.get(key).messages.push(m);
   }
 
-  // Newest first (feed-style) so latest updates appear at the top without scrolling down
+  // Oldest first in thread (WhatsApp-style); chat list sorted by latest activity
   for (const chat of byKey.values()) {
-    chat.messages.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    chat.messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     chat.unreadCount = chat.messages.filter((m) => !m.from_me && !m.read_at).length;
+    chat.lastMessage = chat.messages[chat.messages.length - 1] ?? null;
   }
 
   return Array.from(byKey.values()).sort((a, b) => {
-    const tA = a.messages[0]?.created_at || 0;
-    const tB = b.messages[0]?.created_at || 0;
+    const tA = a.lastMessage?.created_at || 0;
+    const tB = b.lastMessage?.created_at || 0;
     return new Date(tB) - new Date(tA);
   });
 }
@@ -77,6 +92,7 @@ export default function MessagesPage() {
     const next = !soundMuted;
     setMessageSoundMuted(next);
     setSoundMuted(next);
+    if (!next) primeMessageSound();
   };
 
   const loadMessages = () => {
@@ -100,10 +116,36 @@ export default function MessagesPage() {
     ]).then(() => setLoading(false));
   }, []);
 
-  // Poll for message updates so read receipts (admin_read_at) and new messages update while viewing
   useEffect(() => {
-    const interval = setInterval(() => loadMessages(), 10000);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      const uid = session?.user?.id;
+      if (!uid) return;
+
+      unsubscribe = subscribeToAspirantMessages(
+        uid,
+        () => {
+          loadMessages();
+          void playMessageSound();
+        },
+        { channelId: `messages-page-${uid}` },
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onInvalidate = () => loadMessages();
+    window.addEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
+    return () => window.removeEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
   }, []);
 
   const chats = buildChats(messages);
@@ -112,31 +154,46 @@ export default function MessagesPage() {
   useEffect(() => {
     const el = chatScrollRef.current;
     if (!el) return;
-    el.scrollTop = 0;
+    el.scrollTop = el.scrollHeight;
   }, [selectedChatKey, selectedChat?.messages?.length]);
 
-  // Mark this chat as read when aspirant opens it (jobId from key so we don't depend on selectedChat)
+  // Mark this chat as read when aspirant opens it
   useEffect(() => {
     if (!selectedChatKey) return;
+    if (selectedChatKey.startsWith(INTERVIEWER_CHAT_PREFIX)) {
+      const mockRegistrationId = selectedChatKey.slice(INTERVIEWER_CHAT_PREFIX.length);
+      supabase.rpc('mark_aspirant_messages_read', { p_mock_registration_id: mockRegistrationId }).then(() => loadMessages());
+      return;
+    }
     const jobId = selectedChatKey === NTH_TEAM_KEY ? null : selectedChatKey;
     supabase.rpc('mark_aspirant_messages_read', { p_job_id: jobId }).then(() => loadMessages());
   }, [selectedChatKey]);
 
-  const canReply = messageUsage.active && (messageUsage.limit < 0 || messageUsage.used < messageUsage.limit);
-  const jobIdForReply = selectedChat && selectedChat.key !== NTH_TEAM_KEY ? selectedChat.key : null;
+  const isInterviewerChat = Boolean(selectedChat?.isInterviewerChat);
+  const canReply =
+    isInterviewerChat || (messageUsage.active && (messageUsage.limit < 0 || messageUsage.used < messageUsage.limit));
+  const jobIdForReply = selectedChat && selectedChat.key !== NTH_TEAM_KEY && !isInterviewerChat ? selectedChat.key : null;
+  const mockRegistrationIdForReply = isInterviewerChat
+    ? selectedChat.key.slice(INTERVIEWER_CHAT_PREFIX.length)
+    : null;
 
   const handleSendReply = async (e) => {
     e.preventDefault();
     const body = replyBody.trim();
     if (!body || sending || !canReply) return;
     setSending(true);
-    const { data } = await supabase.rpc('send_aspirant_reply', { p_body: body, p_job_id: jobIdForReply });
+    const { data } = isInterviewerChat
+      ? await supabase.rpc('send_aspirant_reply_to_interviewer', {
+          p_mock_registration_id: mockRegistrationIdForReply,
+          p_body: body,
+        })
+      : await supabase.rpc('send_aspirant_reply', { p_body: body, p_job_id: jobIdForReply });
     setSending(false);
     if (data?.ok) {
       setReplyBody('');
       setFlash('');
       loadMessages();
-      loadUsage();
+      if (!isInterviewerChat) loadUsage();
     } else {
       setFlash(data?.error || 'Failed to send');
     }
@@ -173,7 +230,13 @@ export default function MessagesPage() {
         </button>
       </div>
       <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-        Chats from the Naveen Talent Hub team and job groups. Base 1 / Silver 3 / Gold 5 replies per day.
+        Chats from the Naveen Talent Hub team, your mock interviewer, and job groups.
+        {messageUsage.active
+          ? messageUsage.limit < 0
+            ? ' Your plan has unlimited replies to team and job chats.'
+            : ` Your plan allows ${messageUsage.limit} ${messageUsage.limit === 1 ? 'reply' : 'replies'} per day to team and job chats.`
+          : ' An active plan is required to reply to team and job chats.'}
+        {' '}Mock interviewer chats are always unlimited.
       </p>
 
       {messages.length === 0 ? (
@@ -191,7 +254,7 @@ export default function MessagesPage() {
             </div>
             <ul className="flex-1 overflow-auto">
               {chats.map((chat) => {
-                const last = chat.messages[0];
+                const last = chat.lastMessage ?? chat.messages[chat.messages.length - 1];
                 const isSelected = selectedChat?.key === chat.key;
                 const Icon = chat.icon;
                 return (
@@ -253,6 +316,8 @@ export default function MessagesPage() {
                   <span className="w-9 h-9 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
                     {selectedChat.key === NTH_TEAM_KEY ? (
                       <HiChatBubbleLeftRight className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+                    ) : selectedChat.isInterviewerChat ? (
+                      <HiAcademicCap className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
                     ) : (
                       <HiUserGroup className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
                     )}
@@ -262,9 +327,11 @@ export default function MessagesPage() {
                       {selectedChat.label}
                     </h2>
                     <p className="text-[10px] sm:text-xs text-[rgb(var(--nth-text-muted-light))]">
-                      {messageUsage.limit >= 0
-                        ? `${messageUsage.used} / ${messageUsage.limit} replies today`
-                        : 'Replies allowed'}
+                      {isInterviewerChat
+                        ? 'Mock interview chat'
+                        : messageUsage.limit >= 0
+                          ? `${messageUsage.used} / ${messageUsage.limit} replies today`
+                          : 'Replies allowed'}
                     </p>
                   </div>
                 </header>
@@ -312,7 +379,15 @@ export default function MessagesPage() {
                       value={replyBody}
                       onChange={(e) => setReplyBody(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={canReply ? 'Type a reply... (Enter to send)' : messageUsage.active ? 'Daily limit reached. Try again tomorrow.' : 'Active plan required to reply.'}
+                      placeholder={
+                        canReply
+                          ? 'Type a reply... (Enter to send)'
+                          : isInterviewerChat
+                            ? 'Type a reply... (Enter to send)'
+                            : messageUsage.active
+                              ? 'Daily limit reached. Try again tomorrow.'
+                              : 'Active plan required to reply.'
+                      }
                       rows={1}
                       disabled={!canReply || sending}
                       className="flex-1 min-w-0 px-3 py-2 text-sm sm:text-base border border-[rgb(var(--nth-border-light))] rounded-lg bg-white text-[rgb(var(--nth-text-primary-light))] placeholder-[rgb(var(--nth-text-muted-light))] resize-none disabled:opacity-60 disabled:cursor-not-allowed focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-[hsl(var(--nth-primary))]"

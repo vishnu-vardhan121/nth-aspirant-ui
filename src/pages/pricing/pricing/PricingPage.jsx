@@ -1,11 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRICING_PLANS } from '../data/pricingPlans';
 import ChoiceScreen from './components/ChoiceScreen';
 import PricingCards from './components/PricingCards';
-import LeadFormModal from './components/LeadFormModal';
 import { getSafeReturnPath } from '../../../lib/authUtils';
+import { useAppSelector } from '../../../store/hooks';
 import Seo from '../../../components/Seo';
 
 function BackBar({ isFirstSection, returnTo, onBackToFirst }) {
@@ -41,19 +41,22 @@ function BackBar({ isFirstSection, returnTo, onBackToFirst }) {
 
 export default function PricingPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const user = useAppSelector((state) => state.auth.user);
   const trackParam = searchParams.get('track');
   const validTrack =
     trackParam === 'fresher' || trackParam === 'experienced' ? trackParam : null;
   const [pricingType, setPricingType] = useState(validTrack);
-  const [leadModal, setLeadModal] = useState(null);
-  const [thankYou, setThankYou] = useState(false);
   const returnTo = useMemo(() => getSafeReturnPath(searchParams, '/'), [searchParams]);
 
   const plans = pricingType ? PRICING_PLANS[pricingType] : null;
 
-  const handleSelectPlan = (plan) => {
-    setThankYou(false);
-    setLeadModal({ plan, track: pricingType });
+  const handleSelectPlan = () => {
+    if (user) {
+      navigate('/dashboard', { replace: false });
+      return;
+    }
+    navigate(`/login?from=${encodeURIComponent('/dashboard')}`);
   };
 
   useEffect(() => {
@@ -107,47 +110,6 @@ export default function PricingPage() {
           )}
         </AnimatePresence>
       </main>
-
-      {/* Success Notification - System Alert Style */}
-      <AnimatePresence>
-        {thankYou && (
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] w-full max-w-sm px-4"
-          >
-            <div className="relative bg-slate-900 border border-emerald-500/30 p-5 rounded-2xl shadow-2xl">
-              <div className="flex flex-col gap-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                  <span className="text-xs font-semibold text-emerald-400 tracking-wide">Success</span>
-                </div>
-                <p className="font-bold text-white text-base">Thank you. Our team will contact you.</p>
-                <p className="text-slate-400 text-sm">Is there anything you wish for?</p>
-              </div>
-
-              <button 
-                onClick={() => setThankYou(false)}
-                className="absolute top-2 right-2 text-white/20 hover:text-white transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {leadModal && (
-        <LeadFormModal
-          plan={leadModal.plan}
-          track={leadModal.track}
-          onClose={() => setLeadModal(null)}
-          onSuccess={() => setThankYou(true)}
-        />
-      )}
     </div>
   );
 }

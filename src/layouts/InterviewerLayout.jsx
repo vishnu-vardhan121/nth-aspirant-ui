@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiCalendarDays, HiAcademicCap } from 'react-icons/hi2';
+import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 
@@ -54,11 +54,15 @@ export default function InterviewerLayout() {
           </Link>
           <Link to="/interviewer/slots" className={navLinkClass(isActive('/interviewer/slots'))}>
             <HiCalendarDays className="w-5 h-5 shrink-0" />
-            My Slots
+            My availability
           </Link>
           <Link to="/interviewer/mocks" className={navLinkClass(isActive('/interviewer/mocks'))}>
             <HiAcademicCap className="w-5 h-5 shrink-0" />
             My Mocks
+          </Link>
+          <Link to="/interviewer/messages" className={navLinkClass(isActive('/interviewer/messages'))}>
+            <HiChatBubbleLeftRight className="w-5 h-5 shrink-0" />
+            Messages
           </Link>
         </nav>
         <div className="p-3 border-t border-slate-200 shrink-0">
@@ -77,7 +81,7 @@ export default function InterviewerLayout() {
       </aside>
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <AdminNavbar subtitle="Interviewer" />
-        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6">
+        <div className="nth-scroll-y flex-1 min-h-0 min-w-0 overflow-x-hidden p-4 sm:p-6">
           <Outlet />
         </div>
       </main>

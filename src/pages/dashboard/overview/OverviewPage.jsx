@@ -87,7 +87,7 @@ export default function OverviewPage() {
   const completedMocksValue = completedMocksCount ?? '—';
   const completedMocksNote = mockUsage?.active
     ? (mockUsage.limit >= 0
-      ? `${mockUsage.used} of ${mockUsage.limit} mock slots used this period`
+      ? `${mockUsage.used} of ${mockUsage.limit} mocks used this subscription month`
       : `${mockUsage.used} mock slots used this period`)
     : 'Plan is inactive';
 
