@@ -221,6 +221,8 @@ export async function saveAspirantProfile(supabase, payload) {
 
 const PLACEHOLDER_CITIES = new Set(['pending', '—', '-', 'tbd']);
 
+export const ONBOARDING_PATH = '/onboarding?welcome=1';
+
 /** True when onboarding form requirements are satisfied (resume, skills, LinkedIn, etc.). */
 export function isAspirantProfileComplete(profile) {
   if (!profile) return false;

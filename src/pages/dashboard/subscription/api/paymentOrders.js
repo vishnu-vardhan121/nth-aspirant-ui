@@ -4,6 +4,17 @@ const PAYMENT_PROOFS_BUCKET = 'payment-proofs';
 
 const BLOCKED_ORDER_RE = /payment in progress|awaiting verification|already have a payment/i;
 
+export async function fetchMyPaymentOrders() {
+  const { data, error } = await supabase
+    .from('payment_orders')
+    .select(
+      'id, plan, amount_inr, duration_months, status, utr, payer_note, admin_notes, screenshot_path, created_at, updated_at, reviewed_at',
+    )
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function fetchPaymentConfig() {
   const { data, error } = await supabase.rpc('get_payment_config');
   if (error) throw error;

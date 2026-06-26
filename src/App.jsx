@@ -22,6 +22,7 @@ import LoginPage from './pages/auth/LoginPage';
 import SignUpPage from './pages/auth/SignUpPage';
 import VerifyEmailPage from './pages/auth/VerifyEmailPage';
 import ConfirmEmailPage from './pages/auth/ConfirmEmailPage';
+import OAuthCallbackPage from './pages/auth/OAuthCallbackPage';
 import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 import OnboardingPage from './pages/auth/OnboardingPage';
@@ -31,6 +32,7 @@ import ApplicationsPage from './pages/dashboard/applications/ApplicationsPage';
 import MocksPage from './pages/dashboard/mocks/MocksPage';
 import MessagesPage from './pages/dashboard/messages/MessagesPage';
 import ProfilePage from './pages/dashboard/profile/ProfilePage';
+import PaymentsPage from './pages/dashboard/payments/PaymentsPage';
 import AdminOverviewPage from './pages/admin/AdminOverviewPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
@@ -79,6 +81,7 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/auth/confirm" element={<ConfirmEmailPage />} />
+        <Route path="/auth/callback" element={<OAuthCallbackPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route
@@ -147,6 +150,7 @@ function App() {
         >
           <Route index element={<OverviewPage />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="payments" element={<PaymentsPage />} />
           <Route path="jobs" element={<JobsPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="mocks" element={<MocksPage />} />

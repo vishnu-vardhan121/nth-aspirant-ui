@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ONBOARDING_PATH } from '../../../lib/aspirantProfile';
 
 export default function CompleteProfileBanner({ className = '' }) {
   return (
@@ -14,7 +15,7 @@ export default function CompleteProfileBanner({ className = '' }) {
         </p>
       </div>
       <Link
-        to="/onboarding?welcome=1"
+        to={ONBOARDING_PATH}
         className="mt-3 inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors hover:bg-amber-500 sm:mt-0"
       >
         Complete profile
