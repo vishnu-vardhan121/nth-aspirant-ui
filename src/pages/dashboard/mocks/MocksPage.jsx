@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
-import { normalizeHttpUrl } from '../../../lib/aspirantProfile';
+import { normalizeHttpUrl, isAspirantProfileComplete } from '../../../lib/aspirantProfile';
+import { isSubscriptionActive } from '../../../lib/planLimits';
+import { useAppSelector } from '../../../store/hooks';
 import { PageLoader } from '../../../components/ui/Loader';
 import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
+import CompleteProfileBanner from '../components/CompleteProfileBanner';
 import { HiCalendarDays, HiCheckCircle, HiClock, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -31,6 +34,12 @@ function formatPeriodDate(iso) {
 }
 
 export default function MocksPage() {
+  const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const hasActivePlan =
+    aspirantProfile?.plan &&
+    isSubscriptionActive(aspirantProfile.plan, aspirantProfile.plan_started_at);
+  const showCompleteProfileBanner = hasActivePlan && !isAspirantProfileComplete(aspirantProfile);
+
   const [usage, setUsage] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState([]);
   const [mockNotices, setMockNotices] = useState([]);
@@ -201,6 +210,8 @@ export default function MocksPage() {
 
   return (
     <div className="space-y-6">
+      {showCompleteProfileBanner ? <CompleteProfileBanner /> : null}
+
       {/* Header: title, info, usage, actions */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2">

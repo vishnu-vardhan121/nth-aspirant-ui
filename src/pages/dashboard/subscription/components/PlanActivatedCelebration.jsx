@@ -49,7 +49,7 @@ function ConfettiLayer() {
   );
 }
 
-export default function PlanActivatedCelebration({ open, plan, onClose }) {
+export default function PlanActivatedCelebration({ open, plan, needsOnboarding = false, onClose }) {
   const planLabel = PLAN_LABELS[plan] ?? plan ?? 'Your';
 
   if (typeof document === 'undefined') return null;
@@ -104,38 +104,52 @@ export default function PlanActivatedCelebration({ open, plan, onClose }) {
 
             <div className="space-y-5 px-6 py-6">
               <p className="text-sm leading-relaxed text-slate-600">
-                Your payment was verified and your subscription is live. We also sent you a message with
-                the details — check Messages anytime.
+                Your payment was verified and your subscription is live.
+                {needsOnboarding
+                  ? ' Next, complete your profile so we can schedule your mock interviews with IT working professionals.'
+                  : ' We also sent you a message with the details — check Messages anytime.'}
               </p>
-              <p className="text-sm font-medium text-slate-800">
-                Start with a mock interview or explore open jobs on your dashboard.
-              </p>
+              {!needsOnboarding ? (
+                <p className="text-sm font-medium text-slate-800">
+                  Start with a mock interview or explore open jobs on your dashboard.
+                </p>
+              ) : null}
 
-              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+              {needsOnboarding ? (
                 <Link
-                  to="/dashboard/mocks"
+                  to="/onboarding?welcome=1"
                   onClick={onClose}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+                  className="nth-btn-primary flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-bold no-underline"
                 >
-                  <HiAcademicCap className="h-5 w-5 shrink-0" aria-hidden />
-                  Book a mock
+                  Complete your profile
                 </Link>
-                <Link
-                  to="/dashboard/jobs"
-                  onClick={onClose}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-50"
-                >
-                  <HiBriefcase className="h-5 w-5 shrink-0" aria-hidden />
-                  Browse jobs
-                </Link>
-              </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  <Link
+                    to="/dashboard/mocks"
+                    onClick={onClose}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-500"
+                  >
+                    <HiAcademicCap className="h-5 w-5 shrink-0" aria-hidden />
+                    Book a mock
+                  </Link>
+                  <Link
+                    to="/dashboard/jobs"
+                    onClick={onClose}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 transition-colors hover:bg-slate-50"
+                  >
+                    <HiBriefcase className="h-5 w-5 shrink-0" aria-hidden />
+                    Browse jobs
+                  </Link>
+                </div>
+              )}
 
               <button
                 type="button"
                 onClick={onClose}
                 className="w-full rounded-xl py-2.5 text-sm font-semibold text-slate-500 transition-colors hover:text-slate-800"
               >
-                Continue to dashboard
+                {needsOnboarding ? "I'll do this later" : 'Continue to dashboard'}
               </button>
             </div>
           </motion.div>

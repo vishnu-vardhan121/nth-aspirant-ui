@@ -5,8 +5,8 @@ import { supabase } from '../../lib/supabase';
 import { setAuth } from '../../store/slices/authSlice';
 import { setTrack, setPlan } from '../../store/slices/appSlice';
 import { fetchAspirantProfile, clearAspirantProfile } from '../../store/slices/aspirantSlice';
-import { fetchAdminProfile, clearAdminProfile } from '../../store/slices/adminSlice';
-import { fetchInterviewerProfile, clearInterviewerProfile } from '../../store/slices/interviewerSlice';
+import { fetchAdminProfile, clearAdminProfile, setAdminLoading } from '../../store/slices/adminSlice';
+import { fetchInterviewerProfile, clearInterviewerProfile, setInterviewerLoading } from '../../store/slices/interviewerSlice';
 
 /**
  * Auth: login via Supabase. Then fetch aspirant; if no aspirant, fetch admin.
@@ -66,9 +66,15 @@ export default function AuthListener() {
     return () => subscription?.unsubscribe?.();
   }, [dispatch]);
 
-  // When aspirant is done and null, fetch admin and interviewer (so admin/interviewer users get their profile)
+  // When aspirant row exists, user is an aspirant — skip admin/interviewer fetch.
+  // When aspirant is done and null, fetch admin and interviewer for role routing.
   useEffect(() => {
-    if (!user?.id || aspirantLoading || aspirantProfile) return;
+    if (!user?.id || aspirantLoading) return;
+    if (aspirantProfile) {
+      dispatch(setAdminLoading(false));
+      dispatch(setInterviewerLoading(false));
+      return;
+    }
     dispatch(fetchAdminProfile(user.id));
     dispatch(fetchInterviewerProfile(user.id));
   }, [user?.id, aspirantLoading, aspirantProfile, dispatch]);

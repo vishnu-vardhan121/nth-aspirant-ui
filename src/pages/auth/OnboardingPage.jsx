@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setAspirantProfile } from '../../store/slices/aspirantSlice';
-import Navbar from '../../components/Navbar';
 import { supabase } from '../../lib/supabase';
 import { ButtonLoader } from '../../components/ui/Loader';
 import { HiXMark } from 'react-icons/hi2';
@@ -12,9 +11,12 @@ import {
   defaultEducation,
   defaultProfileForm,
   buildAspirantPayload,
+  profileToForm,
   saveAspirantProfile,
   isLinkedInProfileUrl,
   isValidHttpUrl,
+  isValidMobileNumber,
+  MOBILE_VALIDATION_MESSAGE,
 } from '../../lib/aspirantProfile';
 
 const inputClass =
@@ -76,9 +78,10 @@ function SkillTags({ skills, onRemove, input, onInputChange, onAdd, placeholder,
 export default function OnboardingPage() {
   const user = useAppSelector((state) => state.auth.user);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
-  const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const welcomeFromPayment = searchParams.get('welcome') === '1';
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -87,14 +90,20 @@ export default function OnboardingPage() {
   const [skillInput, setSkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
+  const [formReady, setFormReady] = useState(false);
 
   useEffect(() => {
-    if (user?.email) setForm((f) => ({ ...f, email: user.email }));
-  }, [user]);
+    if (!user) return;
+    const base = profileToForm(aspirantProfile);
+    setForm({
+      ...base,
+      email: user.email ?? base.email,
+      education: base.education ?? { ...defaultEducation },
+    });
+    setFormReady(true);
+  }, [user, aspirantProfile]);
 
-  if (aspirantLoading) return null;
-  if (aspirantProfile) return <Navigate to="/dashboard" replace />;
-  if (!user) return null;
+  if (!user || !formReady) return null;
 
   const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -119,7 +128,8 @@ export default function OnboardingPage() {
   const validateStep = (index) => {
     if (index === 0) {
       if (!form.fullName.trim()) return 'Full name is required.';
-      if (!form.phone.trim()) return 'Phone number is required.';
+      if (!form.phone.trim()) return 'Mobile number is required.';
+      if (!isValidMobileNumber(form.phone)) return MOBILE_VALIDATION_MESSAGE;
       if (!form.city.trim()) return 'Current city is required.';
     }
     if (index === 1) {
@@ -210,24 +220,57 @@ export default function OnboardingPage() {
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}>
-      <Navbar />
-      <div className="flex-1 flex flex-col items-center px-4 sm:px-6 pt-24 pb-12">
-        <div className="w-full max-w-2xl">
-          <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">Complete your profile</h1>
-          <p className="text-slate-400 text-sm mb-6">
-            Tell us about your experience and skills so we can match you with the right opportunities.
-          </p>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{
+        background:
+          'linear-gradient(180deg, #0b1220 0%, rgb(var(--nth-bg-dark)) 32%, #0f172a 100%)',
+      }}
+    >
+      <header className="shrink-0 border-b border-white/10 bg-[#0b1220]/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-3xl items-center justify-center px-4 sm:px-6">
+          <img
+            src="/white-logo.png"
+            alt="Naveen Talent Hub"
+            className="h-9 w-auto object-contain sm:h-10"
+          />
+        </div>
+      </header>
 
-          <div className="mb-8">
-            <div className="flex justify-between text-xs text-slate-500 mb-2">
+      <div className="flex-1 flex flex-col items-center px-4 sm:px-6 py-8 sm:py-12">
+        <div className="w-full max-w-2xl">
+          <div className="mb-8 text-center sm:text-left">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[hsl(var(--nth-primary))]">
+              Step {step + 1} of {STEPS.length}
+            </p>
+            <h1 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+              Complete your profile
+            </h1>
+            <p className="mt-2 text-sm leading-relaxed text-slate-400 sm:text-base">
+              {welcomeFromPayment
+                ? 'Your plan is active. Tell us about your experience so we can schedule your mock interviews.'
+                : 'Tell us about your experience and skills so we can match you with the right opportunities.'}
+            </p>
+          </div>
+
+          <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+            <div className="mb-3 flex justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
               {STEPS.map((s, i) => (
-                <span key={s.id} className={i <= step ? 'text-[hsl(var(--nth-primary))] font-medium' : ''}>
+                <span
+                  key={s.id}
+                  className={
+                    i === step
+                      ? 'text-[hsl(var(--nth-primary))]'
+                      : i < step
+                        ? 'text-slate-300'
+                        : ''
+                  }
+                >
                   {s.title}
                 </span>
               ))}
             </div>
-            <div className="h-1.5 rounded-full bg-white/10 overflow-hidden">
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
               <div
                 className="h-full rounded-full bg-[hsl(var(--nth-primary))] transition-all duration-300"
                 style={{ width: `${progress}%` }}
@@ -235,6 +278,7 @@ export default function OnboardingPage() {
             </div>
           </div>
 
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
           <form onSubmit={step === STEPS.length - 1 ? handleSubmit : (e) => { e.preventDefault(); goNext(); }} className="space-y-6">
             {step === 0 && (
               <div className="space-y-5">
@@ -249,8 +293,8 @@ export default function OnboardingPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="phone" className={labelClass}>Phone *</label>
-                    <input id="phone" type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} required className={inputClass} placeholder="+91 98765 43210" />
+                    <label htmlFor="phone" className={labelClass}>Mobile number *</label>
+                    <input id="phone" type="tel" value={form.phone} onChange={(e) => setField('phone', e.target.value)} required className={inputClass} placeholder="10-digit mobile number" inputMode="numeric" />
                   </div>
                   <div>
                     <label htmlFor="city" className={labelClass}>Current city *</label>
@@ -457,6 +501,7 @@ export default function OnboardingPage() {
               </button>
             </div>
           </form>
+          </div>
         </div>
       </div>
     </div>

@@ -22,6 +22,8 @@ import { PlanModalProvider } from '../pages/dashboard/subscription';
 import { usePlanActivationCelebration } from '../pages/dashboard/subscription/hooks/usePlanActivationCelebration';
 import PlanActivatedCelebration from '../pages/dashboard/subscription/components/PlanActivatedCelebration';
 import { isPlanActivationMessage } from '../lib/paymentActivationRealtime';
+import { isAspirantProfileComplete, needsAspirantContactDetails } from '../lib/aspirantProfile';
+import AspirantContactModal from '../pages/dashboard/components/AspirantContactModal';
 import { emitMessagesInvalidate } from '../lib/messagesEvents';
 
 const SIDEBAR_LINKS = [
@@ -135,7 +137,20 @@ export default function DashboardLayout() {
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
-  const { celebration, closeCelebration } = usePlanActivationCelebration(user?.id);
+  const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
+  const [contactSaved, setContactSaved] = useState(false);
+  const { celebration, closeCelebration: dismissCelebration } = usePlanActivationCelebration(user?.id);
+  const needsOnboarding = !isAspirantProfileComplete(aspirantProfile);
+  const showContactModal =
+    !aspirantLoading &&
+    !contactSaved &&
+    Boolean(user?.id) &&
+    needsAspirantContactDetails(aspirantProfile);
+
+  const closeCelebration = useCallback(() => {
+    dismissCelebration();
+  }, [dismissCelebration]);
 
   const dismissNotification = useCallback(() => {
     setMessageNotification((prev) => ({ ...prev, show: false }));
@@ -267,9 +282,17 @@ export default function DashboardLayout() {
       </main>
 
       <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
+      <AspirantContactModal
+        open={showContactModal}
+        userId={user?.id}
+        email={user?.email}
+        profile={aspirantProfile}
+        onSaved={() => setContactSaved(true)}
+      />
       <PlanActivatedCelebration
-        open={Boolean(celebration)}
+        open={Boolean(celebration) && !showContactModal}
         plan={celebration?.plan}
+        needsOnboarding={needsOnboarding}
         onClose={closeCelebration}
       />
 

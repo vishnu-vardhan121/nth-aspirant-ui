@@ -3,13 +3,13 @@ import { useAppSelector } from '../../store/hooks';
 import { PageLoader } from '../ui/Loader';
 
 /**
- * After login: aspirant → dashboard. Admin → /admin. Interviewer → /interviewer. Else → /onboarding.
- * Use around dashboard routes. Assumes user is already authenticated (use inside ProtectedRoute).
+ * Dashboard gate: aspirants can browse, pay, and explore before profile is complete.
+ * Onboarding is prompted via celebration modal and in-page CTAs — not forced here.
  */
 export default function RequireAspirantProfile({ children }) {
   const user = useAppSelector((state) => state.auth.user);
-  const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
+  const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
   const interviewerProfile = useAppSelector((state) => state.interviewer.profile);
@@ -25,12 +25,11 @@ export default function RequireAspirantProfile({ children }) {
     );
   }
 
-  if (aspirantProfile) return children;
-
   if (interviewerProfile) return <Navigate to="/interviewer" replace />;
   if (adminProfile) return <Navigate to="/admin" replace />;
 
-  if (adminLoading || interviewerLoading) {
+  // Only resolve admin/interviewer when there is no aspirant row (role could be staff).
+  if (!aspirantProfile && (adminLoading || interviewerLoading)) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <PageLoader size="md" label="Loading…" />
@@ -38,5 +37,5 @@ export default function RequireAspirantProfile({ children }) {
     );
   }
 
-  return <Navigate to="/onboarding" replace />;
+  return children;
 }
