@@ -71,3 +71,31 @@ export function validateNewPasswordPair(password, confirmPassword) {
   }
   return null;
 }
+
+export const DASHBOARD_JOBS_PATH = '/dashboard/jobs';
+export const DASHBOARD_PATH = '/dashboard';
+
+/** @param {string | null | undefined} applyLink */
+export function isExternalApplyLink(applyLink) {
+  const trimmed = String(applyLink ?? '').trim();
+  return /^https?:\/\//i.test(trimmed);
+}
+
+/** @param {string | null | undefined} applyLink */
+export function getExternalApplyHref(applyLink) {
+  return String(applyLink).trim();
+}
+
+/** @param {boolean} isAuthenticated */
+export function getDashboardJobsAuthPath(isAuthenticated) {
+  return isAuthenticated
+    ? DASHBOARD_JOBS_PATH
+    : `/login?from=${encodeURIComponent(DASHBOARD_JOBS_PATH)}`;
+}
+
+/** @param {boolean} isAuthenticated */
+export function getDashboardAuthPath(isAuthenticated) {
+  return isAuthenticated
+    ? DASHBOARD_PATH
+    : `/login?from=${encodeURIComponent(DASHBOARD_PATH)}`;
+}

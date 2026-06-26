@@ -6,6 +6,7 @@ import {
   isMaxSelfServePlan,
   shouldShowPlanAction,
 } from '../lib/planCheckout';
+import { resolveExperienceBand } from '../data/subscriptionProducts';
 
 /** Aspirant plan state for dashboard UI (navbar, gates, modals). */
 export function useSubscriptionStatus() {
@@ -17,7 +18,7 @@ export function useSubscriptionStatus() {
     const planStartedAt = profile?.plan_started_at ?? null;
     const hasActivePlan = !!plan && isSubscriptionActive(plan, planStartedAt);
     const showPlanAction = shouldShowPlanAction(plan, hasActivePlan);
-    const selectablePlans = getSelectablePlans(track, plan, hasActivePlan);
+    const profileExperienceBand = resolveExperienceBand(profile);
     const canUpgrade = hasActivePlan && plan === 'base';
     const isOnMaxPlan = hasActivePlan && isMaxSelfServePlan(plan);
 
@@ -28,7 +29,7 @@ export function useSubscriptionStatus() {
       planStartedAt,
       hasActivePlan,
       showPlanAction,
-      selectablePlans,
+      profileExperienceBand,
       canUpgrade,
       isOnMaxPlan,
     };

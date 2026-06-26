@@ -1,4 +1,4 @@
-import { getSubscriptionProducts } from '../data/subscriptionProducts';
+import { getSubscriptionProducts, requiresPackContact, resolveExperienceBand } from '../data/subscriptionProducts';
 
 /** Self-serve checkout tiers (dashboard UPI). Gold is admin-only — no upgrade UI. */
 export const SELF_SERVE_PLANS = ['base', 'silver'];
@@ -19,12 +19,15 @@ export function shouldShowPlanAction(plan, hasActivePlan) {
 
 /**
  * Plans to show in the modal.
- * - No subscription → Base + Silver
+ * - No subscription → packs for selected experience band
  * - Base → Silver only (upgrade)
  * - Silver / Gold → none
  */
-export function getSelectablePlans(track, plan, hasActivePlan) {
-  const products = getSubscriptionProducts(track ?? 'fresher');
+export function getSelectablePlans(profile, plan, hasActivePlan, experienceBand) {
+  const band = experienceBand ?? resolveExperienceBand(profile);
+  if (requiresPackContact(band)) return [];
+
+  const products = getSubscriptionProducts(band);
   if (!hasActivePlan) return products;
   if (plan === 'base') return products.filter((p) => p.planId === 'silver');
   return [];
