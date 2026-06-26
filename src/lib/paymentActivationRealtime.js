@@ -3,9 +3,14 @@ import { supabase } from './supabase';
 export const PLAN_ACTIVATED_SUBJECT = 'Plan activated';
 
 const CELEBRATION_PREFIX = 'nth-plan-celebrated:';
+const REJECTION_NOTICE_PREFIX = 'nth-payment-rejected:';
 
 export function celebrationStorageKey(userId, token) {
   return `${CELEBRATION_PREFIX}${userId}:${token}`;
+}
+
+export function rejectionNoticeStorageKey(userId, token) {
+  return `${REJECTION_NOTICE_PREFIX}${userId}:${token}`;
 }
 
 export function hasShownCelebration(userId, token) {
@@ -26,7 +31,29 @@ export function markCelebrationShown(userId, token) {
   }
 }
 
+export function hasShownRejectionNotice(userId, token) {
+  if (!userId || !token) return true;
+  try {
+    return localStorage.getItem(rejectionNoticeStorageKey(userId, token)) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function markRejectionNoticeShown(userId, token) {
+  if (!userId || !token) return;
+  try {
+    localStorage.setItem(rejectionNoticeStorageKey(userId, token), '1');
+  } catch {
+    /* ignore */
+  }
+}
+
 export function celebrationTokenForOrder(orderId) {
+  return `order:${orderId}`;
+}
+
+export function rejectionTokenForOrder(orderId) {
   return `order:${orderId}`;
 }
 
@@ -94,6 +121,58 @@ export async function fetchUncelebratedApproval(userId) {
 
   const row = data.find(
     (r) => r.id && !hasShownCelebration(userId, celebrationTokenForOrder(r.id)),
+  );
+  return row ?? null;
+}
+
+/**
+ * Realtime: payment order rejected for this aspirant.
+ * @returns {() => void}
+ */
+export function subscribeToPaymentRejection(uid, onRejected) {
+  if (!uid || typeof supabase.channel !== 'function') return () => {};
+
+  const uidStr = String(uid);
+  const ch = supabase.channel(`payment-rejection-${uidStr}`);
+
+  ch.on(
+    'postgres_changes',
+    {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'payment_orders',
+      filter: `aspirant_id=eq.${uidStr}`,
+    },
+    (payload) => {
+      const next = payload?.new;
+      const prev = payload?.old;
+      if (next?.status !== 'rejected') return;
+      if (prev?.status === 'rejected') return;
+      onRejected(next);
+    },
+  ).subscribe();
+
+  return () => {
+    supabase.removeChannel(ch);
+  };
+}
+
+/** Latest rejected order the user has not been notified about yet. */
+export async function fetchUnseenRejection(userId) {
+  if (!userId) return null;
+
+  const { data, error } = await supabase
+    .from('payment_orders')
+    .select('id, plan, amount_inr, duration_months, status, admin_notes, reviewed_at, utr')
+    .eq('aspirant_id', userId)
+    .eq('status', 'rejected')
+    .order('reviewed_at', { ascending: false })
+    .limit(5);
+
+  if (error || !Array.isArray(data)) return null;
+
+  const row = data.find(
+    (r) => r.id && !hasShownRejectionNotice(userId, rejectionTokenForOrder(r.id)),
   );
   return row ?? null;
 }

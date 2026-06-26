@@ -1,9 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { setAspirantProfile } from '../../store/slices/aspirantSlice';
 import { supabase } from '../../lib/supabase';
-import { ButtonLoader } from '../../components/ui/Loader';
+import { ButtonLoader, PageLoader } from '../../components/ui/Loader';
+import {
+  clearOnboardingDraft,
+  loadOnboardingDraft,
+  saveOnboardingDraft,
+} from '../../lib/onboardingDraft';
 import { HiXMark } from 'react-icons/hi2';
 import {
   EMPLOYMENT_OPTIONS,
@@ -17,6 +22,7 @@ import {
   isValidHttpUrl,
   isValidMobileNumber,
   MOBILE_VALIDATION_MESSAGE,
+  toFormEducation,
 } from '../../lib/aspirantProfile';
 
 const inputClass =
@@ -78,10 +84,12 @@ function SkillTags({ skills, onRemove, input, onInputChange, onAdd, placeholder,
 export default function OnboardingPage() {
   const user = useAppSelector((state) => state.auth.user);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const welcomeFromPayment = searchParams.get('welcome') === '1';
+  const formInitializedRef = useRef(false);
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -92,18 +100,58 @@ export default function OnboardingPage() {
   const [resumeFile, setResumeFile] = useState(null);
   const [formReady, setFormReady] = useState(false);
 
+  // Hydrate once from draft or profile — never reset when aspirantProfile refetches (tab focus, etc.).
   useEffect(() => {
-    if (!user) return;
-    const base = profileToForm(aspirantProfile);
-    setForm({
-      ...base,
-      email: user.email ?? base.email,
-      education: base.education ?? { ...defaultEducation },
-    });
-    setFormReady(true);
-  }, [user, aspirantProfile]);
+    if (!user?.id || aspirantLoading || formInitializedRef.current) return;
 
-  if (!user || !formReady) return null;
+    const draft = loadOnboardingDraft(user.id);
+    if (draft?.form) {
+      setForm({
+        ...defaultProfileForm,
+        ...draft.form,
+        email: user.email ?? draft.form.email ?? '',
+        education: {
+          ...defaultEducation,
+          ...toFormEducation(draft.form.education),
+        },
+      });
+      if (Number.isFinite(draft.step)) setStep(Math.min(Math.max(0, draft.step), STEPS.length - 1));
+      if (typeof draft.skillInput === 'string') setSkillInput(draft.skillInput);
+      if (typeof draft.secondarySkillInput === 'string') setSecondarySkillInput(draft.secondarySkillInput);
+    } else {
+      const base = profileToForm(aspirantProfile);
+      setForm({
+        ...base,
+        email: user.email ?? base.email,
+        education: base.education ?? { ...defaultEducation },
+      });
+    }
+
+    setFormReady(true);
+    formInitializedRef.current = true;
+  }, [user?.id, user?.email, aspirantProfile, aspirantLoading]);
+
+  // Persist in-progress onboarding so switching browser tabs does not lose work.
+  useEffect(() => {
+    if (!user?.id || !formInitializedRef.current) return;
+    saveOnboardingDraft(user.id, {
+      form,
+      step,
+      skillInput,
+      secondarySkillInput,
+    });
+  }, [user?.id, form, step, skillInput, secondarySkillInput]);
+
+  if (!user || aspirantLoading || !formReady) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ backgroundColor: 'rgb(var(--nth-bg-dark))' }}
+      >
+        <PageLoader size="md" label="Loading your profile…" />
+      </div>
+    );
+  }
 
   const setField = (key, value) => setForm((f) => ({ ...f, [key]: value }));
 
@@ -209,6 +257,7 @@ export default function OnboardingPage() {
     try {
       const profile = await saveAspirantProfile(supabase, payload);
       dispatch(setAspirantProfile(profile ?? payload));
+      clearOnboardingDraft(session.user.id);
       navigate('/dashboard', { replace: true });
     } catch (e) {
       setMessage({ type: 'error', text: e.message ?? 'Failed to save profile.' });

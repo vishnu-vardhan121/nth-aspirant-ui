@@ -15,25 +15,70 @@ import {
   HiClipboardDocumentList,
   HiAcademicCap,
   HiChatBubbleLeftRight,
+  HiCreditCard,
   HiArrowRightOnRectangle,
 } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
-import { PlanModalProvider } from '../pages/dashboard/subscription';
+import { PlanModalProvider, usePlanModal } from '../pages/dashboard/subscription';
 import { usePlanActivationCelebration } from '../pages/dashboard/subscription/hooks/usePlanActivationCelebration';
+import { usePaymentRejectionNotice } from '../pages/dashboard/subscription/hooks/usePaymentRejectionNotice';
 import PlanActivatedCelebration from '../pages/dashboard/subscription/components/PlanActivatedCelebration';
+import PaymentRejectedModal from '../pages/dashboard/subscription/components/PaymentRejectedModal';
 import { isPlanActivationMessage } from '../lib/paymentActivationRealtime';
 import { isAspirantProfileComplete, needsAspirantContactDetails } from '../lib/aspirantProfile';
 import AspirantContactModal from '../pages/dashboard/components/AspirantContactModal';
 import { emitMessagesInvalidate } from '../lib/messagesEvents';
 
-const SIDEBAR_LINKS = [
+const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
-  { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
   { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
   { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
   { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
   { label: 'Applications', to: '/dashboard/applications', icon: HiClipboardDocumentList },
 ];
+
+const SIDEBAR_BOTTOM_LINKS = [
+  { label: 'My Payments', to: '/dashboard/payments', icon: HiCreditCard },
+  { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
+];
+
+function SidebarNavLinks({ links, location, onNavClick }) {
+  return (
+    <div className="space-y-1">
+      {links.map((link) => {
+        const Icon = link.icon;
+        const isActive =
+          link.to === '/dashboard'
+            ? location.pathname === '/dashboard'
+            : location.pathname.startsWith(link.to);
+        return (
+          <Link
+            key={link.to}
+            to={link.to}
+            onClick={onNavClick}
+            className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
+              isActive
+                ? 'bg-white/[0.08] border-white/20 !text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
+                : 'border-transparent !text-slate-200 hover:bg-white/7 hover:!text-white hover:border-white/10'
+            }`}
+          >
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition-colors ${
+                isActive
+                  ? 'bg-white/10 text-slate-100 border-white/25'
+                  : 'bg-white/[0.06] text-slate-300 border-white/15 group-hover:bg-white/12 group-hover:text-slate-100'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+            </span>
+            <span className="truncate">{link.label}</span>
+            {isActive && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-slate-300" />}
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true }) {
   const location = useLocation();
@@ -58,40 +103,14 @@ function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = tru
         <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
           Navigation
         </p>
-        <div className="space-y-1">
-          {SIDEBAR_LINKS.map((link) => {
-            const Icon = link.icon;
-            const isActive =
-              link.to === '/dashboard'
-                ? location.pathname === '/dashboard'
-                : location.pathname.startsWith(link.to);
-            return (
-            <Link
-              key={link.to}
-              to={link.to}
-              onClick={onNavClick}
-              className={`group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 ${
-                isActive
-                  ? 'bg-white/[0.08] border-white/20 !text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]'
-                  : 'border-transparent !text-slate-200 hover:bg-white/7 hover:!text-white hover:border-white/10'
-              }`}
-            >
-              <span
-                className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition-colors ${
-                  isActive
-                    ? 'bg-white/10 text-slate-100 border-white/25'
-                    : 'bg-white/[0.06] text-slate-300 border-white/15 group-hover:bg-white/12 group-hover:text-slate-100'
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-              </span>
-              <span className="truncate">{link.label}</span>
-              {isActive && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-slate-300" />}
-            </Link>
-          );
-        })}
-        </div>
+        <SidebarNavLinks links={SIDEBAR_MAIN_LINKS} location={location} onNavClick={onNavClick} />
       </nav>
+      <div className="shrink-0 border-t border-white/10 p-3 pt-2">
+        <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
+          Account
+        </p>
+        <SidebarNavLinks links={SIDEBAR_BOTTOM_LINKS} location={location} onNavClick={onNavClick} />
+      </div>
       <div className="p-3 border-t border-white/10 shrink-0">
         <div className="rounded-xl border border-white/10 bg-black/20 p-3">
           <div className="flex items-center gap-2.5">
@@ -118,6 +137,44 @@ function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = tru
 
 const MESSAGES_PATH = '/dashboard/messages';
 
+function DashboardOverlays({
+  showContactModal,
+  user,
+  aspirantProfile,
+  onContactSaved,
+  celebration,
+  needsOnboarding,
+  onCloseCelebration,
+  rejection,
+  onCloseRejection,
+}) {
+  const { openPlanModal } = usePlanModal();
+
+  return (
+    <>
+      <AspirantContactModal
+        open={showContactModal}
+        userId={user?.id}
+        email={user?.email}
+        profile={aspirantProfile}
+        onSaved={onContactSaved}
+      />
+      <PaymentRejectedModal
+        open={Boolean(rejection) && !showContactModal}
+        order={rejection}
+        onClose={onCloseRejection}
+        onTryAgain={openPlanModal}
+      />
+      <PlanActivatedCelebration
+        open={Boolean(celebration) && !showContactModal && !rejection}
+        plan={celebration?.plan}
+        needsOnboarding={needsOnboarding}
+        onClose={onCloseCelebration}
+      />
+    </>
+  );
+}
+
 function bodyPreview(body, maxLen = 60) {
   if (!body) return '';
   const t = body.replace(/\n/g, ' ').trim();
@@ -141,6 +198,7 @@ export default function DashboardLayout() {
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const [contactSaved, setContactSaved] = useState(false);
   const { celebration, closeCelebration: dismissCelebration } = usePlanActivationCelebration(user?.id);
+  const { rejection, closeRejection: dismissRejection } = usePaymentRejectionNotice(user?.id);
   const needsOnboarding = !isAspirantProfileComplete(aspirantProfile);
   const showContactModal =
     !aspirantLoading &&
@@ -282,18 +340,16 @@ export default function DashboardLayout() {
       </main>
 
       <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
-      <AspirantContactModal
-        open={showContactModal}
-        userId={user?.id}
-        email={user?.email}
-        profile={aspirantProfile}
-        onSaved={() => setContactSaved(true)}
-      />
-      <PlanActivatedCelebration
-        open={Boolean(celebration) && !showContactModal}
-        plan={celebration?.plan}
+      <DashboardOverlays
+        showContactModal={showContactModal}
+        user={user}
+        aspirantProfile={aspirantProfile}
+        onContactSaved={() => setContactSaved(true)}
+        celebration={celebration}
         needsOnboarding={needsOnboarding}
-        onClose={closeCelebration}
+        onCloseCelebration={closeCelebration}
+        rejection={rejection}
+        onCloseRejection={dismissRejection}
       />
 
       <SignOutConfirmModal

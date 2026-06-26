@@ -54,7 +54,7 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => !!state.auth.user);
   const isLanding = location.pathname === '/';
-  const isAuthPage = ['/login', '/signup', '/forgot-password', '/verify-email', '/reset-password', '/confirm-email'].includes(
+  const isAuthPage = ['/login', '/signup', '/forgot-password', '/verify-email', '/reset-password', '/confirm-email', '/auth/confirm', '/auth/callback'].includes(
     location.pathname
   );
   const [isScrolled, setIsScrolled] = useState(false);

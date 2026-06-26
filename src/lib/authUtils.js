@@ -13,6 +13,50 @@ export function getEmailConfirmRedirectUrl() {
   return `${window.location.origin}/auth/confirm`;
 }
 
+/** Redirect URL for Google / OAuth providers (add to Supabase Auth redirect URLs). */
+export function getOAuthRedirectUrl() {
+  if (typeof window === 'undefined') return '';
+  return `${window.location.origin}/auth/callback`;
+}
+
+const OAUTH_RETURN_KEY = 'nth-oauth-return';
+
+/** @param {string} path */
+export function stashOAuthReturnPath(path) {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(OAUTH_RETURN_KEY, path);
+  } catch {
+    /* ignore */
+  }
+}
+
+/** @param {string} [defaultPath='/dashboard'] */
+export function consumeOAuthReturnPath(defaultPath = '/dashboard') {
+  if (typeof window === 'undefined') return defaultPath;
+  try {
+    const stored = sessionStorage.getItem(OAUTH_RETURN_KEY);
+    sessionStorage.removeItem(OAUTH_RETURN_KEY);
+    if (stored && stored.startsWith('/') && !stored.startsWith('//')) return stored;
+  } catch {
+    /* ignore */
+  }
+  return defaultPath;
+}
+
+/** @returns {string | null} */
+export function readOAuthCallbackError() {
+  if (typeof window === 'undefined') return null;
+  const search = new URLSearchParams(window.location.search);
+  const hash = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+  return (
+    search.get('error_description') ||
+    hash.get('error_description') ||
+    search.get('error') ||
+    hash.get('error')
+  );
+}
+
 /**
  * Safe return path from query: same-origin path only.
  * @param {URLSearchParams} searchParams

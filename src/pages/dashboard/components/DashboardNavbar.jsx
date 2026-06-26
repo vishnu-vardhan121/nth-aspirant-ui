@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { usePlanModal, useSubscriptionStatus } from '../subscription';
 import { HiBell, HiChevronDown, HiBars3 } from 'react-icons/hi2';
@@ -75,15 +76,17 @@ export default function DashboardNavbar({ onMenuClick }) {
           <HiBell className="w-5 h-5" />
         </button>
 
-        <div
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 shadow-sm"
+        <Link
+          to="/dashboard/profile"
+          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 shadow-sm transition-opacity hover:opacity-90"
           style={{
             background: `linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)`,
           }}
-          title={user?.email}
+          title="My profile"
+          aria-label="My profile"
         >
           {initial}
-        </div>
+        </Link>
       </div>
     </header>
   );
