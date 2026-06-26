@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useMemo } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAppDispatch } from '../../store/hooks';
 import { signUp as signUpThunk } from '../../store/slices/authSlice';
 import { supabase } from '../../lib/supabase';
-import { isEmailVerified, MIN_PASSWORD_LENGTH, validateNewPasswordPair } from '../../lib/authUtils';
+import { signInWithGoogle } from '../../lib/googleAuth';
+import { getSafeReturnPath, isEmailVerified, MIN_PASSWORD_LENGTH, validateNewPasswordPair } from '../../lib/authUtils';
 import AuthLayout from '../../components/auth/AuthLayout';
 import AuthAlert from '../../components/auth/AuthAlert';
+import GoogleSignInButton, { AuthEmailDivider } from '../../components/auth/GoogleSignInButton';
 import { authFieldClass, authLabelClass } from '../../components/auth/authStyles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,15 +15,29 @@ import { Label } from '@/components/ui/label';
 import { HiEye, HiEyeSlash } from 'react-icons/hi2';
 
 export default function SignUpPage() {
+  const [searchParams] = useSearchParams();
+  const returnAfterSignUp = useMemo(() => getSafeReturnPath(searchParams, '/dashboard'), [searchParams]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const handleGoogleSignUp = async () => {
+    setMessage({ type: '', text: '' });
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle({ returnPath: returnAfterSignUp });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Could not start Google sign up.' });
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -71,6 +87,14 @@ export default function SignUpPage() {
         </>
       }
     >
+      <GoogleSignInButton
+        loading={googleLoading}
+        disabled={submitting}
+        onClick={handleGoogleSignUp}
+        label="Sign up with Google"
+      />
+      <AuthEmailDivider label="Or sign up with email" />
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="signup-email" className={authLabelClass}>
@@ -139,7 +163,7 @@ export default function SignUpPage() {
           <AuthAlert type={message.type === 'error' ? 'error' : 'success'}>{message.text}</AuthAlert>
         ) : null}
 
-        <Button type="submit" disabled={submitting} size="lg" className="w-full">
+        <Button type="submit" disabled={submitting || googleLoading} size="lg" className="w-full">
           {submitting ? 'Creating account…' : 'Create account'}
         </Button>
       </form>

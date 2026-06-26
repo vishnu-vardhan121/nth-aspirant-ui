@@ -4,6 +4,7 @@ import { supabase } from '../../../lib/supabase';
 import { normalizeHttpUrl, isAspirantProfileComplete } from '../../../lib/aspirantProfile';
 import { isSubscriptionActive } from '../../../lib/planLimits';
 import { useAppSelector } from '../../../store/hooks';
+import { useProfileOnboardingGate } from '../hooks/useProfileOnboardingGate';
 import { PageLoader } from '../../../components/ui/Loader';
 import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
 import CompleteProfileBanner from '../components/CompleteProfileBanner';
@@ -35,6 +36,7 @@ function formatPeriodDate(iso) {
 
 export default function MocksPage() {
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const { profileComplete, goToOnboarding, requireCompleteProfile } = useProfileOnboardingGate();
   const hasActivePlan =
     aspirantProfile?.plan &&
     isSubscriptionActive(aspirantProfile.plan, aspirantProfile.plan_started_at);
@@ -127,6 +129,7 @@ export default function MocksPage() {
   }, [slotsFrom, slotsTo]);
 
   const handleBookSlot = async (slotId) => {
+    if (!requireCompleteProfile()) return;
     setSlotMessage({ type: '', text: '' });
     setBookingSlotId(slotId);
     const { data } = await supabase.rpc('book_mock_slot', { p_slot_id: slotId });
@@ -144,6 +147,7 @@ export default function MocksPage() {
 
   const handleRequestWithoutSlot = async (e) => {
     e.preventDefault();
+    if (!requireCompleteProfile()) return;
     setRequestMessage({ type: '', text: '' });
     if (!requestPreferredDate || !requestPreferredTime) {
       setRequestMessage({ type: 'error', text: 'Please select date and time.' });
@@ -172,6 +176,7 @@ export default function MocksPage() {
 
   const handleRequestReschedule = async (e) => {
     e.preventDefault();
+    if (!requireCompleteProfile()) return;
     if (!rescheduleModal || !rescheduleReason.trim()) return;
     setRescheduleMessage({ type: '', text: '' });
     setRescheduleSaving(true);
@@ -198,7 +203,11 @@ export default function MocksPage() {
   }
 
   const showRequestForm = requestWithoutSlot || requestModalOpen;
-  const openRequestForm = () => { setRequestModalOpen(true); setRequestWithoutSlot(true); };
+  const openRequestForm = () => {
+    if (!requireCompleteProfile()) return;
+    setRequestModalOpen(true);
+    setRequestWithoutSlot(true);
+  };
   const closeRequestForm = () => {
     setRequestModalOpen(false);
     setRequestWithoutSlot(false);
@@ -249,8 +258,12 @@ export default function MocksPage() {
             </span>
           )}
           {usage?.active && withinMonthlyLimit && (
-            <button type="button" onClick={openRequestForm} className="nth-btn-primary px-4 py-2 text-sm font-medium">
-              Request for mock
+            <button
+              type="button"
+              onClick={openRequestForm}
+              className={`px-4 py-2 text-sm font-medium ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
+            >
+              {!profileComplete ? 'Complete profile to request mock' : 'Request for mock'}
             </button>
           )}
         </div>
@@ -439,6 +452,14 @@ export default function MocksPage() {
                   </div>
                   {slot.booked_by_me ? (
                     <span className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-lg">Your slot</span>
+                  ) : !profileComplete ? (
+                    <button
+                      type="button"
+                      onClick={goToOnboarding}
+                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                    >
+                      Complete profile
+                    </button>
                   ) : (
                     <button
                       type="button"
@@ -524,10 +545,23 @@ export default function MocksPage() {
                       <button
                         type="button"
                         disabled={pendingRescheduleIds.includes(r.id)}
-                        onClick={() => { setRescheduleModal(r); setRescheduleReason(''); setRescheduleMessage({ type: '', text: '' }); }}
-                        className="nth-btn-secondary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          if (!requireCompleteProfile()) return;
+                          setRescheduleModal(r);
+                          setRescheduleReason('');
+                          setRescheduleMessage({ type: '', text: '' });
+                        }}
+                        className={`px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
+                          !profileComplete
+                            ? 'rounded-lg border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                            : 'nth-btn-secondary'
+                        }`}
                       >
-                        {pendingRescheduleIds.includes(r.id) ? 'Reschedule requested' : 'Request reschedule'}
+                        {!profileComplete
+                          ? 'Complete profile'
+                          : pendingRescheduleIds.includes(r.id)
+                            ? 'Reschedule requested'
+                            : 'Request reschedule'}
                       </button>
                     )}
                   </div>

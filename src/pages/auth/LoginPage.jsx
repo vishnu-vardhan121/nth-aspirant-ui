@@ -9,8 +9,10 @@ import {
   isUnconfirmedEmailError,
 } from '../../lib/authUtils';
 import { supabase } from '../../lib/supabase';
+import { signInWithGoogle } from '../../lib/googleAuth';
 import AuthLayout from '../../components/auth/AuthLayout';
 import AuthAlert from '../../components/auth/AuthAlert';
+import GoogleSignInButton, { AuthEmailDivider } from '../../components/auth/GoogleSignInButton';
 import { authFieldClass, authLabelClass } from '../../components/auth/authStyles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,9 +32,21 @@ export default function LoginPage() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [unconfirmedEmail, setUnconfirmedEmail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const handleGoogleSignIn = async () => {
+    setMessage({ type: '', text: '' });
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle({ returnPath: returnAfterSignIn });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.message || 'Could not start Google sign in.' });
+      setGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -92,6 +106,9 @@ export default function LoginPage() {
         </>
       }
     >
+      <GoogleSignInButton loading={googleLoading} disabled={submitting} onClick={handleGoogleSignIn} />
+      <AuthEmailDivider />
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
           <Label htmlFor="email" className={authLabelClass}>
@@ -169,7 +186,7 @@ export default function LoginPage() {
           </AuthAlert>
         ) : null}
 
-        <Button type="submit" disabled={submitting} size="lg" className="w-full">
+        <Button type="submit" disabled={submitting || googleLoading} size="lg" className="w-full">
           {submitting ? 'Signing in…' : 'Sign in'}
         </Button>
       </form>

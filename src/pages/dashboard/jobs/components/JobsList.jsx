@@ -12,6 +12,7 @@ import {
 } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
 import { usePlanModal, useSubscriptionStatus } from '../../subscription';
+import { useProfileOnboardingGate } from '../../hooks/useProfileOnboardingGate';
 
 export default function JobsList({ jobs, usage, appliedJobIds, applicationStatusByJobId = {}, onUsageChange }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -101,6 +102,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
   const [applyError, setApplyError] = useState(null);
   const { openPlanModal } = usePlanModal();
   const { canUpgrade } = useSubscriptionStatus();
+  const { profileComplete, goToOnboarding } = useProfileOnboardingGate();
 
   const needsPlan = !usage?.active;
   const atLimit = usage?.active && usage.limit >= 0 && usage.used >= usage.limit;
@@ -111,6 +113,10 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
 
   const handleApply = async () => {
     if (job.isExpired || applying || isApplied) return;
+    if (!profileComplete) {
+      goToOnboarding();
+      return;
+    }
     if (needsPlan) {
       openPlanModal();
       return;
@@ -254,6 +260,14 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
               className="nth-btn-primary inline-block w-full sm:w-auto text-center px-5 py-2.5 text-sm font-medium"
             >
               Get a plan
+            </button>
+          ) : !profileComplete ? (
+            <button
+              type="button"
+              onClick={goToOnboarding}
+              className="inline-block w-full sm:w-auto text-center rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              Complete profile
             </button>
           ) : atLimit && canUpgrade ? (
             <button
