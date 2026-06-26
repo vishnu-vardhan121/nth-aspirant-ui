@@ -27,14 +27,13 @@ export function getSafeReturnPath(searchParams, defaultPath = '/') {
 }
 
 /**
- * Post-login route: onboarding before dashboard for new aspirants.
- * @param {'aspirant' | 'admin' | 'interviewer' | null} role
+ * Post-login route by role. Aspirants go to dashboard first; onboarding runs after payment approval.
  */
 export function getPostLoginPathForRole(role) {
   if (role === 'aspirant') return '/dashboard';
   if (role === 'admin') return '/admin';
   if (role === 'interviewer') return '/interviewer';
-  return '/onboarding';
+  return '/dashboard';
 }
 
 /** True when the URL looks like a Supabase email-confirmation callback. */

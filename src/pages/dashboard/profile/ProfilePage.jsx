@@ -21,6 +21,8 @@ import {
   buildAspirantPayload,
   profileToForm,
   saveAspirantProfile,
+  isValidMobileNumber,
+  MOBILE_VALIDATION_MESSAGE,
 } from '../../../lib/aspirantProfile';
 
 const inputClass =
@@ -193,6 +195,10 @@ export default function ProfilePage() {
     e.preventDefault();
     setMessage({ type: '', text: '' });
     if (!user?.id || !profile) return;
+    if (phone.trim() && !isValidMobileNumber(phone)) {
+      setMessage({ type: 'error', text: MOBILE_VALIDATION_MESSAGE });
+      return;
+    }
     setSaving(true);
 
     const payload = buildAspirantPayload(
