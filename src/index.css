@@ -358,11 +358,96 @@ a.border-indigo-200.text-indigo-600:focus-visible {
   color: rgb(67 56 202) !important; /* indigo-700 */
 }
 
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
   background-color: rgb(var(--nth-bg-light));
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* App-wide: no horizontal scroll; hide scrollbar chrome (page still scrolls) */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Vertical scroll regions without visible scrollbar (modals, panels) */
+.nth-scroll-y {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nth-scroll-y::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Range slider for mock feedback scores */
+.mock-score-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    hsl(var(--nth-primary)) 0%,
+    hsl(var(--nth-primary)) var(--pct, 50%),
+    rgb(var(--nth-border-light)) var(--pct, 50%),
+    rgb(var(--nth-border-light)) 100%
+  );
+  outline: none;
+}
+
+.mock-score-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: hsl(var(--nth-primary));
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+}
+
+.mock-score-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: hsl(var(--nth-primary));
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.2);
+  cursor: pointer;
+}
+
+.mock-score-slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: rgb(var(--nth-border-light));
 }
 
 /* Dark sections: override global color so text is visible on dark backgrounds */

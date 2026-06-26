@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
+import { normalizeHttpUrl } from '../../../lib/aspirantProfile';
 import { PageLoader } from '../../../components/ui/Loader';
+import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
 import { HiCalendarDays, HiCheckCircle, HiClock, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -20,6 +22,12 @@ function formatSlotTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return isNaN(d.getTime()) ? '—' : d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatPeriodDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function MocksPage() {
@@ -56,7 +64,10 @@ export default function MocksPage() {
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const infoRef = useRef(null);
 
-  const canBook = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
+  const withinMonthlyLimit = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
+  const pastBookingGap =
+    !usage?.next_book_after || new Date(usage.next_book_after) <= new Date();
+  const canBook = withinMonthlyLimit && pastBookingGap;
   const NOTICES_PREVIEW = 5;
 
   const fetchUsage = () => {
@@ -68,7 +79,7 @@ export default function MocksPage() {
   const fetchMyRegistrations = () => {
     supabase
       .from('mock_registrations')
-      .select('id, created_at, status, availability_notes, scheduled_at, meet_link, completed_at, technical_score, communication_score, problem_solving_score, overall_score, feedback_notes')
+      .select('id, created_at, status, availability_notes, scheduled_at, meet_link, completed_at, technical_score, communication_score, problem_solving_score, overall_score, feedback_notes, tech_feedback')
       .order('created_at', { ascending: false })
       .then(({ data }) => setMyRegistrations(data ?? []));
   };
@@ -209,6 +220,7 @@ export default function MocksPage() {
                 <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left">
                   <p className="text-xs font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">How mocks work</p>
                   <ul className="text-xs text-[rgb(var(--nth-text-secondary-light))] space-y-1.5">
+                    <li><strong>Allowance</strong> — {usage?.limit >= 0 ? `${usage.limit} mocks per subscription month` : 'Unlimited mocks'} (scheduled + completed count).</li>
                     <li><strong>Book a slot</strong> — Pick date/time; get Meet link.</li>
                     <li><strong>Request a slot</strong> — Admin assigns; you get notified.</li>
                     <li><strong>Reschedule</strong> — Click Request reschedule; admin approves or rejects.</li>
@@ -222,16 +234,48 @@ export default function MocksPage() {
         <div className="flex items-center gap-3">
           {usage?.active && (
             <span className="text-sm text-[rgb(var(--nth-text-muted-light))]">
-              {usage.used}{usage.limit >= 0 ? ` / ${usage.limit}` : ''} mocks
+              {usage.used}{usage.limit >= 0 ? ` / ${usage.limit}` : ''} mocks this month
             </span>
           )}
-          {usage?.active && (usage.limit < 0 || usage.used < usage.limit) && (
+          {usage?.active && withinMonthlyLimit && (
             <button type="button" onClick={openRequestForm} className="nth-btn-primary px-4 py-2 text-sm font-medium">
               Request for mock
             </button>
           )}
         </div>
       </div>
+
+      {usage?.active && usage.period_start && usage.period_end ? (
+        <section className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm text-slate-700">
+          <p>
+            <span className="font-semibold text-slate-900">This subscription month:</span>{' '}
+            {formatPeriodDate(usage.period_start)} – {formatPeriodDate(usage.period_end)}
+            {usage.limit >= 0 ? (
+              <>
+                {' '}
+                · <span className="font-medium">{usage.used} / {usage.limit}</span> mocks booked or completed
+              </>
+            ) : null}
+          </p>
+          {usage.next_book_after ? (
+            <p className="mt-1 text-xs text-slate-600">
+              You can book your next mock from{' '}
+              <span className="font-medium">{formatPeriodDate(usage.next_book_after)}</span>
+              {usage.min_days_between ? ` (${usage.min_days_between}-day gap after your last completed mock).` : '.'}
+            </p>
+          ) : usage.min_days_between ? (
+            <p className="mt-1 text-xs text-slate-600">
+              Up to {usage.limit >= 0 ? usage.limit : 'unlimited'} mocks per subscription month; wait at least{' '}
+              {usage.min_days_between} days between completed mocks.
+            </p>
+          ) : null}
+          {!withinMonthlyLimit && usage.limit >= 0 ? (
+            <p className="mt-1 text-xs text-amber-800">
+              Monthly allowance used. Your next month starts {formatPeriodDate(usage.period_end)}.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {/* Notices: compact preview + View all */}
       {mockNotices.length > 0 && (
@@ -414,7 +458,9 @@ export default function MocksPage() {
                 No mock bookings yet. Book a slot above to get started.
               </li>
             ) : (
-              myRegistrations.map((r) => (
+              myRegistrations.map((r) => {
+                const joinHref = r.status === 'scheduled' ? normalizeHttpUrl(r.meet_link) : null;
+                return (
                 <li key={r.id} className="px-5 py-4 flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -446,22 +492,19 @@ export default function MocksPage() {
                         Scheduled: {formatDateTime(r.scheduled_at)}
                       </p>
                     )}
-                    {r.status === 'completed' && [r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null) && (
-                      <p className="mt-1 text-sm text-[rgb(var(--nth-text-secondary-light))]">
-                        Scores: T: {r.technical_score} · C: {r.communication_score} · P: {r.problem_solving_score} · O: {r.overall_score}
-                        {r.feedback_notes && (
-                          <span className="block mt-0.5 text-[rgb(var(--nth-text-muted-light))]">{r.feedback_notes}</span>
-                        )}
-                      </p>
-                    )}
+                    {r.status === 'completed' ? (
+                      <div className="mt-2">
+                        <MockFeedbackDisplay registration={r} />
+                      </div>
+                    ) : null}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    {r.status === 'scheduled' && r.meet_link && (
+                    {joinHref && (
                       <a
-                        href={r.meet_link}
+                        href={joinHref}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[hsl(var(--nth-primary))] text-white text-sm font-medium hover:opacity-90"
+                        className="nth-btn-primary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium"
                       >
                         <HiLink className="w-4 h-4" /> Join Meet
                       </a>
@@ -478,7 +521,8 @@ export default function MocksPage() {
                     )}
                   </div>
                 </li>
-              ))
+              );
+              })
             )}
           </ul>
         </div>

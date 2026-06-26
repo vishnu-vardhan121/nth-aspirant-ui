@@ -4,8 +4,8 @@ const initialState = {
   theme: 'system',
   sidebarCollapsed: false,
   onboardingComplete: false,
-  plan: 'base', // 'base' | 'silver' | 'gold' (same for both tracks)
-  track: 'fresher', // 'fresher' | 'experienced'
+  plan: null, // synced from aspirants.plan when logged in
+  track: null, // synced from aspirants.track when logged in
 };
 
 const appSlice = createSlice({

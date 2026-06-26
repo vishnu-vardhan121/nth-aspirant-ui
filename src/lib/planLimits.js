@@ -4,13 +4,13 @@
  * -1 = unlimited.
  */
 
-export const PLAN_VALIDITY_MONTHS = { base: 3, silver: 3, gold: 5 };
+export const PLAN_VALIDITY_MONTHS = { base: 1, silver: 3, gold: 5 };
 
 export const PLAN_LIMITS = {
   base: {
-    validityMonths: 3,
+    validityMonths: 1,
     jobApplicationsPerMonth: 5,
-    mocksPerPeriod: 3,
+    mocksPerMonth: 2,
     directInterviewsPerPeriod: 1,
     founderSessionsPerPeriod: 0,
     messagesPerDay: 1,
@@ -18,7 +18,7 @@ export const PLAN_LIMITS = {
   silver: {
     validityMonths: 3,
     jobApplicationsPerMonth: 20,
-    mocksPerPeriod: 3,
+    mocksPerMonth: 2,
     directInterviewsPerPeriod: 2,
     founderSessionsPerPeriod: 0,
     messagesPerDay: 3,
@@ -26,7 +26,7 @@ export const PLAN_LIMITS = {
   gold: {
     validityMonths: 5,
     jobApplicationsPerMonth: -1,
-    mocksPerPeriod: 10,
+    mocksPerMonth: 10,
     directInterviewsPerPeriod: 8,
     founderSessionsPerPeriod: 2,
     messagesPerDay: 5,

@@ -11,17 +11,23 @@ import {
   HiDocumentArrowDown,
   HiCheckCircle,
   HiExclamationCircle,
+  HiBriefcase,
+  HiGlobeAlt,
 } from 'react-icons/hi2';
+import {
+  EMPLOYMENT_OPTIONS,
+  WORK_MODE_OPTIONS,
+  defaultEducation,
+  buildAspirantPayload,
+  profileToForm,
+  saveAspirantProfile,
+} from '../../../lib/aspirantProfile';
 
 const inputClass =
   'w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow';
 const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5';
 
-const defaultEducation = {
-  tenth: { marks: '', year: '' },
-  twelfth: { marks: '', year: '' },
-  graduation: { type: '', year: '', branch: '' },
-};
+const selectClass = inputClass + ' cursor-pointer';
 
 function formatJoined(values) {
   const items = values
@@ -30,23 +36,12 @@ function formatJoined(values) {
   return items.length ? items.join(' • ') : '—';
 }
 
-function toFormEducation(edu) {
-  if (!edu || typeof edu !== 'object') return defaultEducation;
-  return {
-    tenth: {
-      marks: String(edu.tenth?.marks ?? '').trim(),
-      year: edu.tenth?.year ?? '',
-    },
-    twelfth: {
-      marks: String(edu.twelfth?.marks ?? '').trim(),
-      year: edu.twelfth?.year ?? '',
-    },
-    graduation: {
-      type: String(edu.graduation?.type ?? '').trim(),
-      year: edu.graduation?.year ?? '',
-      branch: String(edu.graduation?.branch ?? '').trim(),
-    },
-  };
+function employmentLabel(value) {
+  return EMPLOYMENT_OPTIONS.find((o) => o.value === value)?.label ?? value ?? '—';
+}
+
+function workModeLabel(value) {
+  return WORK_MODE_OPTIONS.find((o) => o.value === value)?.label ?? value ?? '—';
 }
 
 function SectionCard({ icon, title, subtitle, children }) {
@@ -76,9 +71,27 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [country, setCountry] = useState('India');
+  const [isFresher, setIsFresher] = useState(true);
+  const [yearsExperience, setYearsExperience] = useState('');
+  const [employmentStatus, setEmploymentStatus] = useState('student');
+  const [primaryRole, setPrimaryRole] = useState('');
+  const [currentCompany, setCurrentCompany] = useState('');
+  const [previousCompany, setPreviousCompany] = useState('');
+  const [workMode, setWorkMode] = useState('any');
+  const [currentCtc, setCurrentCtc] = useState('');
+  const [expectedSalaryMin, setExpectedSalaryMin] = useState('');
+  const [expectedSalaryMax, setExpectedSalaryMax] = useState('');
+  const [availableFrom, setAvailableFrom] = useState('');
+  const [willingRelocate, setWillingRelocate] = useState(false);
+  const [linkedinUrl, setLinkedinUrl] = useState('');
+  const [portfolioUrl, setPortfolioUrl] = useState('');
+  const [bio, setBio] = useState('');
   const [education, setEducation] = useState(defaultEducation);
   const [skills, setSkills] = useState([]);
+  const [secondarySkills, setSecondarySkills] = useState([]);
   const [skillInput, setSkillInput] = useState('');
+  const [secondarySkillInput, setSecondarySkillInput] = useState('');
   const [message, setMessage] = useState({ type: '', text: '' });
   const [saving, setSaving] = useState(false);
   const [resumeSignedUrl, setResumeSignedUrl] = useState(null);
@@ -89,16 +102,36 @@ export default function ProfilePage() {
     if (user?.id && !profile) dispatch(fetchAspirantProfile(user.id));
   }, [user?.id, dispatch, profile]);
 
+  const applyProfileToForm = (p) => {
+    const f = profileToForm(p);
+    setFullName(f.fullName);
+    setEmail(f.email);
+    setPhone(f.phone);
+    setCity(f.city);
+    setCountry(f.country);
+    setIsFresher(f.isFresher);
+    setYearsExperience(f.yearsExperience);
+    setEmploymentStatus(f.employmentStatus);
+    setPrimaryRole(f.primaryRole);
+    setCurrentCompany(f.currentCompany);
+    setPreviousCompany(f.previousCompany);
+    setWorkMode(f.workMode);
+    setCurrentCtc(f.currentCtc);
+    setExpectedSalaryMin(f.expectedSalaryMin);
+    setExpectedSalaryMax(f.expectedSalaryMax);
+    setAvailableFrom(f.availableFrom);
+    setWillingRelocate(f.willingRelocate);
+    setLinkedinUrl(f.linkedinUrl);
+    setPortfolioUrl(f.portfolioUrl);
+    setBio(f.bio);
+    setEducation(f.education);
+    setSkills(f.skills);
+    setSecondarySkills(f.secondarySkills);
+  };
+
   useEffect(() => {
     if (!profile) return;
-    const timer = setTimeout(() => {
-      setFullName(profile.full_name ?? '');
-      setEmail(profile.email ?? '');
-      setPhone(profile.phone ?? '');
-      setCity(profile.city ?? '');
-      setEducation(toFormEducation(profile.education));
-      setSkills(Array.isArray(profile.skills) ? [...profile.skills] : []);
-    }, 0);
+    const timer = setTimeout(() => applyProfileToForm(profile), 0);
     return () => clearTimeout(timer);
   }, [profile]);
 
@@ -136,6 +169,19 @@ export default function ProfilePage() {
     setSkills((prev) => prev.filter((s) => s !== skill));
   };
 
+  const addSecondarySkill = (e) => {
+    e?.preventDefault?.();
+    const value = secondarySkillInput.trim();
+    if (value && !secondarySkills.includes(value)) {
+      setSecondarySkills((prev) => [...prev, value]);
+      setSecondarySkillInput('');
+    }
+  };
+
+  const removeSecondarySkill = (skill) => {
+    setSecondarySkills((prev) => prev.filter((s) => s !== skill));
+  };
+
   const updateEducation = (level, field, value) => {
     setEducation((prev) => ({
       ...prev,
@@ -149,28 +195,35 @@ export default function ProfilePage() {
     if (!user?.id || !profile) return;
     setSaving(true);
 
-    const payload = {
-      full_name: fullName.trim(),
-      email: email.trim(),
-      phone: phone.trim() || null,
-      city: city.trim(),
-      education: {
-        tenth: {
-          marks: String(education.tenth.marks).trim(),
-          year: education.tenth.year ? Number(education.tenth.year) : null,
-        },
-        twelfth: {
-          marks: String(education.twelfth.marks).trim(),
-          year: education.twelfth.year ? Number(education.twelfth.year) : null,
-        },
-        graduation: {
-          type: String(education.graduation.type).trim() || null,
-          year: education.graduation.year ? Number(education.graduation.year) : null,
-          branch: String(education.graduation.branch).trim() || null,
-        },
+    const payload = buildAspirantPayload(
+      {
+        fullName,
+        email,
+        phone,
+        city,
+        country,
+        isFresher,
+        yearsExperience,
+        employmentStatus,
+        primaryRole,
+        currentCompany,
+        previousCompany,
+        workMode,
+        currentCtc,
+        expectedSalaryMin,
+        expectedSalaryMax,
+        availableFrom,
+        willingRelocate,
+        linkedinUrl,
+        portfolioUrl,
+        bio,
+        education,
+        skills,
+        secondarySkills,
       },
-      skills: skills.length ? skills : [],
-    };
+      user.id,
+    );
+    delete payload.id;
 
     if (resumeReplacementFile) {
       const ext = resumeReplacementFile.name.split('.').pop()?.toLowerCase() || 'pdf';
@@ -187,23 +240,17 @@ export default function ProfilePage() {
       payload.resume_url = newPath;
     }
 
-    const { data, error } = await supabase
-      .from('aspirants')
-      .update(payload)
-      .eq('id', user.id)
-      .select()
-      .single();
-
-    if (error) {
-      setMessage({ type: 'error', text: error.message ?? 'Failed to save profile.' });
+    try {
+      const saved = await saveAspirantProfile(supabase, payload);
+      dispatch(setAspirantProfile(saved));
+      setResumeReplacementFile(null);
+      setMessage({ type: 'success', text: 'Profile saved successfully.' });
+      setIsEditMode(false);
+    } catch (e) {
+      setMessage({ type: 'error', text: e.message ?? 'Failed to save profile.' });
+    } finally {
       setSaving(false);
-      return;
     }
-    dispatch(setAspirantProfile(data));
-    setResumeReplacementFile(null);
-    setMessage({ type: 'success', text: 'Profile saved successfully.' });
-    setIsEditMode(false);
-    setSaving(false);
   };
 
   const startEditing = () => {
@@ -213,13 +260,9 @@ export default function ProfilePage() {
 
   const cancelEditing = () => {
     if (profile) {
-      setFullName(profile.full_name ?? '');
-      setEmail(profile.email ?? '');
-      setPhone(profile.phone ?? '');
-      setCity(profile.city ?? '');
-      setEducation(toFormEducation(profile.education));
-      setSkills(Array.isArray(profile.skills) ? [...profile.skills] : []);
+      applyProfileToForm(profile);
       setSkillInput('');
+      setSecondarySkillInput('');
       setResumeReplacementFile(null);
     }
     setMessage({ type: '', text: '' });
@@ -302,6 +345,113 @@ export default function ProfilePage() {
                 <dt className="text-slate-500">Current city</dt>
                 <dd className="mt-1 font-medium text-slate-900">{profile.city || '—'}</dd>
               </div>
+              <div>
+                <dt className="text-slate-500">Country</dt>
+                <dd className="mt-1 font-medium text-slate-900">{profile.country || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Open to relocate</dt>
+                <dd className="mt-1 font-medium text-slate-900">{profile.willing_relocate ? 'Yes' : 'No'}</dd>
+              </div>
+            </dl>
+          </SectionCard>
+
+          <SectionCard
+            icon={HiBriefcase}
+            title="Experience & role"
+            subtitle="Your track, role, and compensation expectations"
+          >
+            <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt className="text-slate-500">Track</dt>
+                <dd className="mt-1 font-medium text-slate-900 capitalize">{profile.track || '—'}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Target role</dt>
+                <dd className="mt-1 font-medium text-slate-900">{profile.primary_role || '—'}</dd>
+              </div>
+              {profile.track === 'experienced' && (
+                <>
+                  <div>
+                    <dt className="text-slate-500">Experience</dt>
+                    <dd className="mt-1 font-medium text-slate-900">
+                      {profile.experience_years != null ? `${profile.experience_years} years` : '—'}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Current company</dt>
+                    <dd className="mt-1 font-medium text-slate-900">{profile.current_company || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Previous company</dt>
+                    <dd className="mt-1 font-medium text-slate-900">{profile.previous_company || '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Current CTC</dt>
+                    <dd className="mt-1 font-medium text-slate-900">{profile.current_ctc ? `${profile.current_ctc} LPA` : '—'}</dd>
+                  </div>
+                </>
+              )}
+              <div>
+                <dt className="text-slate-500">Employment status</dt>
+                <dd className="mt-1 font-medium text-slate-900">{employmentLabel(profile.employment_status)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Work mode</dt>
+                <dd className="mt-1 font-medium text-slate-900">{workModeLabel(profile.work_mode)}</dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Expected salary</dt>
+                <dd className="mt-1 font-medium text-slate-900">
+                  {formatJoined([
+                    profile.expected_salary_min && `${profile.expected_salary_min} LPA`,
+                    profile.expected_salary_max && `${profile.expected_salary_max} LPA`,
+                  ]).replace(' • ', ' – ') || '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Available from</dt>
+                <dd className="mt-1 font-medium text-slate-900">{profile.available_from || '—'}</dd>
+              </div>
+            </dl>
+          </SectionCard>
+
+          <SectionCard
+            icon={HiGlobeAlt}
+            title="Links & bio"
+            subtitle="Professional profiles and summary"
+          >
+            <dl className="space-y-3 text-sm">
+              <div>
+                <dt className="text-slate-500">LinkedIn</dt>
+                <dd className="mt-1">
+                  {profile.linkedin_url ? (
+                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium break-all">
+                      {profile.linkedin_url}
+                    </a>
+                  ) : (
+                    <span className="text-slate-900">—</span>
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-slate-500">Portfolio</dt>
+                <dd className="mt-1">
+                  {profile.portfolio_url ? (
+                    <a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline font-medium break-all">
+                      {profile.portfolio_url}
+                    </a>
+                  ) : (
+                    <span className="text-slate-900">—</span>
+                  )}
+                </dd>
+              </div>
+              {profile.bio && (
+                <div>
+                  <dt className="text-slate-500">About</dt>
+                  <dd className="mt-1 text-slate-900 whitespace-pre-wrap">{profile.bio}</dd>
+                </div>
+              )}
             </dl>
           </SectionCard>
 
@@ -353,7 +503,19 @@ export default function ProfilePage() {
                 ))}
               </div>
             ) : (
-              <p className="text-sm text-slate-500">No skills added yet.</p>
+              <p className="text-sm text-slate-500">No primary skills added yet.</p>
+            )}
+            {Array.isArray(profile.secondary_skills) && profile.secondary_skills.length > 0 && (
+              <div className="mt-4">
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Secondary</p>
+                <div className="flex flex-wrap gap-2">
+                  {profile.secondary_skills.map((skill) => (
+                    <span key={skill} className="inline-flex px-3 py-1.5 rounded-full bg-slate-50 text-slate-700 text-sm border border-slate-200">
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
             )}
           </SectionCard>
 
@@ -425,7 +587,7 @@ export default function ProfilePage() {
                   placeholder="+91 98765 43210"
                 />
               </div>
-              <div className="sm:col-span-2">
+              <div>
                 <label htmlFor="profile-city" className={labelClass}>Current city</label>
                 <input
                   id="profile-city"
@@ -436,6 +598,102 @@ export default function ProfilePage() {
                   className={inputClass}
                   placeholder="e.g. Bangalore, Hyderabad"
                 />
+              </div>
+              <div>
+                <label htmlFor="profile-country" className={labelClass}>Country</label>
+                <input id="profile-country" type="text" value={country} onChange={(e) => setCountry(e.target.value)} className={inputClass} placeholder="India" />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="flex items-center gap-2 text-sm text-slate-700 cursor-pointer">
+                  <input type="checkbox" checked={willingRelocate} onChange={(e) => setWillingRelocate(e.target.checked)} className="rounded border-slate-300" />
+                  Open to relocating for the right role
+                </label>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard icon={HiBriefcase} title="Experience & role" subtitle="Track, role, and compensation">
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium ${isFresher ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-slate-200 text-slate-700'}`}>
+                  <input type="radio" name="profile-track" checked={isFresher} onChange={() => setIsFresher(true)} className="sr-only" />
+                  Fresher
+                </label>
+                <label className={`flex items-center gap-2 px-4 py-2 rounded-lg border cursor-pointer text-sm font-medium ${!isFresher ? 'border-indigo-500 bg-indigo-50 text-indigo-800' : 'border-slate-200 text-slate-700'}`}>
+                  <input type="radio" name="profile-track" checked={!isFresher} onChange={() => setIsFresher(false)} className="sr-only" />
+                  Experienced
+                </label>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="sm:col-span-2">
+                  <label htmlFor="profile-role" className={labelClass}>Target role</label>
+                  <input id="profile-role" type="text" value={primaryRole} onChange={(e) => setPrimaryRole(e.target.value)} className={inputClass} placeholder="e.g. Full Stack Developer" />
+                </div>
+                {!isFresher && (
+                  <>
+                    <div>
+                      <label htmlFor="profile-years" className={labelClass}>Years of experience</label>
+                      <input id="profile-years" type="number" min="0" step="0.5" value={yearsExperience} onChange={(e) => setYearsExperience(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label htmlFor="profile-ctc" className={labelClass}>Current CTC (LPA)</label>
+                      <input id="profile-ctc" type="text" value={currentCtc} onChange={(e) => setCurrentCtc(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label htmlFor="profile-current-co" className={labelClass}>Current company</label>
+                      <input id="profile-current-co" type="text" value={currentCompany} onChange={(e) => setCurrentCompany(e.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label htmlFor="profile-prev-co" className={labelClass}>Previous company</label>
+                      <input id="profile-prev-co" type="text" value={previousCompany} onChange={(e) => setPreviousCompany(e.target.value)} className={inputClass} />
+                    </div>
+                  </>
+                )}
+                <div>
+                  <label htmlFor="profile-employment" className={labelClass}>Employment status</label>
+                  <select id="profile-employment" value={employmentStatus} onChange={(e) => setEmploymentStatus(e.target.value)} className={selectClass}>
+                    {EMPLOYMENT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="profile-work-mode" className={labelClass}>Work mode</label>
+                  <select id="profile-work-mode" value={workMode} onChange={(e) => setWorkMode(e.target.value)} className={selectClass}>
+                    {WORK_MODE_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="profile-sal-min" className={labelClass}>Expected salary min (LPA)</label>
+                  <input id="profile-sal-min" type="text" value={expectedSalaryMin} onChange={(e) => setExpectedSalaryMin(e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label htmlFor="profile-sal-max" className={labelClass}>Expected salary max (LPA)</label>
+                  <input id="profile-sal-max" type="text" value={expectedSalaryMax} onChange={(e) => setExpectedSalaryMax(e.target.value)} className={inputClass} />
+                </div>
+                <div>
+                  <label htmlFor="profile-available" className={labelClass}>Available from</label>
+                  <input id="profile-available" type="date" value={availableFrom} onChange={(e) => setAvailableFrom(e.target.value)} className={inputClass} />
+                </div>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard icon={HiGlobeAlt} title="Links & bio" subtitle="LinkedIn, portfolio, and summary">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label htmlFor="profile-linkedin" className={labelClass}>LinkedIn</label>
+                <input id="profile-linkedin" type="url" value={linkedinUrl} onChange={(e) => setLinkedinUrl(e.target.value)} className={inputClass} placeholder="https://www.linkedin.com/in/…" />
+              </div>
+              <div>
+                <label htmlFor="profile-portfolio" className={labelClass}>Portfolio / GitHub</label>
+                <input id="profile-portfolio" type="url" value={portfolioUrl} onChange={(e) => setPortfolioUrl(e.target.value)} className={inputClass} placeholder="https://github.com/…" />
+              </div>
+              <div>
+                <label htmlFor="profile-bio" className={labelClass}>About you</label>
+                <textarea id="profile-bio" rows={4} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClass + ' resize-y'} placeholder="Brief summary…" />
               </div>
             </div>
           </SectionCard>
@@ -570,6 +828,32 @@ export default function ProfilePage() {
               >
                 Add
               </button>
+            </div>
+            <div className="mt-6">
+              <label className={labelClass}>Secondary skills</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {secondarySkills.map((skill) => (
+                  <span key={skill} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 text-slate-800 text-sm font-medium">
+                    {skill}
+                    <button type="button" onClick={() => removeSecondarySkill(skill)} className="p-0.5 rounded hover:bg-slate-200" aria-label={`Remove ${skill}`}>
+                      <HiXMark className="h-4 w-4" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={secondarySkillInput}
+                  onChange={(e) => setSecondarySkillInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addSecondarySkill(e)}
+                  className={inputClass}
+                  placeholder="e.g. Docker, AWS"
+                />
+                <button type="button" onClick={addSecondarySkill} className="shrink-0 px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-700 font-medium hover:bg-slate-50">
+                  Add
+                </button>
+              </div>
             </div>
           </SectionCard>
 

@@ -29,6 +29,8 @@ export default function AuthListener() {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
           dispatch(clearInterviewerProfile());
+          dispatch(setPlan(null));
+          dispatch(setTrack(null));
         }
       }).catch((err) => {
         console.warn('Auth getSession failed:', err);
@@ -44,6 +46,8 @@ export default function AuthListener() {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
           dispatch(clearInterviewerProfile());
+          dispatch(setPlan(null));
+          dispatch(setTrack(null));
           return;
         }
         // TOKEN_REFRESHED fires when tab regains focus / background refresh. Refetching
@@ -69,13 +73,13 @@ export default function AuthListener() {
     dispatch(fetchInterviewerProfile(user.id));
   }, [user?.id, aspirantLoading, aspirantProfile, dispatch]);
 
-  // Sync aspirant track/plan from profile to app slice (for jobs visibility)
+  // Sync aspirant track/plan from profile to app slice (clear when null — no default "base")
   useEffect(() => {
     if (aspirantProfile) {
-      if (aspirantProfile.track) dispatch(setTrack(aspirantProfile.track));
-      if (aspirantProfile.plan) dispatch(setPlan(aspirantProfile.plan));
+      dispatch(setTrack(aspirantProfile.track ?? null));
+      dispatch(setPlan(aspirantProfile.plan ?? null));
     }
-  }, [aspirantProfile?.track, aspirantProfile?.plan, dispatch]);
+  }, [aspirantProfile, dispatch]);
 
   return null;
 }

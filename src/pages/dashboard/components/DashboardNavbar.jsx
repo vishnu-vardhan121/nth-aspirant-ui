@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
+import { usePlanModal, useSubscriptionStatus } from '../subscription';
 import { HiBell, HiChevronDown, HiBars3 } from 'react-icons/hi2';
 
 const PLAN_LABELS = { base: 'Base', silver: 'Silver', gold: 'Gold' };
@@ -12,18 +12,20 @@ function getInitial(email) {
 }
 
 export default function DashboardNavbar({ onMenuClick }) {
-  const location = useLocation();
   const user = useAppSelector((state) => state.auth.user);
-  const plan = useAppSelector((state) => state.app.plan);
-  const track = useAppSelector((state) => state.app.track);
-  const pricingTo = `/pricing?from=${encodeURIComponent(location.pathname || '/')}&track=${encodeURIComponent(track || 'fresher')}`;
+  const { openPlanModal } = usePlanModal();
+  const { plan, track, hasActivePlan, showPlanAction } = useSubscriptionStatus();
 
   const initial = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.trim().charAt(0).toUpperCase()
     : getInitial(user?.email);
 
-  const planLabel = PLAN_LABELS[plan] ?? 'Base';
-  const trackLabel = TRACK_LABELS[track] ?? 'Fresher';
+  const planLabel = hasActivePlan ? (PLAN_LABELS[plan] ?? plan) : 'No plan';
+  const trackLabel = track ? (TRACK_LABELS[track] ?? track) : '—';
+
+  const handlePlanClick = () => {
+    openPlanModal();
+  };
 
   return (
     <header className="sticky top-0 z-10 shrink-0 h-14 flex items-center justify-between gap-4 px-4 md:px-6 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -39,22 +41,31 @@ export default function DashboardNavbar({ onMenuClick }) {
 
       <div className="flex items-center gap-2 sm:gap-3">
         <span className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-slate-500">
-          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+          <span
+            className={`px-2 py-0.5 rounded-md ${
+              hasActivePlan ? 'bg-slate-100 text-slate-700' : 'bg-amber-50 text-amber-800 ring-1 ring-amber-200/80'
+            }`}
+          >
             {planLabel}
           </span>
-          <span className="text-slate-300">·</span>
-          <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
-            {trackLabel}
-          </span>
+          {track ? (
+            <>
+              <span className="text-slate-300">·</span>
+              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">{trackLabel}</span>
+            </>
+          ) : null}
         </span>
 
-        <Link
-          to={pricingTo}
-          className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--nth-primary))] hover:underline"
-        >
-          Upgrade
-          <HiChevronDown className="w-3.5 h-3.5 -rotate-90" />
-        </Link>
+        {showPlanAction ? (
+          <button
+            type="button"
+            onClick={handlePlanClick}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--nth-primary))] hover:underline"
+          >
+            {hasActivePlan ? 'Upgrade' : 'Get a plan'}
+            <HiChevronDown className="w-3.5 h-3.5 -rotate-90" />
+          </button>
+        ) : null}
 
         <button
           type="button"

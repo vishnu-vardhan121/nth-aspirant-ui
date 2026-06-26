@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy } from 'react-icons/hi2';
+import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 
@@ -97,6 +97,13 @@ export default function AdminLayout() {
             Leads
           </Link>
           <Link
+            to="/admin/payments"
+            className={navLinkClass(isActive('/admin/payments'))}
+          >
+            <HiBanknotes className="w-5 h-5 shrink-0" />
+            Payments
+          </Link>
+          <Link
             to="/admin/help-desk"
             className={navLinkClass(isActive('/admin/help-desk'))}
           >
@@ -155,7 +162,7 @@ export default function AdminLayout() {
       </aside>
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <AdminNavbar subtitle="Admin" />
-        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6">
+        <div className="nth-scroll-y flex-1 min-h-0 min-w-0 overflow-x-hidden p-4 sm:p-6">
           <Outlet />
         </div>
       </main>

@@ -54,6 +54,9 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => !!state.auth.user);
   const isLanding = location.pathname === '/';
+  const isAuthPage = ['/login', '/signup', '/forgot-password', '/verify-email', '/reset-password', '/confirm-email'].includes(
+    location.pathname
+  );
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [localHelpModalOpen, setLocalHelpModalOpen] = useState(false);
@@ -83,8 +86,8 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
     }
   });
 
-  // On landing page: always white navbar (no dark/white shifting). Else: light style when scrolled or on other pages.
-  const showLightStyle = isLanding ? true : isScrolled;
+  // Landing + auth pages: always light navbar. Other pages: light when scrolled.
+  const showLightStyle = isLanding || isAuthPage ? true : isScrolled;
 
   const navbarStyles = {
     background: showLightStyle || isMobileMenuOpen
