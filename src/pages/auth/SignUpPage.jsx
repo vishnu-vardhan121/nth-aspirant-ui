@@ -10,11 +10,13 @@ import { authFieldClass, authLabelClass } from '../../components/auth/authStyles
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { HiEye, HiEyeSlash } from 'react-icons/hi2';
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [submitting, setSubmitting] = useState(false);
 
@@ -109,18 +111,28 @@ export default function SignUpPage() {
           <Label htmlFor="signup-confirm-password" className={authLabelClass}>
             Confirm password
           </Label>
-          <Input
-            id="signup-confirm-password"
-            type="password"
-            name="confirm-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            minLength={MIN_PASSWORD_LENGTH}
-            autoComplete="off"
-            placeholder="••••••••"
-            className={authFieldClass}
-          />
+          <div className="relative">
+            <Input
+              id="signup-confirm-password"
+              type={showConfirmPassword ? 'text' : 'password'}
+              name="confirm-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              minLength={MIN_PASSWORD_LENGTH}
+              autoComplete="off"
+              placeholder="••••••••"
+              className={`${authFieldClass} pr-11`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+            >
+              {showConfirmPassword ? <HiEyeSlash className="w-5 h-5" /> : <HiEye className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {message.text ? (

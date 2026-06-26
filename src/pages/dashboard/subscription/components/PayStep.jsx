@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { HiCheckCircle } from 'react-icons/hi2';
 import { ButtonLoader } from '../../../../components/ui/Loader';
-import { formatInr, PLAN_EXPERIENCE_NOTE, PLAN_MOCK_FEATURE } from '../data/subscriptionProducts';
+import { formatInr } from '../data/subscriptionProducts';
 import UpiQrDisplay from './UpiQrDisplay';
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -24,10 +24,7 @@ function PlanSummary({ product }) {
       </p>
       <p className="mt-3 flex items-start gap-1.5 text-sm text-slate-600">
         <HiCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-        {PLAN_MOCK_FEATURE}
-      </p>
-      <p className="mt-3 rounded-lg border border-amber-200/80 bg-amber-50/80 px-3 py-2 text-xs leading-relaxed text-amber-950 lg:text-sm">
-        <span className="font-semibold">Note:</span> {PLAN_EXPERIENCE_NOTE}
+        {product?.features?.[0] ?? `${product?.durationMonths ?? 1} month pack`}
       </p>
     </div>
   );

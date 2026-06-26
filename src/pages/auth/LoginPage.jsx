@@ -15,6 +15,7 @@ import { authFieldClass, authLabelClass } from '../../components/auth/authStyles
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { HiEye, HiEyeSlash } from 'react-icons/hi2';
 
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const signupSuccess = searchParams.get('signup') === '1';
   const [email, setEmail] = useState(() => location.state?.email ?? '');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [unconfirmedEmail, setUnconfirmedEmail] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -119,17 +121,27 @@ export default function LoginPage() {
               Forgot password?
             </Link>
           </div>
-          <Input
-            id="password"
-            type="password"
-            name="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-            placeholder="••••••••"
-            className={authFieldClass}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className={`${authFieldClass} pr-11`}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <HiEyeSlash className="w-5 h-5" /> : <HiEye className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {resetSuccess ? (

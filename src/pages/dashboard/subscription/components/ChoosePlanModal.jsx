@@ -1,17 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HiArrowLeft, HiXMark } from 'react-icons/hi2';
 import { useAppSelector } from '../../../../store/hooks';
-import { PageLoader } from '../../../../components/ui/Loader';
+import { ButtonLoader } from '../../../../components/ui/Loader';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
-import { formatProductPrice, isProductAvailable, PLAN_EXPERIENCE_NOTE } from '../data/subscriptionProducts';
-import { getPlanModalTitle } from '../lib/planCheckout';
+import {
+  formatProductPrice,
+  formatInr,
+  getExperienceBandLabel,
+  isProductAvailable,
+  PACK_CONTACT_EMAIL,
+  requiresPackContact,
+} from '../data/subscriptionProducts';
+import { getSelectablePlans, getPlanModalTitle } from '../lib/planCheckout';
 import {
   fetchPaymentConfig,
   submitSubscriptionPayment,
 } from '../api/paymentOrders';
 import PlanOptionCard from './PlanOptionCard';
 import PayStep from './PayStep';
+import PlanCheckoutTerms from './PlanCheckoutTerms';
+import ExperienceBandSelector from './ExperienceBandSelector';
 
 function newPaymentRef() {
   return crypto.randomUUID();
@@ -19,29 +28,54 @@ function newPaymentRef() {
 
 export default function ChoosePlanModal({ open, onClose }) {
   const userId = useAppSelector((state) => state.auth.user?.id);
-  const { plan, hasActivePlan, selectablePlans } = useSubscriptionStatus();
+  const { profile, plan, hasActivePlan, profileExperienceBand } = useSubscriptionStatus();
 
   const [step, setStep] = useState('plans');
+  const [selectedBand, setSelectedBand] = useState(profileExperienceBand);
+  const [pickedPlan, setPickedPlan] = useState(null);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [paymentRef, setPaymentRef] = useState(null);
   const [paymentConfig, setPaymentConfig] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState(false);
+
+  const selectablePlans = useMemo(
+    () => getSelectablePlans(profile, plan, hasActivePlan, selectedBand),
+    [profile, plan, hasActivePlan, selectedBand],
+  );
+  const requiresAdminContact = requiresPackContact(selectedBand);
 
   useEffect(() => {
     if (!open) return undefined;
     setStep('plans');
+    setSelectedBand(profileExperienceBand);
+    setPickedPlan(null);
     setSelectedProduct(null);
     setPaymentRef(null);
     setPaymentConfig(null);
     setError('');
     setLoading(false);
+    setTermsAccepted(false);
+    setTermsError(false);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open]);
+  }, [open, profileExperienceBand]);
+
+  useEffect(() => {
+    if (step !== 'plans' || selectablePlans.length === 0) return;
+    setPickedPlan((prev) => {
+      if (prev) {
+        const match = selectablePlans.find((p) => p.planId === prev.planId);
+        if (match) return match;
+      }
+      return selectablePlans.find((p) => p.popular) ?? selectablePlans[0];
+    });
+  }, [selectablePlans, step]);
 
   if (!open) return null;
 
@@ -52,7 +86,8 @@ export default function ChoosePlanModal({ open, onClose }) {
     plan,
   });
 
-  const noPlansToShow = step === 'plans' && selectablePlans.length === 0;
+  const noPlansToShow = step === 'plans' && selectablePlans.length === 0 && !requiresAdminContact;
+  const experienceLabel = getExperienceBandLabel(selectedBand);
   const panelWidth =
     step === 'pay'
       ? 'max-w-5xl'
@@ -64,18 +99,24 @@ export default function ChoosePlanModal({ open, onClose }) {
     step === 'plans'
       ? noPlansToShow
         ? 'You are already on the highest available plan.'
-        : 'Select a pack to continue to payment.'
+        : 'Select a pack, accept the terms, then continue to payment.'
       : 'Scan the QR or open your UPI app, then submit your transaction ID.';
 
-  const handleChoosePlan = async (product) => {
-    if (!isProductAvailable(product)) return;
+  const handleContinueToPayment = async () => {
+    if (!pickedPlan || !isProductAvailable(pickedPlan)) return;
 
-    setLoading(true);
+    if (!termsAccepted) {
+      setTermsError(true);
+      return;
+    }
+
+    setSelectedProduct(pickedPlan);
     setError('');
+    setTermsError(false);
+    setLoading(true);
     try {
       const config = await fetchPaymentConfig();
       setPaymentConfig(config);
-      setSelectedProduct(product);
       setPaymentRef(newPaymentRef());
       setStep('pay');
     } catch (e) {
@@ -83,6 +124,18 @@ export default function ChoosePlanModal({ open, onClose }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleBackFromPay = () => {
+    setStep('plans');
+    setPaymentRef(null);
+    setPaymentConfig(null);
+    setError('');
+  };
+
+  const handleTermsAcceptedChange = (accepted) => {
+    setTermsAccepted(accepted);
+    if (accepted) setTermsError(false);
   };
 
   const handleSubmitProof = async ({ utr, payerNote, screenshotFile }) => {
@@ -108,6 +161,16 @@ export default function ChoosePlanModal({ open, onClose }) {
     }
   };
 
+  const showPlansFooter = step === 'plans' && !noPlansToShow && !requiresAdminContact;
+  const continueLabel = pickedPlan
+    ? `Continue with ${pickedPlan.name} · ${formatInr(pickedPlan.priceInr)}`
+    : 'Select a plan to continue';
+
+  const panelMaxHeight =
+    step === 'pay'
+      ? 'max-h-[min(92dvh,720px)] sm:max-h-[min(90vh,800px)] lg:max-h-[min(88vh,820px)]'
+      : 'max-h-[min(96dvh,920px)] sm:max-h-[min(94vh,900px)]';
+
   return createPortal(
     <div
       className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
@@ -115,7 +178,7 @@ export default function ChoosePlanModal({ open, onClose }) {
       role="presentation"
     >
       <div
-        className={`flex max-h-[min(92dvh,720px)] w-full ${panelWidth} flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:max-h-[min(90vh,800px)] sm:rounded-2xl lg:max-h-[min(88vh,820px)]`}
+        className={`flex ${panelMaxHeight} w-full ${panelWidth} flex-col overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:rounded-2xl`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -127,12 +190,7 @@ export default function ChoosePlanModal({ open, onClose }) {
           {step === 'pay' ? (
             <button
               type="button"
-              onClick={() => {
-                setStep('plans');
-                setPaymentRef(null);
-                setSelectedProduct(null);
-                setError('');
-              }}
+              onClick={handleBackFromPay}
               className="mb-2 inline-flex items-center gap-1 rounded-lg px-1 py-0.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
               <HiArrowLeft className="h-4 w-4" aria-hidden />
@@ -160,8 +218,8 @@ export default function ChoosePlanModal({ open, onClose }) {
         </header>
 
         <div
-          className={`min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 sm:px-6 sm:py-5 lg:px-8 ${
-            step === 'pay' ? 'nth-scroll-y' : ''
+          className={`nth-scroll-y min-h-0 flex-1 overflow-x-hidden px-4 py-3 sm:px-6 sm:py-4 lg:px-8 ${
+            step === 'pay' ? 'lg:py-5' : ''
           }`}
         >
           {step === 'plans' ? (
@@ -171,19 +229,32 @@ export default function ChoosePlanModal({ open, onClose }) {
                   {error}
                 </p>
               ) : null}
-              {loading ? (
-                <PageLoader size="sm" label="Loading payment…" className="py-16" />
-              ) : noPlansToShow ? (
+              {noPlansToShow ? (
                 <p className="py-12 text-center text-sm text-slate-600">
                   No upgrade is available for your current plan.
                 </p>
+              ) : requiresAdminContact ? (
+                <div className="py-4">
+                  <ExperienceBandSelector value={selectedBand} onChange={setSelectedBand} />
+                  <div className="py-6 text-center">
+                    <p className="text-sm font-medium text-slate-900">Plans for {experienceLabel}</p>
+                    <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                      For candidates with more than 5 years of experience, please contact our team for a
+                      custom plan.
+                    </p>
+                    <a
+                      href={`mailto:${PACK_CONTACT_EMAIL}?subject=${encodeURIComponent('Naveen Talent Hub – plan enquiry')}`}
+                      className="nth-btn-primary mt-6 inline-flex rounded-xl px-5 py-2.5 text-sm font-semibold"
+                    >
+                      {PACK_CONTACT_EMAIL}
+                    </a>
+                  </div>
+                </div>
               ) : (
                 <>
-                  <p className="mb-4 rounded-xl border border-amber-200/90 bg-amber-50 px-3.5 py-3 text-sm leading-relaxed text-amber-950">
-                    <span className="font-semibold">Note:</span> {PLAN_EXPERIENCE_NOTE}
-                  </p>
+                  <ExperienceBandSelector value={selectedBand} onChange={setSelectedBand} />
                   <div
-                    className={`grid gap-4 ${
+                    className={`grid gap-3 ${
                       selectablePlans.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
                     }`}
                   >
@@ -192,10 +263,17 @@ export default function ChoosePlanModal({ open, onClose }) {
                         key={product.planId}
                         product={product}
                         priceLabel={formatProductPrice(product)}
-                        onSelect={handleChoosePlan}
+                        selected={pickedPlan?.planId === product.planId}
+                        onSelect={setPickedPlan}
+                        disabled={loading}
                       />
                     ))}
                   </div>
+                  <PlanCheckoutTerms
+                    accepted={termsAccepted}
+                    onAcceptedChange={handleTermsAcceptedChange}
+                    showError={termsError}
+                  />
                 </>
               )}
             </>
@@ -210,6 +288,20 @@ export default function ChoosePlanModal({ open, onClose }) {
             />
           )}
         </div>
+
+        {showPlansFooter ? (
+          <footer className="shrink-0 border-t border-slate-100 bg-white px-4 py-3 sm:px-6 sm:py-3.5 lg:px-8">
+            <button
+              type="button"
+              disabled={!pickedPlan || loading}
+              onClick={handleContinueToPayment}
+              className="nth-btn-primary flex w-full items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold disabled:opacity-60"
+            >
+              {loading ? <ButtonLoader /> : null}
+              {continueLabel}
+            </button>
+          </footer>
+        ) : null}
       </div>
     </div>,
     document.body,

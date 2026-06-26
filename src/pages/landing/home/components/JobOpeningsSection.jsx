@@ -25,6 +25,11 @@ import {
 import { useState, useEffect, useMemo } from 'react';
 import { useAppSelector } from '../../../../store/hooks';
 import { supabase } from '../../../../lib/supabase';
+import {
+  getDashboardJobsAuthPath,
+  getExternalApplyHref,
+  isExternalApplyLink,
+} from '../../../../lib/authUtils';
 
 /* ─────────────────────────────────────── helpers ─── */
 function coerceJsonArray(value) {
@@ -169,6 +174,9 @@ function Badge({ free }) {
   );
 }
 
+const freeApplyBtnClass =
+  'flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600';
+
 /* ─────────────────────────────────────── CTA button ─── */
 function CtaButton({ job, isAuthenticated, pricingTo }) {
   const canView = job.isFree || isAuthenticated;
@@ -194,11 +202,20 @@ function CtaButton({ job, isAuthenticated, pricingTo }) {
       );
     }
     if (job.isFree) {
+      if (isExternalApplyLink(job.applyLink)) {
+        return (
+          <a
+            href={getExternalApplyHref(job.applyLink)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={freeApplyBtnClass}
+          >
+            Apply Now <HiArrowRight className="w-4 h-4 shrink-0" />
+          </a>
+        );
+      }
       return (
-        <Link
-          to={`/jobs/${job.id}`}
-          className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl font-semibold text-sm bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
+        <Link to={getDashboardJobsAuthPath(isAuthenticated)} className={freeApplyBtnClass}>
           Apply Now <HiArrowRight className="w-4 h-4 shrink-0" />
         </Link>
       );
