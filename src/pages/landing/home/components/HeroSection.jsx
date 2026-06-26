@@ -3,14 +3,14 @@ import WeeklyInterviewsMarquee from '../../../../components/WeeklyInterviewsMarq
 
 export default function HeroSection() {
   return (
-    <section id="hero" className="relative min-h-dvh flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
-      {/* Background: dark fill + full artwork (contain avoids cover cropping top/bottom) + overlay */}
+    <section id="hero" className="relative min-h-dvh w-full flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
+      {/* Background: full viewport width, cover (edge-to-edge) */}
       <div className="absolute inset-0 z-0 bg-slate-950" aria-hidden />
-      <div className="absolute inset-0 z-0 bg-contain bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]">
-        <div
-          className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25"
-          aria-hidden
-        />
+      <div
+        className="absolute inset-0 z-0 w-full bg-cover bg-center bg-no-repeat bg-[url('/hero-section/hero-image.webp')]"
+        aria-hidden
+      >
+        <div className="absolute inset-0 bg-linear-to-b from-black/70 via-black/40 to-black/25" aria-hidden />
       </div>
 
       {/* Content: center headline block; marquee sits below without stretching empty space */}

@@ -145,4 +145,8 @@ exception
 end;
 $$;
 
-grant execute on function public.submit_talent_pool_candidate to anon, authenticated;
+grant execute on function public.submit_talent_pool_candidate(
+  text, text, text, text, text, boolean, numeric, boolean, text,
+  text[], text[], text, text, numeric, numeric, numeric, date, text, text, text,
+  integer, boolean, text, text
+) to anon, authenticated;

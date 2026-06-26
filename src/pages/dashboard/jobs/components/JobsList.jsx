@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { 
   HiMagnifyingGlass, 
   HiMapPin, 
@@ -12,6 +11,7 @@ import {
   HiOutlineBookmark
 } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
+import { usePlanModal, useSubscriptionStatus } from '../../subscription';
 
 export default function JobsList({ jobs, usage, appliedJobIds, applicationStatusByJobId = {}, onUsageChange }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -99,11 +99,22 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
   const [isSaved, setIsSaved] = useState(false);
   const [applying, setApplying] = useState(false);
   const [applyError, setApplyError] = useState(null);
+  const { openPlanModal } = usePlanModal();
+  const { canUpgrade } = useSubscriptionStatus();
 
+  const needsPlan = !usage?.active;
   const atLimit = usage?.active && usage.limit >= 0 && usage.used >= usage.limit;
+  const showUpgradeAction =
+    applyError &&
+    (needsPlan || canUpgrade) &&
+    (/upgrade/i.test(applyError) || /subscription/i.test(applyError) || /limit/i.test(applyError));
 
   const handleApply = async () => {
     if (job.isExpired || applying || isApplied) return;
+    if (needsPlan) {
+      openPlanModal();
+      return;
+    }
     if (atLimit) {
       setApplyError('Application limit reached this month. Upgrade your plan for more.');
       return;
@@ -213,11 +224,15 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
           {applyError && (
             <p className="text-sm text-red-600 max-w-[200px] text-right">
               {applyError}
-              {applyError.includes('Upgrade') && (
-                <Link to="/pricing" className="block mt-1 text-[hsl(var(--nth-primary))] font-medium">
-                  Upgrade plan
-                </Link>
-              )}
+              {showUpgradeAction ? (
+                <button
+                  type="button"
+                  onClick={() => openPlanModal()}
+                  className="block mt-1 text-[hsl(var(--nth-primary))] font-medium hover:underline text-left sm:text-right w-full"
+                >
+                  {needsPlan ? 'Get a plan' : 'Upgrade plan'}
+                </button>
+              ) : null}
             </p>
           )}
           {job.isExpired ? (
@@ -232,13 +247,26 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
             }`}>
               {applicationStatus === 'shortlisted' ? 'Shortlisted' : 'Applied'}
             </span>
-          ) : atLimit ? (
-            <Link
-              to="/pricing"
+          ) : needsPlan ? (
+            <button
+              type="button"
+              onClick={() => openPlanModal()}
+              className="nth-btn-primary inline-block w-full sm:w-auto text-center px-5 py-2.5 text-sm font-medium"
+            >
+              Get a plan
+            </button>
+          ) : atLimit && canUpgrade ? (
+            <button
+              type="button"
+              onClick={() => openPlanModal()}
               className="inline-block w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium text-sm transition-all"
             >
               Limit reached – Upgrade
-            </Link>
+            </button>
+          ) : atLimit ? (
+            <span className="inline-block px-5 py-2.5 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm text-center">
+              Monthly limit reached
+            </span>
           ) : (
             <button
               type="button"

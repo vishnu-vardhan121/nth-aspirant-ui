@@ -22,7 +22,7 @@ export default function MessageNotification({ notification, onDismiss }) {
   return (
     <div
       role="alert"
-      className="fixed top-4 right-4 z-[100] w-full max-w-sm rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg shadow-slate-200/80 overflow-hidden"
+      className="fixed top-4 right-4 z-[200] w-full max-w-sm rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg shadow-slate-200/80 overflow-hidden"
       style={{ animation: 'messageNotificationIn 0.25s ease-out' }}
     >
       <div className="flex gap-3 p-4">

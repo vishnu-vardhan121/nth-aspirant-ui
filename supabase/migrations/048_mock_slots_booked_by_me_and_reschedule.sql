@@ -96,6 +96,7 @@ create index if not exists idx_mock_reschedule_requests_status on public.mock_re
 
 alter table public.mock_reschedule_requests enable row level security;
 
+drop policy if exists "mock_reschedule_requests_aspirant_insert_own" on public.mock_reschedule_requests;
 create policy "mock_reschedule_requests_aspirant_insert_own"
   on public.mock_reschedule_requests for insert
   with check (
@@ -105,6 +106,7 @@ create policy "mock_reschedule_requests_aspirant_insert_own"
     )
   );
 
+drop policy if exists "mock_reschedule_requests_aspirant_select_own" on public.mock_reschedule_requests;
 create policy "mock_reschedule_requests_aspirant_select_own"
   on public.mock_reschedule_requests for select
   using (
@@ -114,6 +116,7 @@ create policy "mock_reschedule_requests_aspirant_select_own"
     )
   );
 
+drop policy if exists "mock_reschedule_requests_admin_all" on public.mock_reschedule_requests;
 create policy "mock_reschedule_requests_admin_all"
   on public.mock_reschedule_requests for all
   using (public.is_admin())

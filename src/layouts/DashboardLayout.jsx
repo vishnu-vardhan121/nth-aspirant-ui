@@ -1,11 +1,12 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
 import DashboardNavbar from '../pages/dashboard/components/DashboardNavbar';
 import MessageNotification from '../components/MessageNotification';
 import { supabase } from '../lib/supabase';
-import { playMessageSound } from '../lib/messageSound';
+import { playMessageSound, primeMessageSound } from '../lib/messageSound';
+import { subscribeToAspirantMessages } from '../lib/messageRealtime';
 import {
   HiXMark,
   HiHome,
@@ -17,14 +18,19 @@ import {
   HiArrowRightOnRectangle,
 } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
+import { PlanModalProvider } from '../pages/dashboard/subscription';
+import { usePlanActivationCelebration } from '../pages/dashboard/subscription/hooks/usePlanActivationCelebration';
+import PlanActivatedCelebration from '../pages/dashboard/subscription/components/PlanActivatedCelebration';
+import { isPlanActivationMessage } from '../lib/paymentActivationRealtime';
+import { emitMessagesInvalidate } from '../lib/messagesEvents';
 
 const SIDEBAR_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
   { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
-  { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
-  { label: 'Applications', to: '/dashboard/applications', icon: HiClipboardDocumentList },
   { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
   { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
+  { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
+  { label: 'Applications', to: '/dashboard/applications', icon: HiClipboardDocumentList },
 ];
 
 function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true }) {
@@ -126,76 +132,67 @@ export default function DashboardLayout() {
     link: MESSAGES_PATH,
   });
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
+  const { celebration, closeCelebration } = usePlanActivationCelebration(user?.id);
 
   const dismissNotification = useCallback(() => {
     setMessageNotification((prev) => ({ ...prev, show: false }));
   }, []);
 
-  const channelRef = useRef(null);
+  useEffect(() => {
+    const prime = () => primeMessageSound();
+    window.addEventListener('pointerdown', prime, { once: true, passive: true });
+    window.addEventListener('keydown', prime, { once: true });
+    return () => {
+      window.removeEventListener('pointerdown', prime);
+      window.removeEventListener('keydown', prime);
+    };
+  }, []);
 
   useEffect(() => {
-    if (typeof supabase.channel !== 'function') return;
-
     let cancelled = false;
+    let unsubscribe = () => {};
+
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (cancelled) return;
       const uid = session?.user?.id ?? user?.id;
       if (!uid) return;
 
-      const uidStr = String(uid);
-      const ch = supabase
-        .channel(`dashboard-messages-${uidStr}`)
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'messages' },
-          (payload) => {
-            const row = payload?.new;
-            if (!row) return;
-            const rowTo = row.to_aspirant_id != null ? String(row.to_aspirant_id) : null;
-            const rowFrom = row.from_aspirant_id != null ? String(row.from_aspirant_id) : null;
-            const toMe = rowTo === uidStr;
-            const isBroadcast = row.to_aspirant_id == null && row.from_admin_id != null;
-            const isFromMe = rowFrom === uidStr;
-            if (!toMe && !isBroadcast) return;
-            if (isFromMe) return;
-            setMessageNotification((prev) => {
-              const onMessagesPage = window.location.pathname === MESSAGES_PATH;
-              if (onMessagesPage) return prev;
-              return {
-                show: true,
-                title: isBroadcast ? 'New message from Naveen Talent Hub Team' : 'New message',
-                bodyPreview: bodyPreview(row.body),
-                link: MESSAGES_PATH,
-              };
-            });
-            if (window.location.pathname !== MESSAGES_PATH) playMessageSound();
-          }
-        )
-        .subscribe((status) => {
-          if (status === 'CHANNEL_ERROR') {
-            console.warn('[Realtime] messages channel error – ensure Database → Replication has table "messages" in supabase_realtime.');
-          }
-        });
+      unsubscribe = subscribeToAspirantMessages(
+        uid,
+        (row) => {
+          const onMessagesPage = location.pathname === MESSAGES_PATH;
+          const isBroadcast = row.to_aspirant_id == null && row.from_admin_id != null;
+          const isPlanActivated = isPlanActivationMessage(row);
 
-      if (cancelled) {
-        supabase.removeChannel(ch);
-        return;
-      }
-      channelRef.current = ch;
+          emitMessagesInvalidate();
+
+          if (!onMessagesPage) {
+            setMessageNotification({
+              show: true,
+              title: isPlanActivated
+                ? 'Your plan is active!'
+                : isBroadcast
+                  ? 'New message from Naveen Talent Hub Team'
+                  : 'New message',
+              bodyPreview: bodyPreview(row.body),
+              link: MESSAGES_PATH,
+            });
+            void playMessageSound();
+          }
+        },
+        { channelId: `dashboard-messages-${uid}` },
+      );
     })();
 
     return () => {
       cancelled = true;
-      const ch = channelRef.current;
-      if (ch) {
-        supabase.removeChannel(ch);
-        channelRef.current = null;
-      }
+      unsubscribe();
     };
-  }, [user?.id]);
+  }, [user?.id, location.pathname]);
 
   const performSignOut = () => {
     dispatch(signOut());
@@ -208,6 +205,7 @@ export default function DashboardLayout() {
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
   return (
+    <PlanModalProvider>
     <div className="h-screen flex overflow-hidden bg-[rgb(var(--nth-bg-soft))]">
       {/* Desktop sidebar - hidden on mobile */}
       <aside
@@ -263,12 +261,17 @@ export default function DashboardLayout() {
       {/* Main: navbar + scrollable content */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <DashboardNavbar onMenuClick={() => setMobileSidebarOpen(true)} />
-        <div className="flex-1 min-h-0 overflow-auto p-4 sm:p-6 md:p-8">
+        <div className="nth-scroll-y flex-1 min-h-0 min-w-0 overflow-x-hidden p-4 sm:p-6 md:p-8">
           <Outlet />
         </div>
       </main>
 
       <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
+      <PlanActivatedCelebration
+        open={Boolean(celebration)}
+        plan={celebration?.plan}
+        onClose={closeCelebration}
+      />
 
       <SignOutConfirmModal
         open={signOutConfirmOpen}
@@ -276,5 +279,6 @@ export default function DashboardLayout() {
         onConfirm={performSignOut}
       />
     </div>
+    </PlanModalProvider>
   );
 }

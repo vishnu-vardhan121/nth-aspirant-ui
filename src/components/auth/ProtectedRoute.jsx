@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
+import { isEmailVerified } from '../../lib/authUtils';
 import { PageLoader } from '../ui/Loader';
 
 export default function ProtectedRoute({ children }) {
@@ -17,6 +18,11 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!isEmailVerified(user)) {
+    const email = encodeURIComponent(user.email ?? '');
+    return <Navigate to={`/verify-email?email=${email}`} replace />;
   }
 
   return children;

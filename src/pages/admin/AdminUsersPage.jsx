@@ -110,8 +110,49 @@ function UserProfileModal({ aspirantId, onClose }) {
                     <dt className="text-slate-500 flex items-center gap-1"><HiMapPin className="h-3.5 w-3" /> City</dt>
                     <dd className="text-slate-900">{profile.city ?? '—'}</dd>
                   </div>
+                  <div>
+                    <dt className="text-slate-500">Track</dt>
+                    <dd className="text-slate-900 capitalize">{profile.track ?? '—'}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">Target role</dt>
+                    <dd className="text-slate-900">{profile.primary_role ?? '—'}</dd>
+                  </div>
+                  {profile.track === 'experienced' && (
+                    <div>
+                      <dt className="text-slate-500">Experience</dt>
+                      <dd className="text-slate-900">{profile.experience_years != null ? `${profile.experience_years} years` : '—'}</dd>
+                    </div>
+                  )}
                 </dl>
               </section>
+              {(profile.linkedin_url || profile.portfolio_url || profile.bio) && (
+                <section>
+                  <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
+                    <HiBriefcase className="h-4 w-4 text-indigo-600" /> Links
+                  </h3>
+                  <dl className="space-y-2 text-sm">
+                    {profile.linkedin_url && (
+                      <div>
+                        <dt className="text-slate-500">LinkedIn</dt>
+                        <dd><a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all">{profile.linkedin_url}</a></dd>
+                      </div>
+                    )}
+                    {profile.portfolio_url && (
+                      <div>
+                        <dt className="text-slate-500">Portfolio</dt>
+                        <dd><a href={profile.portfolio_url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline break-all">{profile.portfolio_url}</a></dd>
+                      </div>
+                    )}
+                    {profile.bio && (
+                      <div>
+                        <dt className="text-slate-500">About</dt>
+                        <dd className="text-slate-900 whitespace-pre-wrap">{profile.bio}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </section>
+              )}
               <section>
                 <h3 className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
                   <HiAcademicCap className="h-4 w-4 text-indigo-600" /> Education

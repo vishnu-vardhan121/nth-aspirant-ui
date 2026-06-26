@@ -12,6 +12,7 @@ comment on table public.todays_interviews is
 drop policy if exists "todays_interviews_public_today" on public.todays_interviews;
 drop policy if exists "todays_interviews_public_week" on public.todays_interviews;
 drop policy if exists "todays_interviews_public_window" on public.todays_interviews;
+drop policy if exists "todays_interviews_public_ist_week" on public.todays_interviews;
 
 create policy "todays_interviews_public_ist_week"
   on public.todays_interviews for select

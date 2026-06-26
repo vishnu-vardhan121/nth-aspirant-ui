@@ -14,6 +14,14 @@ export default function AdminSettingsPage() {
   const [directInterviewLimits, setDirectInterviewLimits] = useState({ base: '', silver: '', gold: '' });
   const [directInterviewSaving, setDirectInterviewSaving] = useState(false);
   const [directInterviewMessage, setDirectInterviewMessage] = useState({ type: '', text: '' });
+  const [messageLimits, setMessageLimits] = useState({ base: '', silver: '', gold: '' });
+  const [messageLimitsSaving, setMessageLimitsSaving] = useState(false);
+  const [messageLimitsMessage, setMessageLimitsMessage] = useState({ type: '', text: '' });
+  const [paymentUpiId, setPaymentUpiId] = useState('');
+  const [paymentPayeeName, setPaymentPayeeName] = useState('Naveen Talent Hub');
+  const [paymentInstructions, setPaymentInstructions] = useState('');
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentMessage, setPaymentMessage] = useState({ type: '', text: '' });
 
   useEffect(() => {
     const fetchStatus = async () => {
@@ -28,6 +36,12 @@ export default function AdminSettingsPage() {
         supabase.rpc('get_job_applications_limit', { plan_name: 'silver' }).then((r) => r.data),
         supabase.rpc('get_job_applications_limit', { plan_name: 'gold' }).then((r) => r.data),
       ]);
+      const [msgBase, msgSilver, msgGold] = await Promise.all([
+        supabase.rpc('get_daily_message_limit', { plan_name: 'base' }).then((r) => r.data),
+        supabase.rpc('get_daily_message_limit', { plan_name: 'silver' }).then((r) => r.data),
+        supabase.rpc('get_daily_message_limit', { plan_name: 'gold' }).then((r) => r.data),
+      ]);
+      const { data: payCfg } = await supabase.rpc('get_payment_config');
       if (!signupError && signupData) {
         const lim = signupData.limit;
         setLimit(lim === -1 ? '' : String(lim));
@@ -43,6 +57,16 @@ export default function AdminSettingsPage() {
         silver: diSilver != null ? String(diSilver) : '',
         gold: diGold != null ? String(diGold) : '',
       });
+      setMessageLimits({
+        base: msgBase != null ? String(msgBase) : '',
+        silver: msgSilver != null ? String(msgSilver) : '',
+        gold: msgGold != null ? String(msgGold) : '',
+      });
+      if (payCfg?.ok) {
+        setPaymentUpiId(payCfg.upi_id || '');
+        setPaymentPayeeName(payCfg.payee_name || 'Naveen Talent Hub');
+        setPaymentInstructions(payCfg.instructions || '');
+      }
       setLoading(false);
     };
     fetchStatus();
@@ -92,6 +116,26 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const handleSaveMessageLimits = async (e) => {
+    e.preventDefault();
+    setMessageLimitsMessage({ type: '', text: '' });
+    const base = messageLimits.base.trim() === '' ? null : parseInt(messageLimits.base, 10);
+    const silver = messageLimits.silver.trim() === '' ? null : parseInt(messageLimits.silver, 10);
+    const gold = messageLimits.gold.trim() === '' ? null : parseInt(messageLimits.gold, 10);
+    if ((base != null && (isNaN(base) || base < -1)) || (silver != null && (isNaN(silver) || silver < -1)) || (gold != null && (isNaN(gold) || gold < -1))) {
+      setMessageLimitsMessage({ type: 'error', text: 'Enter numbers ≥ 0. Use -1 for unlimited.' });
+      return;
+    }
+    setMessageLimitsSaving(true);
+    const { data } = await supabase.rpc('set_message_limits', { p_base: base, p_silver: silver, p_gold: gold });
+    setMessageLimitsSaving(false);
+    if (data?.ok) {
+      setMessageLimitsMessage({ type: 'success', text: 'Message limits saved.' });
+    } else {
+      setMessageLimitsMessage({ type: 'error', text: data?.error ?? 'Failed to save.' });
+    }
+  };
+
   const handleSaveDirectInterviewLimits = async (e) => {
     e.preventDefault();
     setDirectInterviewMessage({ type: '', text: '' });
@@ -110,6 +154,25 @@ export default function AdminSettingsPage() {
     } else {
       setDirectInterviewMessage({ type: 'error', text: data?.error ?? 'Failed to save.' });
     }
+  };
+
+  const handleSavePaymentConfig = async (e) => {
+    e.preventDefault();
+    setPaymentMessage({ type: '', text: '' });
+    setPaymentSaving(true);
+    const { data, error } = await supabase.rpc('set_payment_config', {
+      p_config: {
+        upi_id: paymentUpiId.trim(),
+        payee_name: paymentPayeeName.trim() || 'Naveen Talent Hub',
+        instructions: paymentInstructions.trim(),
+      },
+    });
+    setPaymentSaving(false);
+    if (error || !data?.ok) {
+      setPaymentMessage({ type: 'error', text: data?.error || error?.message || 'Failed to save.' });
+      return;
+    }
+    setPaymentMessage({ type: 'success', text: 'Payment settings saved.' });
   };
 
   if (loading) {
@@ -166,7 +229,7 @@ export default function AdminSettingsPage() {
       <section className="rounded-xl border border-slate-200 bg-white p-6 max-w-md mt-8">
         <h2 className="text-lg font-semibold text-slate-900 mb-1">Mock limits per plan</h2>
         <p className="text-slate-600 text-sm mb-4">
-          Maximum mock interviews per subscription period. Base / Silver / Gold. Use -1 for unlimited.
+          Mocks allowed per subscription month (from each student&apos;s plan start anniversary). Base / Silver / Gold. Use -1 for unlimited.
         </p>
         <form onSubmit={handleSaveMockLimits} className="flex flex-wrap items-end gap-4">
           <div>
@@ -261,6 +324,117 @@ export default function AdminSettingsPage() {
         {directInterviewMessage.text && (
           <p className={`mt-3 text-sm ${directInterviewMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
             {directInterviewMessage.text}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 max-w-md mt-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-1">Message reply limits per plan</h2>
+        <p className="text-slate-600 text-sm mb-4">
+          Daily replies aspirants can send to the NTH team and job group chats. Mock interviewer chats are unlimited. Base / Silver / Gold. Use -1 for unlimited.
+        </p>
+        <form onSubmit={handleSaveMessageLimits} className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Base</label>
+            <input
+              type="number"
+              min="-1"
+              value={messageLimits.base}
+              onChange={(e) => setMessageLimits((f) => ({ ...f, base: e.target.value }))}
+              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Silver</label>
+            <input
+              type="number"
+              min="-1"
+              value={messageLimits.silver}
+              onChange={(e) => setMessageLimits((f) => ({ ...f, silver: e.target.value }))}
+              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Gold</label>
+            <input
+              type="number"
+              min="-1"
+              value={messageLimits.gold}
+              onChange={(e) => setMessageLimits((f) => ({ ...f, gold: e.target.value }))}
+              className="w-20 px-3 py-2 border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={messageLimitsSaving}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {messageLimitsSaving ? 'Saving…' : 'Save'}
+          </button>
+        </form>
+        {messageLimitsMessage.text && (
+          <p className={`mt-3 text-sm ${messageLimitsMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
+            {messageLimitsMessage.text}
+          </p>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 max-w-lg mt-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-1">UPI payments</h2>
+        <p className="text-slate-600 text-sm mb-4">
+          UPI ID and checkout copy for the dashboard subscription modal. Plan prices and durations are set in app code (
+          <code className="text-xs bg-slate-100 px-1 rounded">subscriptionProducts.js</code>
+          ).
+        </p>
+        <form onSubmit={handleSavePaymentConfig} className="space-y-4">
+          <div>
+            <label htmlFor="payment_upi" className="block text-sm font-medium text-slate-700 mb-1">
+              UPI ID
+            </label>
+            <input
+              id="payment_upi"
+              type="text"
+              value={paymentUpiId}
+              onChange={(e) => setPaymentUpiId(e.target.value)}
+              placeholder="merchant@upi"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+          <div>
+            <label htmlFor="payment_payee" className="block text-sm font-medium text-slate-700 mb-1">
+              Payee name
+            </label>
+            <input
+              id="payment_payee"
+              type="text"
+              value={paymentPayeeName}
+              onChange={(e) => setPaymentPayeeName(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+            />
+          </div>
+          <div>
+            <label htmlFor="payment_instructions" className="block text-sm font-medium text-slate-700 mb-1">
+              Instructions (shown on payment screen)
+            </label>
+            <textarea
+              id="payment_instructions"
+              rows={2}
+              value={paymentInstructions}
+              onChange={(e) => setPaymentInstructions(e.target.value)}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={paymentSaving}
+            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {paymentSaving ? 'Saving…' : 'Save payment settings'}
+          </button>
+        </form>
+        {paymentMessage.text && (
+          <p className={`mt-3 text-sm ${paymentMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>
+            {paymentMessage.text}
           </p>
         )}
       </section>

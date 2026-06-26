@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, ButtonLoader, Loader } from '../../components/ui/Loader';
 import { HiCalendarDays, HiLink, HiCheckCircle, HiUserGroup, HiClock, HiCalendar, HiClipboardDocumentList } from 'react-icons/hi2';
+import MockFeedbackModal, { createEmptyMockFeedbackForm } from '../../components/mock/MockFeedbackModal';
+import MockFeedbackDisplay from '../../components/mock/MockFeedbackDisplay';
+import { formatFeedbackSummary, submitMockFeedback } from '../../lib/mockFeedback';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -15,7 +18,7 @@ function formatDateTime(createdAt) {
   return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-const SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // used by slot forms only
 
 function StatCard({ label, value, icon: Icon }) {
   return (
@@ -65,7 +68,7 @@ export default function AdminMocksPage() {
   const [rejectRescheduleMessage, setRejectRescheduleMessage] = useState('');
   const [rejectRescheduleSaving, setRejectRescheduleSaving] = useState(false);
   const [completeModal, setCompleteModal] = useState(null);
-  const [completeForm, setCompleteForm] = useState({ technical_score: 5, communication_score: 5, problem_solving_score: 5, overall_score: 5, notes: '' });
+  const [completeForm, setCompleteForm] = useState(() => createEmptyMockFeedbackForm());
   const [completeSaving, setCompleteSaving] = useState(false);
   const [registrationDetailModal, setRegistrationDetailModal] = useState(null);
   const [registrationsPage, setRegistrationsPage] = useState(0);
@@ -190,30 +193,22 @@ export default function AdminMocksPage() {
 
   const openCompleteModal = (r) => {
     setCompleteModal(r);
-    setCompleteForm({ technical_score: 5, communication_score: 5, problem_solving_score: 5, overall_score: 5, notes: '' });
+    setCompleteForm(createEmptyMockFeedbackForm());
   };
 
-  const handleCompleteSubmit = async (e) => {
-    e.preventDefault();
+  const handleCompleteSubmit = async (form) => {
     if (!completeModal) return;
     setCompleteSaving(true);
-    const { data } = await supabase.rpc('submit_mock_feedback', {
-      p_registration_id: completeModal.id,
-      p_technical_score: completeForm.technical_score,
-      p_communication_score: completeForm.communication_score,
-      p_problem_solving_score: completeForm.problem_solving_score,
-      p_overall_score: completeForm.overall_score,
-      p_notes: completeForm.notes?.trim() || null,
-    });
+    const result = await submitMockFeedback(supabase, completeModal.id, form);
     setCompleteSaving(false);
-    if (data?.ok) {
+    if (result?.ok) {
       setCompleteModal(null);
       fetchMocks();
       fetchSlots();
       fetchCompletedReport();
       setFlashMsg('success', 'Mock completed with feedback. Student was notified.');
     } else {
-      setFlashMsg('error', data?.error ?? 'Failed.');
+      setFlashMsg('error', result?.error ?? 'Failed.');
     }
   };
 
@@ -396,7 +391,9 @@ export default function AdminMocksPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Mock interviews</h1>
-          <p className="text-slate-600 text-sm mt-0.5">Create slots, assign times, and manage reschedules.</p>
+          <p className="text-slate-600 text-sm mt-0.5">
+            Interviewers publish their own availability; use this page when you need to create slots on their behalf.
+          </p>
         </div>
       </div>
 
@@ -665,44 +662,17 @@ export default function AdminMocksPage() {
       )}
 
       {/* Complete mock – must enter scores (admin cannot mark completed without feedback) */}
-      {completeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Complete mock & add feedback</h3>
-            <p className="text-sm text-slate-600 mb-4">For {completeModal.aspirant_name ?? completeModal.aspirant_email}. You must enter scores (0–10) to mark as completed. The student will see them.</p>
-            <form onSubmit={handleCompleteSubmit} className="space-y-4">
-              {['technical_score', 'communication_score', 'problem_solving_score', 'overall_score'].map((key) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">{key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())} (0–10)</label>
-                  <select
-                    value={completeForm[key]}
-                    onChange={(e) => setCompleteForm((f) => ({ ...f, [key]: Number(e.target.value) }))}
-                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    required
-                  >
-                    {SCORE_OPTIONS.map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Feedback notes (optional)</label>
-                <textarea
-                  value={completeForm.notes}
-                  onChange={(e) => setCompleteForm((f) => ({ ...f, notes: e.target.value }))}
-                  rows={2}
-                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={completeSaving} className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50">{completeSaving ? 'Saving…' : 'Complete & notify student'}</button>
-                <button type="button" onClick={() => setCompleteModal(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <MockFeedbackModal
+        open={!!completeModal}
+        registration={completeModal}
+        value={completeForm}
+        onChange={setCompleteForm}
+        onSubmit={handleCompleteSubmit}
+        submitting={completeSaving}
+        onClose={() => setCompleteModal(null)}
+        title="Complete mock & add feedback"
+        submitLabel="Complete & notify student"
+      />
 
       {/* Reject reschedule request modal */}
       {rejectRescheduleModal && (
@@ -940,19 +910,9 @@ export default function AdminMocksPage() {
                     </a>
                   </div>
                 ) : null}
-                {registrationDetailModal.status === 'completed' && [registrationDetailModal.technical_score, registrationDetailModal.communication_score, registrationDetailModal.problem_solving_score, registrationDetailModal.overall_score].every((n) => n != null) && (
-                  <div className="rounded-xl bg-emerald-50/80 border border-emerald-200 p-4">
-                    <p className="text-xs font-semibold text-emerald-800 uppercase tracking-wider mb-2">Scores & feedback</p>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                      <div><dt className="text-slate-600">Technical</dt><dd className="font-medium text-slate-900">{registrationDetailModal.technical_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Communication</dt><dd className="font-medium text-slate-900">{registrationDetailModal.communication_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Problem solving</dt><dd className="font-medium text-slate-900">{registrationDetailModal.problem_solving_score} / 10</dd></div>
-                      <div><dt className="text-slate-600">Overall</dt><dd className="font-medium text-slate-900">{registrationDetailModal.overall_score} / 10</dd></div>
-                    </dl>
-                    {registrationDetailModal.completed_at && <p className="text-slate-600 text-xs mt-2">Completed {formatDateTime(registrationDetailModal.completed_at)}</p>}
-                    {registrationDetailModal.feedback_notes && <p className="text-slate-800 text-sm mt-2 whitespace-pre-wrap border-t border-emerald-200/60 pt-2">{registrationDetailModal.feedback_notes}</p>}
-                  </div>
-                )}
+                {registrationDetailModal.status === 'completed' ? (
+                  <MockFeedbackDisplay registration={registrationDetailModal} />
+                ) : null}
               </div>
             </div>
             {/* Footer: actions */}
@@ -1101,11 +1061,7 @@ export default function AdminMocksPage() {
                       <td className="px-4 py-2.5 text-slate-600">{r.interviewer_name ?? '—'}</td>
                       <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDateTime(r.scheduled_at)}</td>
                       <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDateTime(r.completed_at)}</td>
-                      <td className="px-4 py-2.5 text-slate-600">
-                        {[r.technical_score, r.communication_score, r.problem_solving_score, r.overall_score].every((n) => n != null)
-                          ? `${r.technical_score} / ${r.communication_score} / ${r.problem_solving_score} / ${r.overall_score}`
-                          : '—'}
-                      </td>
+                      <td className="px-4 py-2.5 text-slate-600">{formatFeedbackSummary(r)}</td>
                     </tr>
                   ))
                 )}
