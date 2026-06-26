@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import {
   consumeOAuthReturnPath,
+  clearOAuthCallbackHashFromUrl,
   getPostLoginPathForRole,
   readOAuthCallbackError,
 } from '../../lib/authUtils';
@@ -31,6 +32,7 @@ export default function OAuthCallbackPage() {
     const finish = async (session) => {
       if (done || !session?.user) return;
       done = true;
+      clearOAuthCallbackHashFromUrl();
 
       try {
         const returnAfterSignIn = consumeOAuthReturnPath('/dashboard');

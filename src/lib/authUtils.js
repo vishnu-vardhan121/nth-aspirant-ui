@@ -57,6 +57,14 @@ export function readOAuthCallbackError() {
   );
 }
 
+/** Remove #access_token from the address bar after Supabase establishes the session. */
+export function clearOAuthCallbackHashFromUrl() {
+  if (typeof window === 'undefined') return;
+  const hash = window.location.hash || '';
+  if (!hash.includes('access_token') && !hash.includes('error')) return;
+  window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+}
+
 /**
  * Safe return path from query: same-origin path only.
  * @param {URLSearchParams} searchParams
