@@ -218,3 +218,62 @@ export async function saveAspirantProfile(supabase, payload) {
 
   return upserted;
 }
+
+const PLACEHOLDER_CITIES = new Set(['pending', '—', '-', 'tbd']);
+
+/** True when onboarding form requirements are satisfied (resume, skills, LinkedIn, etc.). */
+export function isAspirantProfileComplete(profile) {
+  if (!profile) return false;
+
+  const name = String(profile.full_name ?? '').trim();
+  const city = String(profile.city ?? '').trim();
+  if (!name || PLACEHOLDER_CITIES.has(city.toLowerCase())) return false;
+  if (!String(profile.phone ?? '').trim()) return false;
+  if (!String(profile.primary_role ?? '').trim()) return false;
+  if (!Array.isArray(profile.skills) || profile.skills.length === 0) return false;
+  if (!String(profile.linkedin_url ?? '').trim()) return false;
+  if (!String(profile.resume_url ?? '').trim()) return false;
+
+  const grad = profile.education?.graduation;
+  if (!String(grad?.type ?? '').trim() || grad?.year == null || grad?.year === '') return false;
+
+  return true;
+}
+
+/** Show first-visit contact popup when name or mobile is missing (admin needs both). */
+export function needsAspirantContactDetails(profile) {
+  const name = String(profile?.full_name ?? '').trim();
+  const phone = String(profile?.phone ?? '').trim();
+  return !name || !phone;
+}
+
+/** Minimal save payload for contact popup — uses existing profile save RPC. */
+export function buildContactDetailsPayload({ fullName, phone, userId, email, profile }) {
+  const form = profile ? profileToForm(profile) : { ...defaultProfileForm, education: { ...defaultEducation } };
+  form.fullName = fullName.trim();
+  form.phone = phone.trim();
+  form.email = (email || form.email || '').trim();
+  if (!form.city.trim() || PLACEHOLDER_CITIES.has(form.city.trim().toLowerCase())) {
+    form.city = '—';
+  }
+  return buildAspirantPayload(form, userId);
+}
+
+export const MOBILE_VALIDATION_MESSAGE = 'Enter a valid 10-digit mobile number.';
+
+/** Strip +91 / leading 0 and return digits only. */
+export function normalizeMobileDigits(phone) {
+  let digits = String(phone ?? '').replace(/\D/g, '');
+  if (digits.length === 12 && digits.startsWith('91')) digits = digits.slice(2);
+  if (digits.length === 11 && digits.startsWith('0')) digits = digits.slice(1);
+  return digits;
+}
+
+/** Indian mobile: exactly 10 digits, starting with 6–9. */
+export function isValidMobileNumber(phone) {
+  const digits = normalizeMobileDigits(phone);
+  return digits.length === 10 && /^[6-9]/.test(digits);
+}
+
+/** @deprecated Use isValidMobileNumber */
+export const isValidContactPhone = isValidMobileNumber;

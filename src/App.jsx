@@ -4,6 +4,7 @@ import AuthListener from './components/auth/AuthListener';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import RequireAspirantProfile from './components/auth/RequireAspirantProfile';
+import RequireOnboardingAccess from './components/auth/RequireOnboardingAccess';
 import RequireAdminProfile from './components/auth/RequireAdminProfile';
 import RequireInterviewerProfile from './components/auth/RequireInterviewerProfile';
 import DashboardLayout from './layouts/DashboardLayout';
@@ -84,7 +85,9 @@ function App() {
           path="/onboarding"
           element={
             <ProtectedRoute>
-              <OnboardingPage />
+              <RequireOnboardingAccess>
+                <OnboardingPage />
+              </RequireOnboardingAccess>
             </ProtectedRoute>
           }
         />
