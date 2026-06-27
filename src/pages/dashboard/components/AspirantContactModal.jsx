@@ -5,10 +5,9 @@ import { setAspirantProfile } from '../../../store/slices/aspirantSlice';
 import { supabase } from '../../../lib/supabase';
 import { ButtonLoader } from '../../../components/ui/Loader';
 import {
-  buildContactDetailsPayload,
   isValidMobileNumber,
   MOBILE_VALIDATION_MESSAGE,
-  saveAspirantProfile,
+  saveAspirantContactDetails,
 } from '../../../lib/aspirantProfile';
 
 const inputClass =
@@ -48,15 +47,13 @@ export default function AspirantContactModal({ open, userId, email, profile, onS
     setSaving(true);
     setError('');
     try {
-      const payload = buildContactDetailsPayload({
+      const saved = await saveAspirantContactDetails(supabase, {
         fullName: trimmedName,
         phone: trimmedPhone,
         userId,
         email,
-        profile,
       });
-      const saved = await saveAspirantProfile(supabase, payload);
-      dispatch(setAspirantProfile(saved ?? payload));
+      dispatch(setAspirantProfile(saved));
       onSaved?.();
     } catch (err) {
       setError(err.message || 'Could not save your details. Please try again.');

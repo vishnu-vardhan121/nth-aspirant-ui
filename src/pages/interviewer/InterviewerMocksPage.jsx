@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageLoader } from '../../components/ui/Loader';
 import MockFeedbackModal, { createEmptyMockFeedbackForm } from '../../components/mock/MockFeedbackModal';
+import MockChatModal from '../../components/mock/MockChatModal';
 import { formatFeedbackSummary, submitMockFeedback } from '../../lib/mockFeedback';
+import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 
 function formatDateTime(iso) {
   if (!iso) return '—';
@@ -28,6 +30,7 @@ export default function InterviewerMocksPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
   const [feedbackModal, setFeedbackModal] = useState(null);
+  const [chatModal, setChatModal] = useState(null);
   const [feedbackForm, setFeedbackForm] = useState(() => createEmptyMockFeedbackForm());
   const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState({ type: '', text: '' });
@@ -147,6 +150,14 @@ export default function InterviewerMocksPage() {
                     {m.status === 'completed' ? formatFeedbackSummary(m) : '—'}
                   </td>
                   <td className="px-4 py-3 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setChatModal(m)}
+                      className="mr-2 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                    >
+                      <HiChatBubbleLeftRight className="h-3.5 w-3.5 text-indigo-600" />
+                      Chat
+                    </button>
                     {m.meet_link && (
                       <a href={m.meet_link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline mr-2">
                         Join
@@ -180,6 +191,8 @@ export default function InterviewerMocksPage() {
         title="Submit mock feedback"
         submitLabel="Submit & mark completed"
       />
+
+      <MockChatModal open={!!chatModal} registration={chatModal} onClose={() => setChatModal(null)} />
     </div>
   );
 }

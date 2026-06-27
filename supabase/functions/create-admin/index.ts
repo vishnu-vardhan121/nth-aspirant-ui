@@ -98,6 +98,7 @@ Deno.serve(async (req) => {
     });
 
     if (insertError) {
+      await supabaseAdmin.auth.admin.deleteUser(userId);
       return new Response(
         JSON.stringify({ error: insertError.message }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },

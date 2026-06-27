@@ -19,6 +19,7 @@ import {
 } from '../api/paymentOrders';
 import PlanOptionCard from './PlanOptionCard';
 import PayStep from './PayStep';
+import PaymentSubmittedStep from './PaymentSubmittedStep';
 import PlanCheckoutTerms from './PlanCheckoutTerms';
 import ExperienceBandSelector from './ExperienceBandSelector';
 
@@ -91,16 +92,20 @@ export default function ChoosePlanModal({ open, onClose }) {
   const panelWidth =
     step === 'pay'
       ? 'max-w-5xl'
-      : step === 'plans' && selectablePlans.length > 1
-        ? 'max-w-3xl'
-        : 'max-w-lg';
+      : step === 'submitted'
+        ? 'max-w-lg'
+        : step === 'plans' && selectablePlans.length > 1
+          ? 'max-w-3xl'
+          : 'max-w-lg';
 
   const subtitle =
-    step === 'plans'
-      ? noPlansToShow
-        ? 'You are already on the highest available plan.'
-        : 'Select a pack, accept the terms, then continue to payment.'
-      : 'Scan the QR or open your UPI app, then submit your transaction ID.';
+    step === 'submitted'
+      ? 'We received your payment details.'
+      : step === 'plans'
+        ? noPlansToShow
+          ? 'You are already on the highest available plan.'
+          : 'Select a pack, accept the terms, then continue to payment.'
+        : 'Scan the QR or open your UPI app, then submit your transaction ID.';
 
   const handleContinueToPayment = async () => {
     if (!pickedPlan || !isProductAvailable(pickedPlan)) return;
@@ -153,7 +158,7 @@ export default function ChoosePlanModal({ open, onClose }) {
         payerNote,
         screenshotFile,
       });
-      onClose();
+      setStep('submitted');
     } catch (e) {
       setError(e.message || 'Failed to submit proof');
     } finally {
@@ -169,7 +174,9 @@ export default function ChoosePlanModal({ open, onClose }) {
   const panelMaxHeight =
     step === 'pay'
       ? 'max-h-[min(92dvh,720px)] sm:max-h-[min(90vh,800px)] lg:max-h-[min(88vh,820px)]'
-      : 'max-h-[min(96dvh,920px)] sm:max-h-[min(94vh,900px)]';
+      : step === 'submitted'
+        ? 'max-h-[min(92dvh,640px)]'
+        : 'max-h-[min(96dvh,920px)] sm:max-h-[min(94vh,900px)]';
 
   return createPortal(
     <div
@@ -210,7 +217,7 @@ export default function ChoosePlanModal({ open, onClose }) {
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 sm:right-4 sm:top-4"
+            className="absolute right-3 top-3 rounded-xl p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 sm:right-4 sm:top-4"
             aria-label="Close"
           >
             <HiXMark className="h-5 w-5" />
@@ -277,6 +284,8 @@ export default function ChoosePlanModal({ open, onClose }) {
                 </>
               )}
             </>
+          ) : step === 'submitted' ? (
+            <PaymentSubmittedStep product={selectedProduct} onClose={onClose} />
           ) : (
             <PayStep
               product={selectedProduct}

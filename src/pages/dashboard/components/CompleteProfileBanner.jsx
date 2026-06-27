@@ -16,7 +16,7 @@ export default function CompleteProfileBanner({ className = '' }) {
       </div>
       <Link
         to={ONBOARDING_PATH}
-        className="mt-3 inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors hover:bg-amber-500 sm:mt-0"
+        className="mt-3 inline-flex w-full shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white no-underline transition-colors hover:bg-amber-500 sm:mt-0 sm:w-auto"
       >
         Complete profile
       </Link>
