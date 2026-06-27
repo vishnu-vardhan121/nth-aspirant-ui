@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { HiXMark } from 'react-icons/hi2';
 import HelpDeskForm from './HelpDeskForm';
 
-export default function HelpDeskModal({ open, onClose }) {
+export default function HelpDeskModal({ open, onClose, source = 'landing_page', initialValues }) {
   useEffect(() => {
     if (!open) return undefined;
     const previousOverflow = document.body.style.overflow;
@@ -48,7 +48,8 @@ export default function HelpDeskModal({ open, onClose }) {
           <HelpDeskForm
             key={open ? 'open' : 'closed'}
             variant="dark"
-            source="landing_page"
+            source={source}
+            initialValues={initialValues}
             submitLabel="Submit Issue"
             showCancel
             cancelLabel="Cancel"
