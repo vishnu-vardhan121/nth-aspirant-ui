@@ -212,13 +212,13 @@ export default function MessagesPage() {
   if (loading) return <PageLoader size="md" label="Loading messages…" className="py-8" />;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[400px]">
+    <div className="flex flex-col min-h-[280px] h-[calc(100dvh-11rem)] sm:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Messages</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Messages</h1>
         <button
           type="button"
           onClick={toggleSoundMuted}
-          className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           title={soundMuted ? 'Unmute new message sound' : 'Mute new message sound'}
           aria-label={soundMuted ? 'Unmute sound' : 'Mute sound'}
         >
@@ -308,7 +308,7 @@ export default function MessagesPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedChatKey(null)}
-                    className="sm:hidden p-1.5 -ml-1 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                    className="sm:hidden p-2.5 -ml-1 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
                     aria-label="Back to chats"
                   >
                     <HiArrowLeft className="w-5 h-5" />

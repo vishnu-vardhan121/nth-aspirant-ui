@@ -5,18 +5,23 @@ import { supabase } from '../../lib/supabase';
 import { setAuth } from '../../store/slices/authSlice';
 import { setTrack, setPlan } from '../../store/slices/appSlice';
 import { fetchAspirantProfile, clearAspirantProfile } from '../../store/slices/aspirantSlice';
-import { fetchAdminProfile, clearAdminProfile, setAdminLoading } from '../../store/slices/adminSlice';
-import { fetchInterviewerProfile, clearInterviewerProfile, setInterviewerLoading } from '../../store/slices/interviewerSlice';
+import { fetchAdminProfile, clearAdminProfile } from '../../store/slices/adminSlice';
+import { fetchInterviewerProfile, clearInterviewerProfile } from '../../store/slices/interviewerSlice';
+
+function loadUserProfiles(dispatch, userId) {
+  dispatch(fetchAspirantProfile(userId));
+  dispatch(fetchAdminProfile(userId));
+  dispatch(fetchInterviewerProfile(userId));
+}
 
 /**
- * Auth: login via Supabase. Then fetch aspirant; if no aspirant, fetch admin.
- * Aspirant → aspirant dashboard. Admin → admin panel.
+ * Auth: login via Supabase, then load aspirant + admin + interviewer profiles.
+ * Route guards prefer staff (admin/interviewer) over a stray aspirants row.
  */
 export default function AuthListener() {
   const dispatch = useDispatch();
-  const user = useAppSelector((state) => state.auth.user);
-  const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const adminProfile = useAppSelector((state) => state.admin.profile);
 
   useEffect(() => {
     let subscription;
@@ -24,7 +29,7 @@ export default function AuthListener() {
       supabase.auth.getSession().then(({ data: { session } }) => {
         dispatch(setAuth({ session, user: session?.user ?? null }));
         if (session?.user?.id) {
-          dispatch(fetchAspirantProfile(session.user.id));
+          loadUserProfiles(dispatch, session.user.id);
         } else {
           dispatch(clearAspirantProfile());
           dispatch(clearAdminProfile());
@@ -54,7 +59,7 @@ export default function AuthListener() {
         // profile sets aspirant/admin loading=true → Require* wrappers show full-page
         // loader and feels like a reload. Session is already updated above; skip refetch.
         if (event === 'TOKEN_REFRESHED') return;
-        dispatch(fetchAspirantProfile(session.user.id));
+        loadUserProfiles(dispatch, session.user.id);
       });
       subscription = result?.data?.subscription;
     } catch (err) {
@@ -66,26 +71,17 @@ export default function AuthListener() {
     return () => subscription?.unsubscribe?.();
   }, [dispatch]);
 
-  // When aspirant row exists, user is an aspirant — skip admin/interviewer fetch.
-  // When aspirant is done and null, fetch admin and interviewer for role routing.
+  // Sync aspirant track/plan only for non-staff users (admins may have a legacy aspirants row).
   useEffect(() => {
-    if (!user?.id || aspirantLoading) return;
-    if (aspirantProfile) {
-      dispatch(setAdminLoading(false));
-      dispatch(setInterviewerLoading(false));
-      return;
-    }
-    dispatch(fetchAdminProfile(user.id));
-    dispatch(fetchInterviewerProfile(user.id));
-  }, [user?.id, aspirantLoading, aspirantProfile, dispatch]);
-
-  // Sync aspirant track/plan from profile to app slice (clear when null — no default "base")
-  useEffect(() => {
-    if (aspirantProfile) {
+    const isStaff = Boolean(adminProfile);
+    if (aspirantProfile && !isStaff) {
       dispatch(setTrack(aspirantProfile.track ?? null));
       dispatch(setPlan(aspirantProfile.plan ?? null));
+    } else if (!aspirantProfile || isStaff) {
+      dispatch(setPlan(null));
+      dispatch(setTrack(null));
     }
-  }, [aspirantProfile, dispatch]);
+  }, [aspirantProfile, adminProfile, dispatch]);
 
   return null;
 }

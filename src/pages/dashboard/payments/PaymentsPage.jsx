@@ -255,7 +255,7 @@ export default function PaymentsPage() {
               <HiCreditCard className="h-6 w-6" aria-hidden />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight text-[rgb(var(--nth-text-primary-light))]">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[rgb(var(--nth-text-primary-light))]">
                 My payments
               </h1>
               <p className="mt-1 max-w-xl text-sm leading-relaxed text-slate-600">
@@ -318,7 +318,7 @@ export default function PaymentsPage() {
 
       {latestRejected ? (
         <div className="overflow-hidden rounded-xl border border-red-200 bg-red-50 shadow-sm">
-          <div className="flex gap-3 border-b border-red-200/80 bg-red-100/60 px-4 py-3.5">
+          <div className="flex flex-col gap-3 border-b border-red-200/80 bg-red-100/60 px-4 py-3.5 sm:flex-row sm:items-start">
             <HiXCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="font-semibold text-red-950">Payment rejected</p>
@@ -331,7 +331,7 @@ export default function PaymentsPage() {
               <button
                 type="button"
                 onClick={openPlanModal}
-                className="shrink-0 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-red-500"
+                className="shrink-0 self-start rounded-lg bg-red-600 px-4 py-2.5 min-h-[44px] text-xs font-bold text-white transition-colors hover:bg-red-500 sm:self-center"
               >
                 Pay again
               </button>
@@ -381,7 +381,7 @@ export default function PaymentsPage() {
                 key={tab.value}
                 type="button"
                 onClick={() => setFilter(tab.value)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`rounded-lg px-3.5 py-2 min-h-[40px] text-xs sm:text-sm font-semibold transition-colors ${
                   filter === tab.value
                     ? 'bg-slate-900 text-white'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80 hover:text-slate-900'

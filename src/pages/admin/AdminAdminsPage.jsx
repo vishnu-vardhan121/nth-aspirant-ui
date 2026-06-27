@@ -3,6 +3,7 @@ import { useAppSelector } from '../../store/hooks';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiXMark, HiPlus } from 'react-icons/hi2';
 import { supabase } from '../../lib/supabase';
+import { getEdgeFunctionErrorMessage } from '../../lib/edgeFunctionError';
 import { PageLoader } from '../../components/ui/Loader';
 
 const ROLES = [
@@ -85,13 +86,16 @@ function AddAdminModal({ onClose, onSuccess }) {
       },
     });
     setSubmitting(false);
-    if (error) {
-      const msg = error.message || 'Failed to create admin.';
-      setMessage({ type: 'error', text: msg === 'Invalid JWT' ? 'Session expired. Please sign out and sign in again.' : msg });
-      return;
-    }
-    if (data?.error) {
-      setMessage({ type: 'error', text: data.error });
+    const serverError = data?.error != null ? String(data.error) : null;
+    if (serverError || error) {
+      setMessage({
+        type: 'error',
+        text: getEdgeFunctionErrorMessage({
+          error,
+          data,
+          fallback: 'Failed to create admin.',
+        }),
+      });
       return;
     }
     onSuccess?.();

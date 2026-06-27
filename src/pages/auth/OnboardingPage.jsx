@@ -23,7 +23,26 @@ import {
   isValidMobileNumber,
   MOBILE_VALIDATION_MESSAGE,
   toFormEducation,
+  validateEducationFields,
+  validateJobDomains,
 } from '../../lib/aspirantProfile';
+import {
+  JOB_DOMAIN_SUGGESTIONS,
+  MAX_JOB_DOMAINS,
+  QUALIFICATION_OPTIONS,
+  EDUCATION_PATH_OPTIONS,
+  INTERMEDIATE_TYPE_OPTIONS,
+  COLLEGE_STANDING_OPTIONS,
+  GRADUATION_SCORE_TYPE_OPTIONS,
+  ROLE_SPECIALIZATION_SUGGESTIONS,
+  getBranchOptions,
+  defaultRoleTitleForDomain,
+  formatCollegeStandingOption,
+  parseCollegeStandingOption,
+  NOTICE_PERIOD_OPTIONS,
+  jobDomainLabel,
+  normalizeJobDomainEntry,
+} from '../../lib/aspirantFilterOptions';
 
 const inputClass =
   'w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--nth-primary))] focus:border-transparent';
@@ -32,7 +51,7 @@ const selectClass = inputClass + ' cursor-pointer';
 
 const STEPS = [
   { id: 'personal', title: 'Personal' },
-  { id: 'experience', title: 'Experience' },
+  { id: 'career', title: 'Career' },
   { id: 'education', title: 'Education' },
   { id: 'skills', title: 'Skills' },
   { id: 'finish', title: 'Links & resume' },
@@ -60,19 +79,19 @@ function SkillTags({ skills, onRemove, input, onInputChange, onAdd, placeholder,
           </span>
         ))}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), onAdd())}
-          className={inputClass}
+          className={`${inputClass} min-w-0 flex-1`}
           placeholder={placeholder}
         />
         <button
           type="button"
           onClick={onAdd}
-          className="px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-medium hover:bg-white/15 whitespace-nowrap"
+          className="w-full sm:w-auto shrink-0 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-medium hover:bg-white/15 sm:whitespace-nowrap"
         >
           Add
         </button>
@@ -97,6 +116,7 @@ export default function OnboardingPage() {
   const [form, setForm] = useState({ ...defaultProfileForm, education: { ...defaultEducation } });
   const [skillInput, setSkillInput] = useState('');
   const [secondarySkillInput, setSecondarySkillInput] = useState('');
+  const [domainInput, setDomainInput] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
   const [formReady, setFormReady] = useState(false);
 
@@ -181,7 +201,10 @@ export default function OnboardingPage() {
       if (!form.city.trim()) return 'Current city is required.';
     }
     if (index === 1) {
-      if (!form.primaryRole.trim()) return 'Target role is required.';
+      const domainErr = validateJobDomains(form);
+      if (domainErr) return domainErr;
+      if (!form.roleTitle.trim()) return 'Role title is required (e.g. Frontend Developer).';
+      if (!form.noticePeriod) return 'Select your notice period / joining timeline.';
       if (!form.isFresher) {
         if (!form.yearsExperience.trim()) return 'Years of experience is required.';
         const yrs = parseFloat(form.yearsExperience);
@@ -189,8 +212,38 @@ export default function OnboardingPage() {
       }
     }
     if (index === 2) {
-      const g = form.education.graduation;
-      if (!g.type.trim() || !g.year) return 'Graduation type and year are required.';
+      const eduErr = validateEducationFields(form);
+      if (eduErr) return eduErr;
+      if (!form.collegeName.trim()) return 'College name is required.';
+      if (!form.isCurrentlyStudying && !form.graduationYear) {
+        return 'Graduation year (batch) is required.';
+      }
+      if (form.isCurrentlyStudying && !form.expectedGraduationYear) {
+        return 'Expected graduation year is required.';
+      }
+      if (!form.isCurrentlyStudying) {
+        if (!form.graduationScore.trim()) return 'Enter your CGPA or percentage.';
+        const score = parseFloat(form.graduationScore);
+        if (!Number.isFinite(score) || score <= 0) return 'Enter a valid score.';
+        if (form.graduationScoreType === 'cgpa' && score > 10) {
+          return 'CGPA should be 10 or below.';
+        }
+        if (form.graduationScoreType === 'percentage' && score > 100) {
+          return 'Percentage should be 100 or below.';
+        }
+      }
+      if (form.educationPath === 'twelfth_degree' || form.educationPath === 'diploma_degree') {
+        if (!form.education.tenth.year) return '10th passing year is required.';
+      }
+      if (form.educationPath === 'twelfth_degree' && form.intermediateType === 'twelfth') {
+        if (!form.education.twelfth.year) return '12th passing year is required.';
+      }
+      if (
+        (form.educationPath === 'diploma_degree' || form.intermediateType === 'diploma')
+        && !form.education.diploma?.year
+      ) {
+        return 'Diploma passing year is required.';
+      }
     }
     if (index === 3) {
       if (form.skills.length === 0) return 'Add at least one primary skill.';
@@ -258,12 +311,106 @@ export default function OnboardingPage() {
       const profile = await saveAspirantProfile(supabase, payload);
       dispatch(setAspirantProfile(profile ?? payload));
       clearOnboardingDraft(session.user.id);
-      navigate('/dashboard', { replace: true });
+      navigate('/dashboard/profile', { replace: true });
     } catch (e) {
       setMessage({ type: 'error', text: e.message ?? 'Failed to save profile.' });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const branchOptions = getBranchOptions(form.highestQualification);
+
+  const handleQualificationChange = (qual) => {
+    setForm((f) => ({
+      ...f,
+      highestQualification: qual,
+      highestQualificationOther: qual === 'other' ? f.highestQualificationOther : '',
+      degreeBranch: '',
+      degreeBranchOther: '',
+    }));
+  };
+
+  const handleBranchChange = (branch) => {
+    setForm((f) => ({
+      ...f,
+      degreeBranch: branch,
+      degreeBranchOther: branch === 'other' ? f.degreeBranchOther : '',
+    }));
+  };
+
+  const handleCollegeStandingChange = (value) => {
+    const { premierInstituteType, instituteTier } = parseCollegeStandingOption(value);
+    setForm((f) => ({
+      ...f,
+      premierInstituteType,
+      instituteTier,
+    }));
+  };
+
+  const domainKey = (value) => String(value ?? '').trim().toLowerCase();
+
+  const toggleJobDomain = (value) => {
+    const normalized = normalizeJobDomainEntry(value);
+    if (!normalized) return;
+    setForm((f) => {
+      const key = domainKey(normalized);
+      const has = f.jobDomains.some((d) => domainKey(d) === key);
+      const jobDomains = has
+        ? f.jobDomains.filter((d) => domainKey(d) !== key)
+        : f.jobDomains.length >= MAX_JOB_DOMAINS
+          ? f.jobDomains
+          : [...f.jobDomains, normalized];
+      const updates = { jobDomains };
+      if (!f.roleTitle.trim() && jobDomains.length > 0) {
+        const title = defaultRoleTitleForDomain(jobDomains[0]);
+        if (title) {
+          updates.roleTitle = title;
+          updates.primaryRole = title;
+        }
+      }
+      return { ...f, ...updates };
+    });
+  };
+
+  const addCustomJobDomain = () => {
+    const normalized = normalizeJobDomainEntry(domainInput);
+    if (!normalized) return;
+    const key = domainKey(normalized);
+    if (form.jobDomains.some((d) => domainKey(d) === key)) {
+      setDomainInput('');
+      return;
+    }
+    if (form.jobDomains.length >= MAX_JOB_DOMAINS) return;
+    setForm((f) => {
+      const jobDomains = [...f.jobDomains, normalized];
+      const updates = { jobDomains };
+      if (!f.roleTitle.trim()) {
+        const title = defaultRoleTitleForDomain(normalized);
+        if (title) {
+          updates.roleTitle = title;
+          updates.primaryRole = title;
+        }
+      }
+      return { ...f, ...updates };
+    });
+    setDomainInput('');
+  };
+
+  const removeJobDomain = (domain) => {
+    setForm((f) => ({
+      ...f,
+      jobDomains: f.jobDomains.filter((d) => d !== domain),
+    }));
+  };
+
+  const toggleRoleSpec = (spec) => {
+    setForm((f) => {
+      const list = f.roleSpecializations.includes(spec)
+        ? f.roleSpecializations.filter((s) => s !== spec)
+        : [...f.roleSpecializations, spec];
+      return { ...f, roleSpecializations: list };
+    });
   };
 
   const progress = ((step + 1) / STEPS.length) * 100;
@@ -303,17 +450,20 @@ export default function OnboardingPage() {
           </div>
 
           <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
-            <div className="mb-3 flex justify-between gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-2 text-center text-xs font-medium text-slate-400 sm:hidden">
+              Step {step + 1} of {STEPS.length}: {STEPS[step].title}
+            </p>
+            <div className="mb-3 hidden gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:flex sm:justify-between">
               {STEPS.map((s, i) => (
                 <span
                   key={s.id}
-                  className={
+                  className={`shrink-0 ${
                     i === step
                       ? 'text-[hsl(var(--nth-primary))]'
                       : i < step
                         ? 'text-slate-300'
                         : ''
-                  }
+                  }`}
                 >
                   {s.title}
                 </span>
@@ -363,7 +513,7 @@ export default function OnboardingPage() {
 
             {step === 1 && (
               <div className="space-y-5">
-                <h2 className="text-lg font-semibold text-white">Experience & role</h2>
+                <h2 className="text-lg font-semibold text-white">Career & domain</h2>
                 <div className="flex flex-wrap gap-3">
                   <label className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border cursor-pointer transition-colors ${form.isFresher ? 'border-[hsl(var(--nth-primary))] bg-[hsl(var(--nth-primary))]/10 text-white' : 'border-white/10 text-slate-300'}`}>
                     <input type="radio" name="track" checked={form.isFresher} onChange={() => setField('isFresher', true)} className="sr-only" />
@@ -375,8 +525,105 @@ export default function OnboardingPage() {
                   </label>
                 </div>
                 <div>
-                  <label htmlFor="primaryRole" className={labelClass}>Target role *</label>
-                  <input id="primaryRole" type="text" value={form.primaryRole} onChange={(e) => setField('primaryRole', e.target.value)} className={inputClass} placeholder="e.g. Full Stack Developer, Java Backend" />
+                  <p className={labelClass}>
+                    Target domains * <span className="text-slate-500 font-normal">(up to {MAX_JOB_DOMAINS})</span>
+                  </p>
+                  <p className="text-xs text-slate-500 mb-2">
+                    Pick suggestions or type your own — e.g. Frontend, Backend, Data Engineering
+                  </p>
+                  {form.jobDomains.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {form.jobDomains.map((domain) => (
+                        <span
+                          key={domain}
+                          className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-white/10 text-slate-200 text-sm"
+                        >
+                          {jobDomainLabel(domain)}
+                          <button
+                            type="button"
+                            onClick={() => removeJobDomain(domain)}
+                            className="hover:text-white"
+                            aria-label={`Remove ${jobDomainLabel(domain)}`}
+                          >
+                            <HiXMark className="w-4 h-4" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {JOB_DOMAIN_SUGGESTIONS.map((o) => (
+                      <button
+                        key={o.value}
+                        type="button"
+                        onClick={() => toggleJobDomain(o.value)}
+                        disabled={
+                          form.jobDomains.length >= MAX_JOB_DOMAINS
+                          && !form.jobDomains.some((d) => domainKey(d) === domainKey(o.value))
+                        }
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+                          form.jobDomains.some((d) => domainKey(d) === domainKey(o.value))
+                            ? 'border-[hsl(var(--nth-primary))] bg-[hsl(var(--nth-primary))]/15 text-white'
+                            : 'border-white/15 text-slate-300 hover:border-white/30'
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      id="jobDomainCustom"
+                      type="text"
+                      value={domainInput}
+                      onChange={(e) => setDomainInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomJobDomain())}
+                      className={`${inputClass} min-w-0 flex-1`}
+                      placeholder="Type a domain and press Enter — e.g. Cloud, Cyber Security"
+                      disabled={form.jobDomains.length >= MAX_JOB_DOMAINS}
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomJobDomain}
+                      disabled={!domainInput.trim() || form.jobDomains.length >= MAX_JOB_DOMAINS}
+                      className="w-full sm:w-auto shrink-0 px-4 py-3 rounded-xl bg-white/10 border border-white/10 text-white font-medium hover:bg-white/15 sm:whitespace-nowrap disabled:opacity-40"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="roleTitle" className={labelClass}>Role title *</label>
+                  <input
+                    id="roleTitle"
+                    type="text"
+                    value={form.roleTitle}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setForm((f) => ({ ...f, roleTitle: v, primaryRole: v }));
+                    }}
+                    className={inputClass}
+                    placeholder="e.g. Frontend Developer"
+                  />
+                </div>
+                <div>
+                  <p className={labelClass}>Specializations (optional)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {ROLE_SPECIALIZATION_SUGGESTIONS.slice(0, 12).map((spec) => (
+                      <button
+                        key={spec}
+                        type="button"
+                        onClick={() => toggleRoleSpec(spec)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                          form.roleSpecializations.includes(spec)
+                            ? 'border-[hsl(var(--nth-primary))] bg-[hsl(var(--nth-primary))]/15 text-white'
+                            : 'border-white/15 text-slate-300 hover:border-white/30'
+                        }`}
+                      >
+                        {spec}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {!form.isFresher && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -408,6 +655,33 @@ export default function OnboardingPage() {
                     </select>
                   </div>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="noticePeriod" className={labelClass}>Notice period / joining *</label>
+                    <select
+                      id="noticePeriod"
+                      value={form.noticePeriod}
+                      onChange={(e) => setField('noticePeriod', e.target.value)}
+                      className={selectClass}
+                    >
+                      {NOTICE_PERIOD_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {form.noticePeriod && form.noticePeriod !== 'immediate' && (
+                    <div>
+                      <label htmlFor="lastWorkingDay" className={labelClass}>Last working day (optional)</label>
+                      <input
+                        id="lastWorkingDay"
+                        type="date"
+                        value={form.availableFrom}
+                        onChange={(e) => setField('availableFrom', e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  )}
+                </div>
                 {!form.isFresher && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -420,60 +694,192 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 )}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label htmlFor="salaryMin" className={labelClass}>Expected salary min (LPA)</label>
-                    <input id="salaryMin" type="text" value={form.expectedSalaryMin} onChange={(e) => setField('expectedSalaryMin', e.target.value)} className={inputClass} placeholder="e.g. 6" />
-                  </div>
-                  <div>
-                    <label htmlFor="salaryMax" className={labelClass}>Expected salary max (LPA)</label>
-                    <input id="salaryMax" type="text" value={form.expectedSalaryMax} onChange={(e) => setField('expectedSalaryMax', e.target.value)} className={inputClass} placeholder="e.g. 10" />
-                  </div>
-                  <div>
-                    <label htmlFor="availableFrom" className={labelClass}>Available from</label>
-                    <input id="availableFrom" type="date" value={form.availableFrom} onChange={(e) => setField('availableFrom', e.target.value)} className={inputClass} />
-                  </div>
-                </div>
               </div>
             )}
 
             {step === 2 && (
               <div className="space-y-5">
                 <h2 className="text-lg font-semibold text-white">Education</h2>
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="educationPath" className={labelClass}>Education path</label>
+                  <select
+                    id="educationPath"
+                    value={form.educationPath}
+                    onChange={(e) => setField('educationPath', e.target.value)}
+                    className={selectClass}
+                  >
+                    {EDUCATION_PATH_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {(form.educationPath === 'twelfth_degree' || form.educationPath === 'diploma_degree') && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className={labelClass}>10th marks</label>
+                        <input type="text" value={form.education.tenth.marks} onChange={(e) => updateEducation('tenth', 'marks', e.target.value)} className={inputClass} placeholder="e.g. 95" />
+                      </div>
+                      <div>
+                        <label className={labelClass}>10th year *</label>
+                        <input type="number" min="1990" max="2030" value={form.education.tenth.year || ''} onChange={(e) => updateEducation('tenth', 'year', e.target.value)} className={inputClass} placeholder="2018" />
+                      </div>
+                    </div>
+                    {form.educationPath === 'twelfth_degree' && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className={labelClass}>12th marks</label>
+                          <input type="text" value={form.education.twelfth.marks} onChange={(e) => updateEducation('twelfth', 'marks', e.target.value)} className={inputClass} placeholder="e.g. 92" />
+                        </div>
+                        <div>
+                          <label className={labelClass}>12th year *</label>
+                          <input type="number" min="1990" max="2030" value={form.education.twelfth.year || ''} onChange={(e) => updateEducation('twelfth', 'year', e.target.value)} className={inputClass} placeholder="2020" />
+                        </div>
+                      </div>
+                    )}
+                    {form.educationPath === 'diploma_degree' && (
+                      <div className="space-y-4 rounded-xl border border-white/10 p-4">
+                        <p className="text-sm font-medium text-slate-300">Diploma details</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className={labelClass}>Diploma branch</label>
+                            <input type="text" value={form.education.diploma.branch} onChange={(e) => updateEducation('diploma', 'branch', e.target.value)} className={inputClass} placeholder="CSE" />
+                          </div>
+                          <div>
+                            <label className={labelClass}>Diploma year *</label>
+                            <input type="number" min="1990" max="2030" value={form.education.diploma.year || ''} onChange={(e) => updateEducation('diploma', 'year', e.target.value)} className={inputClass} />
+                          </div>
+                        </div>
+                        <div>
+                          <label className={labelClass}>Diploma college</label>
+                          <input type="text" value={form.education.diploma.college} onChange={(e) => updateEducation('diploma', 'college', e.target.value)} className={inputClass} placeholder="Polytechnic name" />
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>10th marks</label>
-                    <input type="text" value={form.education.tenth.marks} onChange={(e) => updateEducation('tenth', 'marks', e.target.value)} className={inputClass} placeholder="e.g. 95" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>10th year</label>
-                    <input type="number" min="1990" max="2030" value={form.education.tenth.year || ''} onChange={(e) => updateEducation('tenth', 'year', e.target.value)} className={inputClass} placeholder="2018" />
+                    <label htmlFor="highestQualification" className={labelClass}>Highest qualification *</label>
+                    <select
+                      id="highestQualification"
+                      value={form.highestQualification}
+                      onChange={(e) => handleQualificationChange(e.target.value)}
+                      className={selectClass}
+                    >
+                      <option value="" className="bg-slate-900">Select qualification</option>
+                      {QUALIFICATION_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                {form.highestQualification === 'other' && (
                   <div>
-                    <label className={labelClass}>12th marks</label>
-                    <input type="text" value={form.education.twelfth.marks} onChange={(e) => updateEducation('twelfth', 'marks', e.target.value)} className={inputClass} placeholder="e.g. 92" />
+                    <label htmlFor="highestQualificationOther" className={labelClass}>Specify qualification *</label>
+                    <input
+                      id="highestQualificationOther"
+                      type="text"
+                      value={form.highestQualificationOther}
+                      onChange={(e) => setField('highestQualificationOther', e.target.value)}
+                      required
+                      className={inputClass}
+                      placeholder="e.g. B.Com, BBA"
+                    />
                   </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>12th year</label>
-                    <input type="number" min="1990" max="2030" value={form.education.twelfth.year || ''} onChange={(e) => updateEducation('twelfth', 'year', e.target.value)} className={inputClass} placeholder="2020" />
+                    <label htmlFor="degreeBranch" className={labelClass}>Branch / course *</label>
+                    <select
+                      id="degreeBranch"
+                      value={form.degreeBranch}
+                      onChange={(e) => handleBranchChange(e.target.value)}
+                      className={selectClass}
+                      disabled={!form.highestQualification}
+                    >
+                      <option value="" className="bg-slate-900">
+                        {form.highestQualification ? 'Select branch' : 'Select qualification first'}
+                      </option>
+                      {branchOptions.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {form.degreeBranch === 'other' && (
                   <div>
-                    <label className={labelClass}>Graduation type *</label>
-                    <input type="text" value={form.education.graduation.type} onChange={(e) => updateEducation('graduation', 'type', e.target.value)} className={inputClass} placeholder="B.Tech, BCA" />
+                    <label htmlFor="degreeBranchOther" className={labelClass}>Specify branch / course *</label>
+                    <input
+                      id="degreeBranchOther"
+                      type="text"
+                      value={form.degreeBranchOther}
+                      onChange={(e) => setField('degreeBranchOther', e.target.value)}
+                      required
+                      className={inputClass}
+                      placeholder="e.g. CSE, Mechanical, Electronics"
+                    />
                   </div>
+                )}
+                <div>
+                  <label htmlFor="collegeName" className={labelClass}>College / university name *</label>
+                  <input id="collegeName" type="text" value={form.collegeName} onChange={(e) => setField('collegeName', e.target.value)} className={inputClass} placeholder="e.g. JNTUH, IIT Hyderabad" />
+                </div>
+                <div>
+                  <label htmlFor="collegeStanding" className={labelClass}>College tier / institute</label>
+                  <select
+                    id="collegeStanding"
+                    value={formatCollegeStandingOption(form.premierInstituteType, form.instituteTier)}
+                    onChange={(e) => handleCollegeStandingChange(e.target.value)}
+                    className={selectClass}
+                  >
+                    {COLLEGE_STANDING_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value} className="bg-slate-900">
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className={labelClass}>Year *</label>
-                    <input type="number" min="1990" max="2030" value={form.education.graduation.year || ''} onChange={(e) => updateEducation('graduation', 'year', e.target.value)} className={inputClass} placeholder="2024" />
-                  </div>
-                  <div>
-                    <label className={labelClass}>Branch</label>
-                    <input type="text" value={form.education.graduation.branch} onChange={(e) => updateEducation('graduation', 'branch', e.target.value)} className={inputClass} placeholder="CSE" />
+                    <label htmlFor="graduationScoreType" className={labelClass}>Score type</label>
+                    <select id="graduationScoreType" value={form.graduationScoreType} onChange={(e) => setField('graduationScoreType', e.target.value)} className={selectClass}>
+                      {GRADUATION_SCORE_TYPE_OPTIONS.map((o) => (
+                        <option key={o.value} value={o.value} className="bg-slate-900">{o.label}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
+                <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.isCurrentlyStudying}
+                    onChange={(e) => setField('isCurrentlyStudying', e.target.checked)}
+                    className="rounded border-white/20"
+                  />
+                  I am currently studying (final year)
+                </label>
+                {form.isCurrentlyStudying ? (
+                  <div>
+                    <label htmlFor="expectedGraduationYear" className={labelClass}>Expected graduation year *</label>
+                    <input id="expectedGraduationYear" type="number" min="2020" max="2035" value={form.expectedGraduationYear} onChange={(e) => setField('expectedGraduationYear', e.target.value)} className={inputClass} placeholder="2025" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="graduationYear" className={labelClass}>Graduation year (batch) *</label>
+                      <input id="graduationYear" type="number" min="1990" max="2035" value={form.graduationYear} onChange={(e) => setField('graduationYear', e.target.value)} className={inputClass} placeholder="2024" />
+                    </div>
+                    <div>
+                      <label htmlFor="graduationScore" className={labelClass}>
+                        {form.graduationScoreType === 'percentage' ? 'Percentage' : 'CGPA'} *
+                      </label>
+                      <input id="graduationScore" type="number" step="0.01" min="0" value={form.graduationScore} onChange={(e) => setField('graduationScore', e.target.value)} className={inputClass} placeholder={form.graduationScoreType === 'percentage' ? '85' : '8.5'} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -22,7 +22,7 @@ export default function MessageNotification({ notification, onDismiss }) {
   return (
     <div
       role="alert"
-      className="fixed top-4 right-4 z-[200] w-full max-w-sm rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg shadow-slate-200/80 overflow-hidden"
+      className="fixed top-4 inset-x-4 z-[200] mx-auto max-w-sm rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg shadow-slate-200/80 overflow-hidden"
       style={{ animation: 'messageNotificationIn 0.25s ease-out' }}
     >
       <div className="flex gap-3 p-4">
@@ -47,7 +47,7 @@ export default function MessageNotification({ notification, onDismiss }) {
         <button
           type="button"
           onClick={onDismiss}
-          className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors shrink-0"
+          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors shrink-0"
           aria-label="Dismiss"
         >
           <HiXMark className="w-5 h-5" />

@@ -80,7 +80,7 @@ export default function PlanActivatedCelebration({ open, plan, needsOnboarding =
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute right-3 top-3 rounded-xl p-2 text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                className="absolute right-3 top-3 rounded-xl p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-white/80 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Close"
               >
                 <HiXMark className="h-5 w-5" />

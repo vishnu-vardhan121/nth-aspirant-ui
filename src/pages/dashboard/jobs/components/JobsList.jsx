@@ -174,7 +174,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
             {/* Save Button */}
             <button 
               onClick={() => setIsSaved(!isSaved)}
-              className="p-1.5 rounded-full hover:bg-[rgb(var(--nth-bg-soft))] text-[rgb(var(--nth-text-muted-light))] transition-colors"
+              className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-[rgb(var(--nth-bg-soft))] text-[rgb(var(--nth-text-muted-light))] transition-colors shrink-0"
             >
               {isSaved ? (
                 <HiBookmark className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
@@ -228,7 +228,7 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
         {/* Action */}
         <div className="pt-4 sm:pt-0 sm:self-center flex shrink-0 flex-col items-end gap-1">
           {applyError && (
-            <p className="text-sm text-red-600 max-w-[200px] text-right">
+            <p className="text-sm text-red-600 max-w-full sm:max-w-[200px] text-left sm:text-right">
               {applyError}
               {showUpgradeAction ? (
                 <button
