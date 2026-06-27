@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { usePlanModal, useSubscriptionStatus } from '../subscription';
-import { HiBell, HiChevronDown, HiBars3 } from 'react-icons/hi2';
+import { HiBell, HiChevronDown, HiBars3, HiLifebuoy } from 'react-icons/hi2';
 
 const PLAN_LABELS = { base: 'Base', silver: 'Silver', gold: 'Gold' };
 const TRACK_LABELS = { fresher: 'Fresher', experienced: 'Experienced' };
@@ -66,6 +66,17 @@ export default function DashboardNavbar({ onMenuClick }) {
             {hasActivePlan ? 'Upgrade' : 'Get a plan'}
             <HiChevronDown className="w-3.5 h-3.5 -rotate-90" />
           </button>
+        ) : null}
+
+        {hasActivePlan ? (
+          <Link
+            to="/dashboard/messages?help=1"
+            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+            title="Help & support"
+          >
+            <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
+            <span className="hidden sm:inline">Help</span>
+          </Link>
         ) : null}
 
         <button
