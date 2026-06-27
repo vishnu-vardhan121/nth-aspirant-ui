@@ -86,6 +86,7 @@ export default function DashboardNavbar({ onMenuClick }) {
             to="/dashboard/messages?help=1"
             className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
             title="Help & support"
+            aria-label="Help and support"
           >
             <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
             <span className="hidden sm:inline">Help</span>
@@ -97,6 +98,7 @@ export default function DashboardNavbar({ onMenuClick }) {
               onClick={() => setHelpModalOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
               title="Help & support"
+              aria-label="Help and support"
             >
               <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
               <span className="hidden sm:inline">Help</span>
