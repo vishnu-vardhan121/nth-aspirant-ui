@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiXMark } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
+import { useModalBackdropClose } from '../../../../hooks/useModalBackdropClose';
+import { clearFormDraft, loadFormDraft, saveFormDraft } from '../../../../lib/formDraft';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,16 +20,34 @@ function isValidMobile(value) {
 const REGISTRATION_CLOSED_MESSAGE = 'Registrations are closed for today. Please try again after 24 hours.';
 
 export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
-  const [form, setForm] = useState({
-    name: '',
-    looking_for_role: '',
-    email: '',
-    contact_number: '',
-    graduation_pass: '',
-    current_company: '',
-    experience_years: '',
-    current_ctc: '',
-    message: '',
+  const { backdropProps } = useModalBackdropClose(onClose);
+  const draftKey = `nth-lead:${plan?.planId ?? 'plan'}:${track ?? 'track'}`;
+  const [form, setForm] = useState(() => {
+    const draft = loadFormDraft(draftKey);
+    return draft && typeof draft === 'object'
+      ? {
+          name: '',
+          looking_for_role: '',
+          email: '',
+          contact_number: '',
+          graduation_pass: '',
+          current_company: '',
+          experience_years: '',
+          current_ctc: '',
+          message: '',
+          ...draft,
+        }
+      : {
+          name: '',
+          looking_for_role: '',
+          email: '',
+          contact_number: '',
+          graduation_pass: '',
+          current_company: '',
+          experience_years: '',
+          current_ctc: '',
+          message: '',
+        };
   });
   const [message, setMessage] = useState({ type: '', text: '' });
   const [submitting, setSubmitting] = useState(false);
@@ -41,6 +61,10 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
     experience_years: '',
     current_ctc: '',
   });
+
+  useEffect(() => {
+    saveFormDraft(draftKey, form);
+  }, [draftKey, form]);
   const [registrationAllowed, setRegistrationAllowed] = useState(null);
   const [limitMessage, setLimitMessage] = useState('');
 
@@ -173,6 +197,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
     setSubmitting(false);
     if (data?.ok) {
       onSuccess?.();
+      clearFormDraft(draftKey);
       onClose?.();
     } else {
       setMessage({ type: 'error', text: data?.error ?? 'Something went wrong. Please try again.' });
@@ -186,7 +211,7 @@ export default function LeadFormModal({ plan, track, onClose, onSuccess }) {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm"
-        onClick={onClose}
+        {...backdropProps}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}

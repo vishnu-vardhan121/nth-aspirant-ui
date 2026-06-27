@@ -13,6 +13,7 @@ import {
   HiMapPin,
 } from 'react-icons/hi2';
 import { supabase } from '../../../../lib/supabase';
+import { useModalBackdropClose } from '../../../../hooks/useModalBackdropClose';
 
 const RESUME_ACCEPT = '.pdf,.doc,.docx';
 const RESUME_MAX_SIZE_MB = 5;
@@ -25,6 +26,7 @@ const sectionTitleClass =
   'md:col-span-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-indigo-600 mb-1';
 
 export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, onClose }) {
+  const { backdropProps, fileInputGuardProps } = useModalBackdropClose(onClose);
   const [capacityClosed, setCapacityClosed] = useState(false);
 
   useEffect(() => {
@@ -221,7 +223,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
         <div
           className="absolute inset-0 bg-slate-900/55 backdrop-blur-[3px]"
           aria-hidden
-          onClick={onClose}
+          {...backdropProps}
         />
         <div
           className="relative z-10 w-full max-w-md rounded-3xl bg-white p-8 md:p-10 text-center shadow-2xl shadow-indigo-950/20 ring-1 ring-slate-200/80"
@@ -253,7 +255,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
       <div
         className="absolute inset-0 bg-slate-900/55 backdrop-blur-[3px]"
         aria-hidden
-        onClick={onClose}
+        {...backdropProps}
       />
       <div
         role="dialog"
@@ -421,6 +423,7 @@ export default function FreeJobApplicationForm({ jobId, jobTitle, jobCompany, on
                     type="file"
                     accept={RESUME_ACCEPT}
                     onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    {...fileInputGuardProps}
                     className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
                   />
                   <div

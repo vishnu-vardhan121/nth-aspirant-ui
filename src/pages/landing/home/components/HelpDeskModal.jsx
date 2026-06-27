@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { HiXMark } from 'react-icons/hi2';
 import HelpDeskForm from './HelpDeskForm';
+import { useModalBackdropClose } from '../../../../hooks/useModalBackdropClose';
 
 export default function HelpDeskModal({ open, onClose, source = 'landing_page', initialValues }) {
+  const { backdropProps } = useModalBackdropClose(onClose);
   useEffect(() => {
     if (!open) return undefined;
     const previousOverflow = document.body.style.overflow;
@@ -22,7 +24,7 @@ export default function HelpDeskModal({ open, onClose, source = 'landing_page', 
   return (
     <div
       className="fixed inset-0 z-120 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
-      onClick={onClose}
+      {...backdropProps}
       role="presentation"
     >
       <div

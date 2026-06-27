@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { HiCheckCircle } from 'react-icons/hi2';
 import { ButtonLoader } from '../../../../components/ui/Loader';
 import { formatInr } from '../data/subscriptionProducts';
@@ -41,6 +41,7 @@ function ProofFields({
   confirmed,
   setConfirmed,
   product,
+  fileInputGuardProps,
 }) {
   return (
     <div className="space-y-4">
@@ -85,6 +86,7 @@ function ProofFields({
           type="file"
           accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
           onChange={handleFileChange}
+          {...fileInputGuardProps}
           className="block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2.5 file:text-sm file:font-semibold file:text-indigo-700"
         />
         {screenshotFile ? (
@@ -128,13 +130,44 @@ function SubmitBlock({ loading, disabled, className = '' }) {
   );
 }
 
-export default function PayStep({ product, paymentRef, paymentConfig, loading, error, onSubmitProof }) {
+export default function PayStep({
+  product,
+  paymentRef,
+  paymentConfig,
+  loading,
+  error,
+  onSubmitProof,
+  fileInputGuardProps = {},
+}) {
+  const draftKey = paymentRef ? `nth_pay_draft_${paymentRef}` : null;
   const [utr, setUtr] = useState('');
   const [payerNote, setPayerNote] = useState('');
   const [screenshotFile, setScreenshotFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
   const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (!draftKey) return;
+    try {
+      const raw = sessionStorage.getItem(draftKey);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (typeof draft.utr === 'string') setUtr(draft.utr);
+      if (typeof draft.payerNote === 'string') setPayerNote(draft.payerNote);
+      if (typeof draft.confirmed === 'boolean') setConfirmed(draft.confirmed);
+    } catch {
+      /* ignore corrupt draft */
+    }
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!draftKey) return;
+    sessionStorage.setItem(
+      draftKey,
+      JSON.stringify({ utr, payerNote, confirmed }),
+    );
+  }, [draftKey, utr, payerNote, confirmed]);
 
   const handleFileChange = (e) => {
     setFileError('');
@@ -169,6 +202,7 @@ export default function PayStep({ product, paymentRef, paymentConfig, loading, e
       return;
     }
     await onSubmitProof({ utr: trimmed, payerNote: payerNote.trim(), screenshotFile });
+    if (draftKey) sessionStorage.removeItem(draftKey);
   };
 
   const displayError = localError || error;
@@ -185,6 +219,7 @@ export default function PayStep({ product, paymentRef, paymentConfig, loading, e
     confirmed,
     setConfirmed,
     product,
+    fileInputGuardProps,
   };
 
   return (
