@@ -19,7 +19,7 @@ import {
   HiArrowRightOnRectangle,
 } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
-import { PlanModalProvider, usePlanModal } from '../pages/dashboard/subscription';
+import { usePlanModal } from '../pages/dashboard/subscription';
 import { usePlanActivationCelebration } from '../pages/dashboard/subscription/hooks/usePlanActivationCelebration';
 import { usePaymentRejectionNotice } from '../pages/dashboard/subscription/hooks/usePaymentRejectionNotice';
 import PlanActivatedCelebration from '../pages/dashboard/subscription/components/PlanActivatedCelebration';
@@ -284,7 +284,6 @@ export default function DashboardLayout() {
   const closeMobileSidebar = () => setMobileSidebarOpen(false);
 
   return (
-    <PlanModalProvider>
     <div className="h-screen flex overflow-hidden bg-[rgb(var(--nth-bg-soft))]">
       {/* Desktop sidebar - hidden on mobile */}
       <aside
@@ -364,6 +363,5 @@ export default function DashboardLayout() {
         onConfirm={performSignOut}
       />
     </div>
-    </PlanModalProvider>
   );
 }

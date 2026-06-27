@@ -22,8 +22,8 @@ export default function AspirantContactModal({ open, userId, email, profile, onS
 
   useEffect(() => {
     if (!open) return;
-    setFullName(String(profile?.full_name ?? '').trim());
-    setPhone(String(profile?.phone ?? '').trim());
+    setFullName((prev) => prev || String(profile?.full_name ?? '').trim());
+    setPhone((prev) => prev || String(profile?.phone ?? '').trim());
     setError('');
     setSaving(false);
   }, [open, profile?.full_name, profile?.phone]);
