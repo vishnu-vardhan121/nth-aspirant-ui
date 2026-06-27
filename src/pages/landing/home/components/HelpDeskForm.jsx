@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../../lib/supabase';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -75,13 +75,31 @@ export default function HelpDeskForm({
   successDisplay = 'inline',
   className = '',
   idPrefix = 'help-desk',
+  initialValues,
 }) {
   const styles = VARIANT_STYLES[variant] ?? VARIANT_STYLES.dark;
-  const [form, setForm] = useState(INITIAL_FORM);
+
+  const buildInitialForm = () => ({
+    ...INITIAL_FORM,
+    name: String(initialValues?.name ?? '').trim(),
+    email: String(initialValues?.email ?? '').trim(),
+    phone: initialValues?.phone ? normalizePhone(String(initialValues.phone)) : '',
+  });
+
+  const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10);
+
+  const [form, setForm] = useState(buildInitialForm);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    setForm(buildInitialForm());
+    setErrors({});
+    setSubmitError('');
+    setSubmitted(false);
+  }, [initialValues?.name, initialValues?.email, initialValues?.phone]);
 
   const validateField = (field, value) => {
     const trimmed = (value ?? '').trim();
@@ -115,8 +133,6 @@ export default function HelpDeskForm({
     return Object.keys(nextErrors).length === 0;
   };
 
-  const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10);
-
   const handleChange = (field, value) => {
     const nextValue = field === 'phone' ? normalizePhone(value) : value;
     setForm((prev) => ({ ...prev, [field]: nextValue }));
@@ -125,7 +141,7 @@ export default function HelpDeskForm({
   };
 
   const resetForm = () => {
-    setForm(INITIAL_FORM);
+    setForm(buildInitialForm());
     setErrors({});
     setSubmitError('');
     setSubmitting(false);
@@ -160,7 +176,7 @@ export default function HelpDeskForm({
     }
 
     setSubmitted(true);
-    setForm(INITIAL_FORM);
+    setForm(buildInitialForm());
     onSuccess?.(data);
   };
 
