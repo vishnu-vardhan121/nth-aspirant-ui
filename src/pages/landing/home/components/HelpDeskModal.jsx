@@ -14,6 +14,11 @@ export default function HelpDeskModal({ open, onClose, source = 'landing_page', 
 
   if (!open) return null;
 
+  const subtitle =
+    source === 'dashboard'
+      ? 'We will reply using your account email or phone.'
+      : 'Share your issue. Our team will contact you.';
+
   return (
     <div
       className="fixed inset-0 z-120 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-md"
@@ -32,7 +37,7 @@ export default function HelpDeskModal({ open, onClose, source = 'landing_page', 
             <h2 id="help-desk-title" className="text-lg font-semibold">
               Help Desk
             </h2>
-            <p className="mt-1 text-sm text-slate-300">Share your issue. Our team will contact you.</p>
+            <p className="mt-1 text-sm text-slate-300">{subtitle}</p>
           </div>
           <button
             type="button"
