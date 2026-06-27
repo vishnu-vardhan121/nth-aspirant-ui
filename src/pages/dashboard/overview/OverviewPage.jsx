@@ -98,7 +98,7 @@ export default function OverviewPage() {
   return (
     <div className="space-y-6 sm:space-y-8">
       <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm">
-        <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Overview</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Overview</h1>
         <p className="mt-1 text-sm text-slate-600">
           Track your progress, monitor completions, and quickly jump to your latest activity.
         </p>

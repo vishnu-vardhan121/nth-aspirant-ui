@@ -33,7 +33,7 @@ export default function DashboardNavbar({ onMenuClick }) {
       <button
         type="button"
         onClick={() => onMenuClick?.()}
-        className="md:hidden p-2 -ml-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
+        className="md:hidden p-2.5 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 transition-colors"
         aria-label="Open menu"
       >
         <HiBars3 className="w-6 h-6" />
@@ -61,7 +61,7 @@ export default function DashboardNavbar({ onMenuClick }) {
           <button
             type="button"
             onClick={handlePlanClick}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[hsl(var(--nth-primary))] hover:underline"
+            className="inline-flex items-center gap-1 px-2.5 py-2 min-h-[44px] text-xs font-semibold text-[hsl(var(--nth-primary))] hover:underline"
           >
             {hasActivePlan ? 'Upgrade' : 'Get a plan'}
             <HiChevronDown className="w-3.5 h-3.5 -rotate-90" />
@@ -70,7 +70,7 @@ export default function DashboardNavbar({ onMenuClick }) {
 
         <button
           type="button"
-          className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           aria-label="Notifications"
         >
           <HiBell className="w-5 h-5" />
@@ -78,14 +78,11 @@ export default function DashboardNavbar({ onMenuClick }) {
 
         <Link
           to="/dashboard/profile"
-          className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 shadow-sm transition-opacity hover:opacity-90"
-          style={{
-            background: `linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)`,
-          }}
+          className="flex h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-indigo-600 text-base font-bold leading-none text-white shadow-md ring-2 ring-indigo-100 transition-colors hover:bg-indigo-700"
           title="My profile"
           aria-label="My profile"
         >
-          {initial}
+          <span className="select-none text-white">{initial}</span>
         </Link>
       </div>
     </header>

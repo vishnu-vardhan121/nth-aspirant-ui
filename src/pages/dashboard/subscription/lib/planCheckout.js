@@ -34,6 +34,7 @@ export function getSelectablePlans(profile, plan, hasActivePlan, experienceBand)
 }
 
 export function getPlanModalTitle({ step, productName, hasActivePlan, plan }) {
+  if (step === 'submitted') return 'Payment submitted';
   if (step === 'pay' && productName) return `Pay for ${productName}`;
   if (hasActivePlan && plan === 'base') return 'Upgrade your plan';
   if (!hasActivePlan) return 'Choose your plan';

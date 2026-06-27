@@ -222,14 +222,14 @@ export default function MocksPage() {
       {showCompleteProfileBanner ? <CompleteProfileBanner /> : null}
 
       {/* Header: title, info, usage, actions */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Mock Interviews</h1>
-          <div className="relative" ref={infoRef}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Mock Interviews</h1>
+          <div className="relative shrink-0" ref={infoRef}>
             <button
               type="button"
               onClick={() => setInfoOpen((o) => !o)}
-              className="p-1 rounded-full text-[rgb(var(--nth-text-muted-light))] hover:text-[hsl(var(--nth-primary))] hover:bg-[hsl(var(--nth-primary))]/10"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[rgb(var(--nth-text-muted-light))] hover:text-[hsl(var(--nth-primary))] hover:bg-[hsl(var(--nth-primary))]/10"
               aria-label="How mocks work"
             >
               <HiInformationCircle className="w-5 h-5" />
@@ -237,7 +237,7 @@ export default function MocksPage() {
             {infoOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setInfoOpen(false)} aria-hidden="true" />
-                <div className="absolute left-0 top-full mt-1 z-50 w-72 rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left">
+                <div className="absolute left-0 top-full z-50 mt-1 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left sm:w-72">
                   <p className="text-xs font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">How mocks work</p>
                   <ul className="text-xs text-[rgb(var(--nth-text-secondary-light))] space-y-1.5">
                     <li><strong>Allowance</strong> — {usage?.limit >= 0 ? `${usage.limit} mocks per subscription month` : 'Unlimited mocks'} (scheduled + completed count).</li>
@@ -251,7 +251,7 @@ export default function MocksPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
           {usage?.active && (
             <span className="text-sm text-[rgb(var(--nth-text-muted-light))]">
               {usage.used}{usage.limit >= 0 ? ` / ${usage.limit}` : ''} mocks this month
@@ -261,7 +261,7 @@ export default function MocksPage() {
             <button
               type="button"
               onClick={openRequestForm}
-              className={`px-4 py-2 text-sm font-medium ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
+              className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-center ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
             >
               {!profileComplete ? 'Complete profile to request mock' : 'Request for mock'}
             </button>
@@ -339,7 +339,7 @@ export default function MocksPage() {
             <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">Request for mock</h3>
             <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">Choose your preferred date and time. Admin will assign a slot and notify you.</p>
             <form onSubmit={handleRequestWithoutSlot} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Preferred date</label>
                   <input
@@ -373,9 +373,9 @@ export default function MocksPage() {
               {requestMessage.text && (
                 <p className={`text-sm ${requestMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{requestMessage.text}</p>
               )}
-              <div className="flex gap-2 justify-end">
-                <button type="button" onClick={closeRequestForm} disabled={requestSaving} className="nth-btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-50">Cancel</button>
-                <button type="submit" disabled={requestSaving} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">{requestSaving ? 'Submitting…' : 'Submit'}</button>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+                <button type="button" onClick={closeRequestForm} disabled={requestSaving} className="nth-btn-secondary w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-sm font-medium disabled:opacity-50">Cancel</button>
+                <button type="submit" disabled={requestSaving} className="nth-btn-primary w-full sm:w-auto px-4 py-2.5 min-h-[44px] text-sm font-medium disabled:opacity-50">{requestSaving ? 'Submitting…' : 'Submit'}</button>
               </div>
             </form>
           </div>
@@ -388,7 +388,7 @@ export default function MocksPage() {
           <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-lg w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between p-4 border-b border-[rgb(var(--nth-border-light))]">
               <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">All notices</h3>
-              <button type="button" onClick={() => setNoticesModalOpen(false)} className="text-[rgb(var(--nth-text-muted-light))] hover:text-[rgb(var(--nth-text-primary-light))]">×</button>
+              <button type="button" onClick={() => setNoticesModalOpen(false)} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[rgb(var(--nth-text-muted-light))] hover:bg-slate-100 hover:text-[rgb(var(--nth-text-primary-light))]" aria-label="Close">×</button>
             </div>
             <div className="overflow-y-auto p-4 space-y-3">
               {mockNotices.map((n) => (
@@ -407,7 +407,7 @@ export default function MocksPage() {
 
       {/* Book a slot */}
       {usage?.active && (
-        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 sm:p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-4">Book a slot</h2>
           <div className="flex flex-wrap items-end gap-3 mb-4">
             <div>
@@ -443,7 +443,7 @@ export default function MocksPage() {
                   key={slot.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[rgb(var(--nth-border-light))] px-4 py-3 bg-slate-50/50"
                 >
-                  <div className="text-sm text-[rgb(var(--nth-text-primary-light))]">
+                  <div className="min-w-0 flex-1 text-sm text-[rgb(var(--nth-text-primary-light))] break-words">
                     <span className="font-medium">{formatDate(slot.start_at)}</span>
                     <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
                     <span>{formatSlotTime(slot.start_at)}</span>

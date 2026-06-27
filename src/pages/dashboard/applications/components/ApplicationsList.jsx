@@ -12,7 +12,7 @@ export default function ApplicationsList({ applications }) {
             key={app.id}
             className="px-5 py-4 hover:bg-slate-50 transition-colors flex flex-wrap items-center justify-between gap-4"
           >
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="font-medium text-slate-900">{app.jobTitle}</p>
               <p className="text-sm text-slate-500">{app.company}</p>
               <p className="text-xs text-slate-400 mt-1">Applied {app.appliedAt}</p>
