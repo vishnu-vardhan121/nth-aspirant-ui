@@ -78,14 +78,11 @@ export default function DashboardNavbar({ onMenuClick }) {
 
         <Link
           to="/dashboard/profile"
-          className="h-10 w-10 min-h-[44px] min-w-[44px] rounded-full flex items-center justify-center text-sm font-semibold text-white shrink-0 shadow-sm transition-opacity hover:opacity-90"
-          style={{
-            background: `linear-gradient(135deg, hsl(var(--nth-primary)) 0%, hsl(var(--nth-primary-light)) 100%)`,
-          }}
+          className="flex h-10 w-10 min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full bg-indigo-600 text-base font-bold leading-none text-white shadow-md ring-2 ring-indigo-100 transition-colors hover:bg-indigo-700"
           title="My profile"
           aria-label="My profile"
         >
-          {initial}
+          <span className="select-none text-white">{initial}</span>
         </Link>
       </div>
     </header>
