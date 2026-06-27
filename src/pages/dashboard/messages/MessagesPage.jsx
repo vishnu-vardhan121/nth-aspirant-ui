@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
 import { isMessageSoundMuted, setMessageSoundMuted, playMessageSound, primeMessageSound } from '../../../lib/messageSound';
@@ -71,6 +72,23 @@ function buildChats(messages) {
   });
 }
 
+/** Always offer NTH Team thread so aspirants can start a help conversation. */
+function ensureNthTeamChat(chats) {
+  if (chats.some((c) => c.key === NTH_TEAM_KEY)) return chats;
+  return [
+    {
+      key: NTH_TEAM_KEY,
+      label: 'Naveen Talent Hub Team',
+      icon: HiChatBubbleLeftRight,
+      messages: [],
+      isInterviewerChat: false,
+      unreadCount: 0,
+      lastMessage: null,
+    },
+    ...chats,
+  ];
+}
+
 function lastPreview(body, maxLen = 40) {
   if (!body) return 'No messages';
   const t = body.replace(/\n/g, ' ').trim();
@@ -78,6 +96,8 @@ function lastPreview(body, maxLen = 40) {
 }
 
 export default function MessagesPage() {
+  const [searchParams] = useSearchParams();
+  const helpMode = searchParams.get('help') === '1';
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedChatKey, setSelectedChatKey] = useState(null);
@@ -148,8 +168,14 @@ export default function MessagesPage() {
     return () => window.removeEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
   }, []);
 
-  const chats = buildChats(messages);
+  const chats = ensureNthTeamChat(buildChats(messages));
   const selectedChat = selectedChatKey ? chats.find((c) => c.key === selectedChatKey) : null;
+
+  useEffect(() => {
+    if (!loading && helpMode) {
+      setSelectedChatKey(NTH_TEAM_KEY);
+    }
+  }, [loading, helpMode]);
 
   useEffect(() => {
     const el = chatScrollRef.current;
@@ -214,7 +240,9 @@ export default function MessagesPage() {
   return (
     <div className="flex flex-col min-h-[280px] h-[calc(100dvh-11rem)] sm:h-[calc(100vh-8rem)]">
       <div className="flex items-center justify-between gap-2 mb-1">
-        <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Messages</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">
+          {helpMode ? 'Help & support' : 'Messages'}
+        </h1>
         <button
           type="button"
           onClick={toggleSoundMuted}
@@ -230,21 +258,20 @@ export default function MessagesPage() {
         </button>
       </div>
       <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-        Chats from the Naveen Talent Hub team, your mock interviewer, and job groups.
-        {messageUsage.active
+        {helpMode
+          ? 'Chat with the Naveen Talent Hub team about your account, mocks, jobs, or payments. We reply here in Messages.'
+          : 'Chats from the Naveen Talent Hub team, your mock interviewer, and job groups.'}
+        {!helpMode && messageUsage.active
           ? messageUsage.limit < 0
             ? ' Your plan has unlimited replies to team and job chats.'
             : ` Your plan allows ${messageUsage.limit} ${messageUsage.limit === 1 ? 'reply' : 'replies'} per day to team and job chats.`
-          : ' An active plan is required to reply to team and job chats.'}
-        {' '}Mock interviewer chats are always unlimited.
+          : !helpMode
+            ? ' An active plan is required to reply to team and job chats.'
+            : ''}
+        {!helpMode ? ' Mock interviewer chats are always unlimited.' : ''}
       </p>
 
-      {messages.length === 0 ? (
-        <div className="flex-1 rounded-xl border border-[rgb(var(--nth-border-light))] bg-white flex items-center justify-center p-8 text-[rgb(var(--nth-text-muted-light))]">
-          No messages yet.
-        </div>
-      ) : (
-        <div className="flex-1 flex min-h-0 rounded-xl border border-[rgb(var(--nth-border-light))] bg-white overflow-hidden shadow-sm">
+      <div className="flex min-h-0 flex-1 rounded-xl border border-[rgb(var(--nth-border-light))] bg-white overflow-hidden shadow-sm">
           {/* Left: chat list — hidden on mobile when a chat is open */}
           <aside className={`w-full sm:w-72 shrink-0 flex flex-col border-r border-[rgb(var(--nth-border-light))] bg-[rgb(var(--nth-bg-soft))] ${showListOnMobile ? 'flex' : 'hidden sm:flex'}`}>
             <div className="p-2 bg-white border-b border-[rgb(var(--nth-border-light))]">
@@ -336,8 +363,15 @@ export default function MessagesPage() {
                   </div>
                 </header>
 
-                <div ref={chatScrollRef} className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 space-y-2 flex flex-col">
-                  {selectedChat.messages.map((m) => (
+                <div ref={chatScrollRef} className="flex min-h-0 flex-1 flex-col space-y-2 overflow-y-auto overflow-x-hidden p-4">
+                  {selectedChat.messages.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-[rgb(var(--nth-text-muted-light))]">
+                      {helpMode || selectedChat.key === NTH_TEAM_KEY
+                        ? 'No messages yet. Type below — our team will reply here.'
+                        : 'No messages in this chat yet.'}
+                    </p>
+                  ) : (
+                    selectedChat.messages.map((m) => (
                     <div key={m.id} className={m.from_me ? 'flex justify-end' : 'flex justify-start'}>
                       <div className="max-w-[85%] sm:max-w-[75%]">
                         <div
@@ -366,7 +400,8 @@ export default function MessagesPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  ))
+                  )}
                 </div>
 
                 {flash && (
@@ -381,7 +416,9 @@ export default function MessagesPage() {
                       onKeyDown={handleKeyDown}
                       placeholder={
                         canReply
-                          ? 'Type a reply... (Enter to send)'
+                          ? helpMode
+                            ? 'Describe your issue… (Enter to send)'
+                            : 'Type a reply... (Enter to send)'
                           : isInterviewerChat
                             ? 'Type a reply... (Enter to send)'
                             : messageUsage.active
@@ -405,7 +442,6 @@ export default function MessagesPage() {
             )}
           </main>
         </div>
-      )}
     </div>
   );
 }
