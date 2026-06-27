@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
+import { useStickyGateReady } from '../../hooks/useStickyGateReady';
 import { PageLoader } from '../ui/Loader';
 
 /**
@@ -14,9 +15,12 @@ export default function RequireAspirantProfile({ children }) {
   const interviewerProfile = useAppSelector((state) => state.interviewer.profile);
   const interviewerLoading = useAppSelector((state) => state.interviewer.loading);
 
+  const blockingLoad = aspirantLoading || adminLoading || interviewerLoading;
+  const gateReady = useStickyGateReady(blockingLoad);
+
   if (!user) return null;
 
-  if (aspirantLoading || adminLoading || interviewerLoading) {
+  if (!gateReady && blockingLoad) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <PageLoader size="md" label="Loading your profile…" />

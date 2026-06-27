@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { supabase } from '../../../../lib/supabase';
+import { clearFormDraft, loadFormDraft, saveFormDraft } from '../../../../lib/formDraft';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[6-9]\d{9}$/;
@@ -79,6 +80,8 @@ export default function HelpDeskForm({
 }) {
   const styles = VARIANT_STYLES[variant] ?? VARIANT_STYLES.dark;
 
+  const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10);
+
   const buildInitialForm = () => ({
     ...INITIAL_FORM,
     name: String(initialValues?.name ?? '').trim(),
@@ -86,20 +89,46 @@ export default function HelpDeskForm({
     phone: initialValues?.phone ? normalizePhone(String(initialValues.phone)) : '',
   });
 
-  const normalizePhone = (value) => value.replace(/\D/g, '').slice(0, 10);
+  const draftKey = useMemo(
+    () => `nth-help:${source}:${String(initialValues?.email ?? 'guest').trim().toLowerCase() || 'guest'}`,
+    [source, initialValues?.email],
+  );
 
-  const [form, setForm] = useState(buildInitialForm);
+  const [form, setForm] = useState(() => {
+    const draft = loadFormDraft(draftKey);
+    if (draft && typeof draft === 'object') {
+      return { ...INITIAL_FORM, ...draft };
+    }
+    return buildInitialForm();
+  });
+  const prefilledRef = useRef(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    setForm(buildInitialForm());
-    setErrors({});
-    setSubmitError('');
-    setSubmitted(false);
+    if (prefilledRef.current) return;
+    const hasInitial =
+      String(initialValues?.name ?? '').trim() ||
+      String(initialValues?.email ?? '').trim() ||
+      String(initialValues?.phone ?? '').trim();
+    if (!hasInitial) return;
+    setForm((prev) => ({
+      ...prev,
+      name: prev.name || String(initialValues?.name ?? '').trim(),
+      email: prev.email || String(initialValues?.email ?? '').trim(),
+      phone:
+        prev.phone ||
+        (initialValues?.phone ? normalizePhone(String(initialValues.phone)) : ''),
+    }));
+    prefilledRef.current = true;
   }, [initialValues?.name, initialValues?.email, initialValues?.phone]);
+
+  useEffect(() => {
+    if (submitted) return;
+    saveFormDraft(draftKey, form);
+  }, [draftKey, form, submitted]);
 
   const validateField = (field, value) => {
     const trimmed = (value ?? '').trim();
@@ -141,11 +170,13 @@ export default function HelpDeskForm({
   };
 
   const resetForm = () => {
+    clearFormDraft(draftKey);
     setForm(buildInitialForm());
     setErrors({});
     setSubmitError('');
     setSubmitting(false);
     setSubmitted(false);
+    prefilledRef.current = false;
   };
 
   const handleSubmit = async (e) => {
@@ -170,11 +201,13 @@ export default function HelpDeskForm({
     }
 
     if (successDisplay === 'none') {
+      clearFormDraft(draftKey);
       resetForm();
       onSuccess?.(data);
       return;
     }
 
+    clearFormDraft(draftKey);
     setSubmitted(true);
     setForm(buildInitialForm());
     onSuccess?.(data);

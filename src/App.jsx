@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { PlanModalProvider } from './pages/dashboard/subscription';
 import { GlobalNativeDateTimeInputBehavior } from './components/system/GlobalNativeDateTimeInputBehavior';
 import AuthListener from './components/auth/AuthListener';
 import ScrollToTop from './components/ScrollToTop';
@@ -61,6 +62,7 @@ import AboutPage from './pages/landing/about/AboutPage';
 function App() {
   return (
     <BrowserRouter>
+      <PlanModalProvider>
       <GlobalNativeDateTimeInputBehavior />
       <ScrollToTop />
       <AuthListener />
@@ -157,6 +159,7 @@ function App() {
           <Route path="messages" element={<MessagesPage />} />
         </Route>
       </Routes>
+      </PlanModalProvider>
     </BrowserRouter>
   );
 }

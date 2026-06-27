@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAppSelector } from '../../store/hooks';
+import { useStickyGateReady } from '../../hooks/useStickyGateReady';
 import { PageLoader } from '../ui/Loader';
 
 /**
@@ -10,9 +11,11 @@ export default function RequireAdminProfile({ children }) {
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
 
+  const gateReady = useStickyGateReady(adminLoading);
+
   if (!user) return null;
 
-  if (adminLoading) {
+  if (!gateReady && adminLoading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center">
         <PageLoader size="md" label="Loading…" />

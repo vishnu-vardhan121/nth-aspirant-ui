@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { useAppSelector } from '../../store/hooks';
+import { store } from '../../store';
 import { supabase } from '../../lib/supabase';
 import { setAuth } from '../../store/slices/authSlice';
 import { setTrack, setPlan } from '../../store/slices/appSlice';
@@ -12,6 +13,17 @@ function loadUserProfiles(dispatch, userId) {
   dispatch(fetchAspirantProfile(userId));
   dispatch(fetchAdminProfile(userId));
   dispatch(fetchInterviewerProfile(userId));
+}
+
+/** Only refetch role profiles when the user actually signs in or updates account — not on tab focus token refresh. */
+function shouldReloadProfiles(event) {
+  if (event === 'SIGNED_IN' || event === 'USER_UPDATED') return true;
+  if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') return false;
+
+  const { aspirant, admin, interviewer } = store.getState();
+  const resolved =
+    !aspirant.loading && !admin.loading && !interviewer.loading;
+  return !resolved;
 }
 
 /**
@@ -55,10 +67,8 @@ export default function AuthListener() {
           dispatch(setTrack(null));
           return;
         }
-        // TOKEN_REFRESHED fires when tab regains focus / background refresh. Refetching
-        // profile sets aspirant/admin loading=true → Require* wrappers show full-page
-        // loader and feels like a reload. Session is already updated above; skip refetch.
-        if (event === 'TOKEN_REFRESHED') return;
+        // Tab focus / token refresh must not refetch profiles (unmounts dashboard modals mid-form).
+        if (!shouldReloadProfiles(event)) return;
         loadUserProfiles(dispatch, session.user.id);
       });
       subscription = result?.data?.subscription;

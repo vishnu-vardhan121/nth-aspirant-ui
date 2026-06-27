@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HiArrowLeft, HiXMark } from 'react-icons/hi2';
 import { useAppSelector } from '../../../../store/hooks';
 import { ButtonLoader } from '../../../../components/ui/Loader';
+import { useModalBackdropClose } from '../../../../hooks/useModalBackdropClose';
 import { useSubscriptionStatus } from '../hooks/useSubscriptionStatus';
 import {
   formatProductPrice,
@@ -22,6 +23,7 @@ import PayStep from './PayStep';
 import PaymentSubmittedStep from './PaymentSubmittedStep';
 import PlanCheckoutTerms from './PlanCheckoutTerms';
 import ExperienceBandSelector from './ExperienceBandSelector';
+import { clearFormDraft, loadFormDraft, saveFormDraft } from '../../../../lib/formDraft';
 
 function newPaymentRef() {
   return crypto.randomUUID();
@@ -41,31 +43,83 @@ export default function ChoosePlanModal({ open, onClose }) {
   const [error, setError] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsError, setTermsError] = useState(false);
+  const wasOpenRef = useRef(false);
+
+  const allowBackdropClose = step !== 'pay';
+  const { backdropProps, fileInputGuardProps } = useModalBackdropClose(onClose, { allowBackdropClose });
 
   const selectablePlans = useMemo(
     () => getSelectablePlans(profile, plan, hasActivePlan, selectedBand),
     [profile, plan, hasActivePlan, selectedBand],
   );
   const requiresAdminContact = requiresPackContact(selectedBand);
+  const checkoutDraftKey = userId ? `nth-checkout:${userId}` : null;
 
   useEffect(() => {
-    if (!open) return undefined;
-    setStep('plans');
-    setSelectedBand(profileExperienceBand);
-    setPickedPlan(null);
-    setSelectedProduct(null);
-    setPaymentRef(null);
-    setPaymentConfig(null);
-    setError('');
-    setLoading(false);
-    setTermsAccepted(false);
-    setTermsError(false);
+    if (!open) {
+      wasOpenRef.current = false;
+      return undefined;
+    }
+
+    const justOpened = !wasOpenRef.current;
+    wasOpenRef.current = true;
+
+    if (justOpened) {
+      const draft = checkoutDraftKey ? loadFormDraft(checkoutDraftKey) : null;
+      const draftPlans = getSelectablePlans(profile, plan, hasActivePlan, draft?.selectedBand ?? profileExperienceBand);
+      const draftProduct =
+        draft?.planId != null ? draftPlans.find((p) => p.planId === draft.planId) : null;
+
+      if (draft?.step === 'pay' && draft.paymentRef && draftProduct) {
+        setStep('pay');
+        setSelectedBand(draft.selectedBand ?? profileExperienceBand);
+        setPickedPlan(draftProduct);
+        setSelectedProduct(draftProduct);
+        setPaymentRef(draft.paymentRef);
+        setTermsAccepted(Boolean(draft.termsAccepted));
+        setTermsError(false);
+        setError('');
+        setLoading(true);
+        fetchPaymentConfig()
+          .then((config) => setPaymentConfig(config))
+          .catch((e) => setError(e.message || 'Could not load payment details'))
+          .finally(() => setLoading(false));
+      } else {
+        setStep('plans');
+        setSelectedBand(profileExperienceBand);
+        setPickedPlan(null);
+        setSelectedProduct(null);
+        setPaymentRef(null);
+        setPaymentConfig(null);
+        setError('');
+        setLoading(false);
+        setTermsAccepted(false);
+        setTermsError(false);
+      }
+    }
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [open, profileExperienceBand]);
+  }, [open, profileExperienceBand, checkoutDraftKey, profile, plan, hasActivePlan]);
+
+  useEffect(() => {
+    if (!open || !checkoutDraftKey || step === 'submitted') return;
+    saveFormDraft(checkoutDraftKey, {
+      step,
+      selectedBand,
+      planId: selectedProduct?.planId ?? pickedPlan?.planId ?? null,
+      paymentRef,
+      termsAccepted,
+    });
+  }, [open, checkoutDraftKey, step, selectedBand, selectedProduct, pickedPlan, paymentRef, termsAccepted]);
+
+  useEffect(() => {
+    if (!open || step !== 'plans') return;
+    setSelectedBand(profileExperienceBand);
+  }, [open, profileExperienceBand, step]);
 
   useEffect(() => {
     if (step !== 'plans' || selectablePlans.length === 0) return;
@@ -158,6 +212,7 @@ export default function ChoosePlanModal({ open, onClose }) {
         payerNote,
         screenshotFile,
       });
+      if (checkoutDraftKey) clearFormDraft(checkoutDraftKey);
       setStep('submitted');
     } catch (e) {
       setError(e.message || 'Failed to submit proof');
@@ -181,7 +236,7 @@ export default function ChoosePlanModal({ open, onClose }) {
   return createPortal(
     <div
       className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/55 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
+      {...backdropProps}
       role="presentation"
     >
       <div
@@ -294,6 +349,7 @@ export default function ChoosePlanModal({ open, onClose }) {
               loading={loading}
               error={error}
               onSubmitProof={handleSubmitProof}
+              fileInputGuardProps={fileInputGuardProps}
             />
           )}
         </div>
