@@ -39,13 +39,20 @@ export function getJobApplicationsLimit(plan) {
   return limits?.jobApplicationsPerMonth;
 }
 
+/** Subscription end (matches DB subscription_ends_at). */
+export function getSubscriptionEndsAt(plan, planStartedAt) {
+  if (!plan || !planStartedAt) return null;
+  const months = PLAN_VALIDITY_MONTHS[plan];
+  if (!months) return null;
+  const end = new Date(planStartedAt);
+  if (Number.isNaN(end.getTime())) return null;
+  end.setMonth(end.getMonth() + months);
+  return end;
+}
+
 /** Check if subscription is still active (now < plan_started_at + validity). */
 export function isSubscriptionActive(plan, planStartedAt) {
   if (!plan || !planStartedAt) return false;
-  const months = PLAN_VALIDITY_MONTHS[plan];
-  if (!months) return false;
-  const start = new Date(planStartedAt);
-  const end = new Date(start);
-  end.setMonth(end.getMonth() + months);
-  return new Date() < end;
+  const end = getSubscriptionEndsAt(plan, planStartedAt);
+  return end ? new Date() < end : false;
 }

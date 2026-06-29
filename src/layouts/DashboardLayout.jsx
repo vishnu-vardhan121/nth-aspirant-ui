@@ -260,8 +260,8 @@ export default function DashboardLayout() {
               bodyPreview: bodyPreview(row.body),
               link: MESSAGES_PATH,
             });
-            void playMessageSound();
           }
+          void playMessageSound();
         },
         { channelId: `dashboard-messages-${uid}` },
       );

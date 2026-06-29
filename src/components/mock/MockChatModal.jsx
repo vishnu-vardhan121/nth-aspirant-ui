@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { HiCalendarDays, HiUserCircle, HiXMark } from 'react-icons/hi2';
+import ViewCandidateProfileButton from '../interviewer/ViewCandidateProfileButton';
 import MockChatPanel from './MockChatPanel';
 
 function formatScheduled(iso) {
@@ -69,14 +70,17 @@ export default function MockChatModal({ open, onClose, registration }) {
                 ) : null}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-              aria-label="Close"
-            >
-              <HiXMark className="h-5 w-5" />
-            </button>
+            <div className="flex shrink-0 items-center gap-1">
+              <ViewCandidateProfileButton mockRegistrationId={registration.id} label="Profile" />
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                aria-label="Close"
+              >
+                <HiXMark className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </header>
 

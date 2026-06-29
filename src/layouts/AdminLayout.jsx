@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes } from 'react-icons/hi2';
+import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes, HiChartBar } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 
@@ -46,7 +46,7 @@ export default function AdminLayout() {
             />
           </Link>
         </div>
-        <nav className="p-2 flex-1 min-h-0 overflow-y-auto">
+        <nav className="nth-scroll-y flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-2">
           <Link
             to="/admin"
             className={navLinkClass(isActive('/admin', true))}
@@ -75,6 +75,15 @@ export default function AdminLayout() {
             <HiAcademicCap className="w-5 h-5 shrink-0" />
             Mocks
           </Link>
+          {admin?.role === 'super admin' && (
+            <Link
+              to="/admin/interviewer-performance"
+              className={navLinkClass(isActive('/admin/interviewer-performance'))}
+            >
+              <HiChartBar className="w-5 h-5 shrink-0" />
+              Interviewer stats
+            </Link>
+          )}
           <Link
             to="/admin/admins"
             className={navLinkClass(isActive('/admin/admins'))}

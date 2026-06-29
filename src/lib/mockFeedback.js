@@ -1,49 +1,126 @@
-/** Predefined mock interview skill areas (0–10 each). */
-export const MOCK_FEEDBACK_AREA_DEFS = [
-  { key: 'frontend', label: 'Frontend' },
-  { key: 'backend', label: 'Backend / APIs' },
-  { key: 'database', label: 'Database & SQL' },
-  { key: 'deployment', label: 'Deployment / DevOps' },
-  { key: 'custom', label: 'Custom topic', isCustom: true },
-];
+import {
+  MOCK_TOPIC_MAX,
+  getMockTopicDef,
+  makeCustomTopicKey,
+  slugifyTopicKey,
+} from './mockFeedbackTopics';
+
+export {
+  MOCK_TOPIC_MAX,
+  MOCK_ROLE_FIT_CATEGORIES,
+  MOCK_ROLE_FIT_OPTIONS,
+  MOCK_RATING_OPTIONS,
+  MOCK_TOPIC_CATEGORIES,
+  MOCK_TOPIC_FILTER_OPTIONS,
+  getMockTopicDef,
+  getMockTopicLabel,
+  getMockRoleFitLabel,
+  getMockRatingLabel,
+  getMockRatingClass,
+  makeCustomTopicKey,
+  slugifyTopicKey,
+} from './mockFeedbackTopics';
+
+/** @deprecated use MOCK_TOPIC_CATEGORIES — kept for imports */
+export const MOCK_FEEDBACK_AREA_DEFS = [];
 
 export const MOCK_SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-function emptyArea() {
-  return { enabled: false, score: 5, notes: '', label: '' };
+const MIN_OVERALL = 30;
+const MIN_TOPIC_TEXT = 20;
+
+function emptyTopicRow() {
+  return {
+    score: 5,
+    rating: 'average',
+    feedback: '',
+    suggestions: '',
+    label: '',
+    category: null,
+    isCustom: false,
+  };
 }
 
 export function createEmptyMockFeedbackForm() {
-  const areas = {};
-  for (const def of MOCK_FEEDBACK_AREA_DEFS) {
-    areas[def.key] = {
-      ...emptyArea(),
-      enabled: def.key === 'frontend' || def.key === 'backend',
-    };
-  }
   return {
     overall_score: 5,
     communication_score: 5,
     feedback_notes: '',
-    areas,
+    overall_suggestions: '',
+    selectedKeys: [],
+    topics: {},
+    role_fit_keys: [],
   };
 }
 
-/** @returns {{ areas: Array<{ key: string, label: string, score: number, notes: string|null }> }} */
-export function buildTechFeedbackPayload(form) {
-  const areas = [];
-  for (const def of MOCK_FEEDBACK_AREA_DEFS) {
-    const row = form.areas?.[def.key];
-    if (!row?.enabled) continue;
-    if (def.isCustom && !row.label?.trim()) continue;
-    areas.push({
-      key: def.key,
-      label: def.isCustom ? row.label.trim() : def.label,
-      score: row.score,
-      notes: row.notes?.trim() || '',
-    });
+export function toggleTopicInForm(form, topicKey, topicMeta) {
+  const selected = new Set(form.selectedKeys ?? []);
+  const topics = { ...(form.topics ?? {}) };
+
+  if (selected.has(topicKey)) {
+    selected.delete(topicKey);
+    delete topics[topicKey];
+  } else {
+    if (selected.size >= MOCK_TOPIC_MAX) return form;
+    selected.add(topicKey);
+    topics[topicKey] = {
+      ...emptyTopicRow(),
+      label: topicMeta?.label ?? topicKey,
+      category: topicMeta?.category ?? null,
+      isCustom: Boolean(topicMeta?.isCustom),
+    };
   }
-  return { areas };
+
+  return { ...form, selectedKeys: [...selected], topics };
+}
+
+export function addCustomTopicToForm(form, rawLabel) {
+  const label = rawLabel?.trim();
+  if (!label) return { form, error: 'Enter a topic name' };
+  if ((form.selectedKeys?.length ?? 0) >= MOCK_TOPIC_MAX) {
+    return { form, error: `Maximum ${MOCK_TOPIC_MAX} topics per mock` };
+  }
+  const key = makeCustomTopicKey(label);
+  if (form.selectedKeys?.includes(key)) {
+    return { form, error: 'That custom topic is already added' };
+  }
+  return {
+    form: toggleTopicInForm(form, key, { label, category: 'custom', isCustom: true }),
+    error: null,
+  };
+}
+
+export function toggleRoleFitInForm(form, roleKey) {
+  const current = form.role_fit_keys ?? [];
+  if (current.includes(roleKey)) {
+    return { ...form, role_fit_keys: current.filter((k) => k !== roleKey) };
+  }
+  return { ...form, role_fit_keys: [...current, roleKey] };
+}
+
+/** @returns {{ version: 2, areas: Array<object>, role_fit: string[] }} */
+export function buildTechFeedbackPayload(form) {
+  const areas = (form.selectedKeys ?? []).map((key) => {
+    const row = form.topics?.[key] ?? {};
+    const def = getMockTopicDef(key);
+    const label = row.label?.trim() || def?.label || key;
+    return {
+      key,
+      label,
+      category: row.category ?? def?.category ?? null,
+      score: row.score,
+      rating: row.rating,
+      feedback: row.feedback?.trim() || '',
+      suggestions: row.suggestions?.trim() || '',
+      notes: row.feedback?.trim() || '',
+    };
+  });
+  return {
+    version: 2,
+    overall_suggestions: form.overall_suggestions?.trim() || null,
+    role_fit: form.role_fit_keys ?? [],
+    areas,
+  };
 }
 
 export function validateMockFeedbackForm(form) {
@@ -53,40 +130,72 @@ export function validateMockFeedbackForm(form) {
   if (form.communication_score == null || form.communication_score < 0 || form.communication_score > 10) {
     return 'Communication score must be 0–10.';
   }
-  if (!form.feedback_notes?.trim() || form.feedback_notes.trim().length < 10) {
-    return 'Overall feedback is required (at least 10 characters).';
+  if (!form.feedback_notes?.trim() || form.feedback_notes.trim().length < MIN_OVERALL) {
+    return `Overall summary is required (at least ${MIN_OVERALL} characters).`;
   }
-  const custom = form.areas?.custom;
-  if (custom?.enabled && !custom.label?.trim()) {
-    return 'Enter a name for the custom topic (e.g. System design, DSA).';
+
+  const keys = form.selectedKeys ?? [];
+  if (keys.length === 0) {
+    return 'Select at least one interview topic.';
   }
-  const payload = buildTechFeedbackPayload(form);
-  if (payload.areas.length === 0) {
-    return 'Enable and score at least one technical area.';
+  if (keys.length > MOCK_TOPIC_MAX) {
+    return `Maximum ${MOCK_TOPIC_MAX} topics per mock.`;
   }
-  for (const def of MOCK_FEEDBACK_AREA_DEFS) {
-    const row = form.areas?.[def.key];
-    if (!row?.enabled) continue;
-    const areaLabel = def.isCustom ? row.label?.trim() || def.label : def.label;
-    if (!row.notes?.trim() || row.notes.trim().length < 10) {
-      return `Written feedback is required for ${areaLabel} (at least 10 characters).`;
+
+  for (const key of keys) {
+    const row = form.topics?.[key];
+    if (!row) return 'Complete feedback for each selected topic.';
+    const label = row.label?.trim() || getMockTopicDef(key)?.label || key;
+    if (!row.rating || !['good', 'average', 'needs_work'].includes(row.rating)) {
+      return `Choose a rating for ${label}.`;
+    }
+    if (row.score == null || row.score < 0 || row.score > 10) {
+      return `Score for ${label} must be 0–10.`;
+    }
+    if (!row.feedback?.trim() || row.feedback.trim().length < MIN_TOPIC_TEXT) {
+      return `Feedback for ${label} is required (at least ${MIN_TOPIC_TEXT} characters).`;
+    }
+    if (!row.suggestions?.trim() || row.suggestions.trim().length < MIN_TOPIC_TEXT) {
+      return `Suggestions for ${label} are required (at least ${MIN_TOPIC_TEXT} characters).`;
     }
   }
+
   return null;
 }
 
 export function getTechFeedbackAreas(reg) {
   const raw = reg?.tech_feedback;
   if (!raw) return [];
-  if (Array.isArray(raw.areas)) return raw.areas;
-  if (typeof raw === 'string') {
+  let areas = [];
+  if (Array.isArray(raw.areas)) areas = raw.areas;
+  else if (typeof raw === 'string') {
     try {
       const parsed = JSON.parse(raw);
-      return Array.isArray(parsed.areas) ? parsed.areas : [];
+      areas = Array.isArray(parsed.areas) ? parsed.areas : [];
     } catch {
       return [];
     }
   }
+  return areas.map((a) => ({
+    ...a,
+    feedback: a.feedback ?? a.notes ?? '',
+    suggestions: a.suggestions ?? '',
+  }));
+}
+
+export function getOverallSuggestions(reg) {
+  const raw = reg?.tech_feedback;
+  if (!raw || typeof raw !== 'object') return '';
+  return raw.overall_suggestions?.trim?.() ? raw.overall_suggestions.trim() : '';
+}
+
+/** Internal interviewer tags — column preferred; never shown to aspirants in UI. */
+export function getRoleFitKeys(reg) {
+  if (Array.isArray(reg?.role_fit_keys) && reg.role_fit_keys.length > 0) {
+    return reg.role_fit_keys;
+  }
+  const raw = reg?.tech_feedback;
+  if (raw && Array.isArray(raw.role_fit)) return raw.role_fit;
   return [];
 }
 
@@ -107,7 +216,7 @@ export function hasAnyMockFeedback(reg) {
 export function formatFeedbackSummary(reg) {
   const areas = getTechFeedbackAreas(reg);
   if (areas.length > 0 && reg.overall_score != null) {
-    return `Overall ${reg.overall_score}/10 · Comm ${reg.communication_score ?? '—'}/10 · ${areas.length} area${areas.length === 1 ? '' : 's'}`;
+    return `Overall ${reg.overall_score}/10 · Comm ${reg.communication_score ?? '—'}/10 · ${areas.length} topic${areas.length === 1 ? '' : 's'}`;
   }
   if (hasLegacyMockFeedback(reg)) {
     return `T:${reg.technical_score} C:${reg.communication_score} P:${reg.problem_solving_score} O:${reg.overall_score}`;

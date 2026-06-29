@@ -23,7 +23,7 @@ export function filtersReducer(state, action) {
 
 export function buildUsersListRpcParams(filters) {
   const f = filters;
-  return {
+  const params = {
     p_plan: f.plan || null,
     p_track: f.track || null,
     p_search: f.search.trim() || null,
@@ -32,7 +32,7 @@ export function buildUsersListRpcParams(filters) {
     p_degree_branch: f.branch || null,
     p_graduation_year: f.batch ? parseInt(f.batch, 10) : null,
     p_graduation_score_min: f.cgpaMin ? parseFloat(f.cgpaMin) : null,
-    p_premier_institute_type: f.premier || null,
+    p_premier_institute_type: null,
     p_institute_tier: f.tier || null,
     p_communication_level: f.communication || null,
     p_notice_period: f.noticePeriod || null,
@@ -41,7 +41,15 @@ export function buildUsersListRpcParams(filters) {
     p_mock_overall_min: f.mockOverallMin ? parseFloat(f.mockOverallMin) : null,
     p_mock_communication_min: f.mockCommMin ? parseFloat(f.mockCommMin) : null,
     p_mock_technical_min: null,
+    p_mock_topic_key: f.mockTopicKey || null,
+    p_mock_topic_score_min: f.mockTopicScoreMin ? parseFloat(f.mockTopicScoreMin) : null,
+    p_mock_topic_score_max: f.mockTopicScoreMax ? parseFloat(f.mockTopicScoreMax) : null,
+    p_mock_topic_mode: f.mockTopicMode || 'any',
     p_limit: PAGE_SIZE,
     p_offset: (f.page ?? 0) * PAGE_SIZE,
   };
+  // Only after migration 105 — omit when unset so older DB signatures still match.
+  if (f.roleFitKey) params.p_role_fit_key = f.roleFitKey;
+  if (f.profileStatus) params.p_profile_status = f.profileStatus;
+  return params;
 }

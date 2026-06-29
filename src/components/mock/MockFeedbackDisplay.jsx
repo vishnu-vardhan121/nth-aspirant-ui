@@ -1,5 +1,8 @@
 import {
   getTechFeedbackAreas,
+  getOverallSuggestions,
+  getMockRatingLabel,
+  getMockRatingClass,
   hasAnyMockFeedback,
   hasLegacyMockFeedback,
   hasStructuredMockFeedback,
@@ -10,6 +13,7 @@ export default function MockFeedbackDisplay({ registration, compact = false }) {
 
   const areas = getTechFeedbackAreas(registration);
   const structured = hasStructuredMockFeedback(registration);
+  const overallSuggestions = getOverallSuggestions(registration);
 
   if (compact) {
     return (
@@ -33,7 +37,7 @@ export default function MockFeedbackDisplay({ registration, compact = false }) {
   }
 
   return (
-    <div className="rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 space-y-3">
+    <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4">
       <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">Interview feedback</p>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
@@ -60,22 +64,55 @@ export default function MockFeedbackDisplay({ registration, compact = false }) {
       </dl>
 
       {registration.feedback_notes ? (
-        <p className="text-sm text-slate-800 whitespace-pre-wrap border-t border-emerald-200/60 pt-2">
-          {registration.feedback_notes}
-        </p>
+        <div className="border-t border-emerald-200/60 pt-2">
+          <p className="text-xs font-semibold uppercase text-slate-600">Overall summary</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{registration.feedback_notes}</p>
+        </div>
+      ) : null}
+
+      {overallSuggestions ? (
+        <div className="border-t border-emerald-200/60 pt-2">
+          <p className="text-xs font-semibold uppercase text-slate-600">Overall suggestions</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm text-slate-800">{overallSuggestions}</p>
+        </div>
       ) : null}
 
       {structured ? (
-        <div className="border-t border-emerald-200/60 pt-3 space-y-2">
-          <p className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Technical areas</p>
+        <div className="space-y-2 border-t border-emerald-200/60 pt-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">Topics</p>
           <ul className="space-y-2">
             {areas.map((a) => (
-              <li key={`${a.key}-${a.label}`} className="rounded-lg bg-white/80 border border-emerald-100 px-3 py-2 text-sm">
-                <div className="flex justify-between gap-2 font-medium text-slate-900">
-                  <span>{a.label}</span>
-                  <span className="tabular-nums">{a.score} / 10</span>
+              <li
+                key={`${a.key}-${a.label}`}
+                className="rounded-lg border border-emerald-100 bg-white/80 px-3 py-3 text-sm"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-semibold text-slate-900">{a.label}</span>
+                  <div className="flex items-center gap-2">
+                    {a.rating ? (
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${getMockRatingClass(a.rating)}`}
+                      >
+                        {getMockRatingLabel(a.rating)}
+                      </span>
+                    ) : null}
+                    <span className="tabular-nums font-bold text-indigo-700">{a.score} / 10</span>
+                  </div>
                 </div>
-                {a.notes ? <p className="mt-1 text-slate-600 text-xs whitespace-pre-wrap">{a.notes}</p> : null}
+                {a.feedback ? (
+                  <div className="mt-2">
+                    <p className="text-[10px] font-semibold uppercase text-slate-500">Feedback</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-slate-700">{a.feedback}</p>
+                  </div>
+                ) : a.notes ? (
+                  <p className="mt-2 whitespace-pre-wrap text-xs text-slate-600">{a.notes}</p>
+                ) : null}
+                {a.suggestions ? (
+                  <div className="mt-2 rounded-md bg-indigo-50/80 px-2 py-1.5">
+                    <p className="text-[10px] font-semibold uppercase text-indigo-700">Suggestions</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-indigo-900">{a.suggestions}</p>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -83,7 +120,9 @@ export default function MockFeedbackDisplay({ registration, compact = false }) {
       ) : null}
 
       {registration.completed_at ? (
-        <p className="text-xs text-slate-500">Completed {new Date(registration.completed_at).toLocaleString('en-IN')}</p>
+        <p className="text-xs text-slate-500">
+          Completed {new Date(registration.completed_at).toLocaleString('en-IN')}
+        </p>
       ) : null}
     </div>
   );

@@ -22,6 +22,7 @@ import {
   profileToForm,
   saveAspirantProfile,
   isValidMobileNumber,
+  isPlaceholderCity,
   MOBILE_VALIDATION_MESSAGE,
   validateEducationFields,
   validateJobDomains,
@@ -303,6 +304,10 @@ export default function ProfilePage() {
       setMessage({ type: 'error', text: MOBILE_VALIDATION_MESSAGE });
       return;
     }
+    if (!city.trim() || isPlaceholderCity(city)) {
+      setMessage({ type: 'error', text: 'Enter your current city (e.g. Hyderabad).' });
+      return;
+    }
     const domainErr = validateJobDomains({ jobDomains });
     if (domainErr) {
       setMessage({ type: 'error', text: domainErr });
@@ -384,6 +389,8 @@ export default function ProfilePage() {
         return;
       }
       payload.resume_url = newPath;
+    } else if (profile.resume_url) {
+      payload.resume_url = profile.resume_url;
     }
 
     try {
