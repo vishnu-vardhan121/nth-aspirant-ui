@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { subscribeToAdminMessages } from '../../lib/messageRealtime';
 import { Loader, LoaderDots } from '../../components/ui/Loader';
 import { HiUserGroup, HiMegaphone, HiChatBubbleLeftRight } from 'react-icons/hi2';
 
@@ -36,6 +37,24 @@ export default function AdminMessagesPage() {
       supabase.rpc('get_aspirants_for_admin').then(({ data }) => setAspirants(Array.isArray(data) ? data : [])),
     ]).then(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const refreshLists = () => {
+      supabase.rpc('get_admin_drive_conversations').then(({ data }) => setDrives(Array.isArray(data) ? data : []));
+      supabase.rpc('get_aspirants_for_admin').then(({ data }) => setAspirants(Array.isArray(data) ? data : []));
+      if (selected.type === 'drive' && selected.id) {
+        supabase.rpc('get_admin_drive_messages', { p_job_id: selected.id }).then(({ data }) => {
+          setDriveMessages(Array.isArray(data) ? data : []);
+        });
+      } else if (selected.type === 'individual' && selected.id) {
+        supabase.rpc('get_admin_messages_to_aspirant', { p_aspirant_id: selected.id }).then(({ data }) => {
+          setIndividualMessages(Array.isArray(data) ? data : []);
+        });
+      }
+    };
+    const unsubscribe = subscribeToAdminMessages(refreshLists, { channelId: 'admin-messages-page' });
+    return unsubscribe;
+  }, [selected.type, selected.id]);
 
   // Open individual chat when navigated with state (e.g. from Job Applicants "Send message")
   useEffect(() => {

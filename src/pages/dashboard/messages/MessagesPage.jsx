@@ -1,15 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
-import { isMessageSoundMuted, setMessageSoundMuted, playMessageSound, primeMessageSound } from '../../../lib/messageSound';
+import { isMessageSoundMuted, setMessageSoundMuted, primeMessageSound } from '../../../lib/messageSound';
 import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
 import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
+import {
+  NTH_TEAM_KEY,
+  MOCK_UPDATES_KEY,
+  INTERVIEWER_CHAT_PREFIX,
+  getChatKeyForMessage,
+  countUnreadInChat,
+  markMessagesReadOptimistic,
+  markChatReadOnServer,
+} from '../../../lib/aspirantChatKeys';
 import { HiUserGroup, HiChatBubbleLeftRight, HiCheck, HiSpeakerWave, HiSpeakerXMark, HiArrowLeft, HiAcademicCap } from 'react-icons/hi2';
-
-const NTH_TEAM_KEY = '__nth_team__';
-const INTERVIEWER_CHAT_PREFIX = '__interviewer__';
-
 function formatTime(createdAt) {
   if (!createdAt) return '';
   const d = new Date(createdAt);
@@ -35,23 +40,27 @@ function buildChats(messages) {
   const byKey = new Map();
 
   for (const m of messages) {
-    const interviewerKey =
-      m.source === 'interviewer' && m.mock_registration_id
-        ? `${INTERVIEWER_CHAT_PREFIX}${m.mock_registration_id}`
-        : null;
-    const key = interviewerKey ?? (m.source === 'job_group' && m.job_id ? m.job_id : NTH_TEAM_KEY);
+    const key = getChatKeyForMessage(m);
+    const interviewerKey = key.startsWith(INTERVIEWER_CHAT_PREFIX) ? key : null;
     if (!byKey.has(key)) {
       byKey.set(key, {
         key,
         label:
           key === NTH_TEAM_KEY
             ? 'Naveen Talent Hub Team'
-            : interviewerKey
-              ? (m.interviewer_name ? `Mock: ${m.interviewer_name}` : 'Mock interviewer')
-              : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
+            : key === MOCK_UPDATES_KEY
+              ? 'Mock updates'
+              : interviewerKey
+                ? (m.interviewer_name ? `Mock: ${m.interviewer_name}` : 'Mock interviewer')
+                : [m.job_title, m.company_name].filter(Boolean).join(' – ') || 'Job',
         icon:
-          key === NTH_TEAM_KEY ? HiChatBubbleLeftRight : interviewerKey ? HiAcademicCap : HiUserGroup,
-        messages: [],
+          key === NTH_TEAM_KEY
+            ? HiChatBubbleLeftRight
+            : key === MOCK_UPDATES_KEY
+              ? HiAcademicCap
+              : interviewerKey
+                ? HiAcademicCap
+                : HiUserGroup,        messages: [],
         isInterviewerChat: !!interviewerKey,
       });
     }
@@ -107,6 +116,8 @@ export default function MessagesPage() {
   const [flash, setFlash] = useState('');
   const [soundMuted, setSoundMuted] = useState(() => isMessageSoundMuted());
   const chatScrollRef = useRef(null);
+  const selectedChatKeyRef = useRef(null);
+  const markingRef = useRef(false);
 
   const toggleSoundMuted = () => {
     const next = !soundMuted;
@@ -115,12 +126,41 @@ export default function MessagesPage() {
     if (!next) primeMessageSound();
   };
 
-  const loadMessages = () => {
-    supabase.rpc('get_my_messages').then(({ data }) => {
-      setMessages(Array.isArray(data) ? data : []);
-    });
-  };
+  const fetchMessages = useCallback(async () => {
+    const { data } = await supabase.rpc('get_my_messages');
+    const list = Array.isArray(data) ? data : [];
+    setMessages(list);
+    return list;
+  }, []);
 
+  const markChatRead = useCallback(
+    async (chatKey, { optimistic = true } = {}) => {
+      if (!chatKey || markingRef.current) return;
+      markingRef.current = true;
+      try {
+        if (optimistic) {
+          setMessages((prev) => markMessagesReadOptimistic(prev, chatKey));
+        }
+        const { error } = await markChatReadOnServer(supabase, chatKey);
+        if (error) {
+          console.warn('[Messages] mark read failed:', error.message);
+        }
+        await fetchMessages();
+      } finally {
+        markingRef.current = false;
+      }
+    },
+    [fetchMessages],
+  );
+
+  const loadMessages = useCallback(() => {
+    void fetchMessages().then((list) => {
+      const key = selectedChatKeyRef.current;
+      if (key && countUnreadInChat(list, key) > 0) {
+        void markChatRead(key, { optimistic: false });
+      }
+    });
+  }, [fetchMessages, markChatRead]);
   const loadUsage = () => {
     supabase.rpc('get_aspirant_daily_message_usage').then(({ data }) => {
       if (data && typeof data === 'object') setMessageUsage({ used: data.used ?? 0, limit: data.limit ?? 0, active: !!data.active });
@@ -129,13 +169,25 @@ export default function MessagesPage() {
 
   useEffect(() => {
     Promise.all([
-      supabase.rpc('get_my_messages').then(({ data }) => setMessages(Array.isArray(data) ? data : [])),
+      fetchMessages(),
       supabase.rpc('get_aspirant_daily_message_usage').then(({ data }) => {
         if (data && typeof data === 'object') setMessageUsage({ used: data.used ?? 0, limit: data.limit ?? 0, active: !!data.active });
       }),
     ]).then(() => setLoading(false));
-  }, []);
+  }, [fetchMessages]);
 
+  useEffect(() => {
+    selectedChatKeyRef.current = selectedChatKey;
+  }, [selectedChatKey]);
+
+  const handleSelectChat = useCallback(
+    (chatKey) => {
+      setSelectedChatKey(chatKey);
+      selectedChatKeyRef.current = chatKey;
+      void markChatRead(chatKey);
+    },
+    [markChatRead],
+  );
   useEffect(() => {
     let cancelled = false;
     let unsubscribe = () => {};
@@ -150,7 +202,6 @@ export default function MessagesPage() {
         uid,
         () => {
           loadMessages();
-          void playMessageSound();
         },
         { channelId: `messages-page-${uid}` },
       );
@@ -160,46 +211,47 @@ export default function MessagesPage() {
       cancelled = true;
       unsubscribe();
     };
-  }, []);
+  }, [loadMessages]);
 
   useEffect(() => {
     const onInvalidate = () => loadMessages();
     window.addEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
     return () => window.removeEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
-  }, []);
-
+  }, [loadMessages]);
   const chats = ensureNthTeamChat(buildChats(messages));
   const selectedChat = selectedChatKey ? chats.find((c) => c.key === selectedChatKey) : null;
 
   useEffect(() => {
     if (!loading && helpMode) {
-      setSelectedChatKey(NTH_TEAM_KEY);
+      handleSelectChat(NTH_TEAM_KEY);
     }
-  }, [loading, helpMode]);
+  }, [loading, helpMode, handleSelectChat]);
 
+  // Open the chat with the most unread messages first (unless help mode).
+  useEffect(() => {
+    if (loading || helpMode || selectedChatKey) return;
+    const built = ensureNthTeamChat(buildChats(messages));
+    const withUnread = built.filter((c) => c.unreadCount > 0);
+    if (withUnread.length > 0) {
+      const top = withUnread.sort((a, b) => b.unreadCount - a.unreadCount)[0];
+      handleSelectChat(top.key);
+    }
+  }, [loading, helpMode, messages, selectedChatKey, handleSelectChat]);
   useEffect(() => {
     const el = chatScrollRef.current;
     if (!el) return;
     el.scrollTop = el.scrollHeight;
   }, [selectedChatKey, selectedChat?.messages?.length]);
 
-  // Mark this chat as read when aspirant opens it
-  useEffect(() => {
-    if (!selectedChatKey) return;
-    if (selectedChatKey.startsWith(INTERVIEWER_CHAT_PREFIX)) {
-      const mockRegistrationId = selectedChatKey.slice(INTERVIEWER_CHAT_PREFIX.length);
-      supabase.rpc('mark_aspirant_messages_read', { p_mock_registration_id: mockRegistrationId }).then(() => loadMessages());
-      return;
-    }
-    const jobId = selectedChatKey === NTH_TEAM_KEY ? null : selectedChatKey;
-    supabase.rpc('mark_aspirant_messages_read', { p_job_id: jobId }).then(() => loadMessages());
-  }, [selectedChatKey]);
-
-  const isInterviewerChat = Boolean(selectedChat?.isInterviewerChat);
-  const canReply =
+  const isInterviewerChat = Boolean(selectedChat?.isInterviewerChat);  const canReply =
     isInterviewerChat || (messageUsage.active && (messageUsage.limit < 0 || messageUsage.used < messageUsage.limit));
-  const jobIdForReply = selectedChat && selectedChat.key !== NTH_TEAM_KEY && !isInterviewerChat ? selectedChat.key : null;
-  const mockRegistrationIdForReply = isInterviewerChat
+  const jobIdForReply =
+    selectedChat &&
+    selectedChat.key !== NTH_TEAM_KEY &&
+    selectedChat.key !== MOCK_UPDATES_KEY &&
+    !isInterviewerChat
+      ? selectedChat.key
+      : null;  const mockRegistrationIdForReply = isInterviewerChat
     ? selectedChat.key.slice(INTERVIEWER_CHAT_PREFIX.length)
     : null;
 
@@ -288,7 +340,7 @@ export default function MessagesPage() {
                   <li key={chat.key}>
                     <button
                       type="button"
-                      onClick={() => setSelectedChatKey(chat.key)}
+                      onClick={() => handleSelectChat(chat.key)}
                       className={`w-full text-left px-3 py-3 flex items-start gap-3 hover:bg-white/80 transition-colors border-b border-[rgb(var(--nth-border-light))]/50 ${
                         isSelected ? 'bg-white border-l-2 border-l-[hsl(var(--nth-primary))]' : ''
                       }`}

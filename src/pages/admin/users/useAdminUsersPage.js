@@ -1,7 +1,8 @@
 import { useReducer, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { filtersReducer, buildUsersListRpcParams, INITIAL_USER_FILTERS } from './adminUserFilters';
-import { exportFilteredUsersCsv } from './exportUsersCsv';
+import { exportFilteredUsersExcel } from './exportUsersExcel';
+import { enrichUsersWithAllMockRoleFit } from './aggregateMockRoleFit';
 
 export function useAdminUsersPage() {
   const [filters, dispatchFilters] = useReducer(filtersReducer, {
@@ -25,6 +26,10 @@ export function useAdminUsersPage() {
     dispatchFilters({ type: 'page', page });
   }, []);
 
+  const resetFilters = useCallback(() => {
+    dispatchFilters({ type: 'reset' });
+  }, []);
+
   const refreshSummary = useCallback(async () => {
     const { data, error } = await supabase.rpc('get_admin_users_summary');
     if (!error && data) setSummary(data);
@@ -33,7 +38,14 @@ export function useAdminUsersPage() {
   const refreshUsers = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase.rpc('get_admin_users_list', buildUsersListRpcParams(filters));
-    if (!error && data) setUsers(Array.isArray(data) ? data : []);
+    if (error || !data) {
+      setUsers([]);
+      setLoading(false);
+      return;
+    }
+    const list = Array.isArray(data) ? data : [];
+    const enriched = await enrichUsersWithAllMockRoleFit(supabase, list);
+    setUsers(enriched);
     setLoading(false);
   }, [filters]);
 
@@ -42,10 +54,10 @@ export function useAdminUsersPage() {
     refreshUsers();
   }, [refreshSummary, refreshUsers]);
 
-  const exportCsv = useCallback(async () => {
+  const exportExcel = useCallback(async () => {
     setExporting(true);
     try {
-      const result = await exportFilteredUsersCsv(supabase, filters);
+      const result = await exportFilteredUsersExcel(supabase, filters);
       return result;
     } finally {
       setExporting(false);
@@ -68,8 +80,9 @@ export function useAdminUsersPage() {
     patchFilter,
     setQualification,
     setPage,
+    resetFilters,
     refresh,
-    exportCsv,
+    exportExcel,
     exporting,
   };
 }

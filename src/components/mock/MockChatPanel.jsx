@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { subscribeToInterviewerMessages } from '../../lib/messageRealtime';
 import { HiArrowLeft } from 'react-icons/hi2';
+import ViewCandidateProfileButton from '../interviewer/ViewCandidateProfileButton';
 
 function formatTime(createdAt) {
   if (!createdAt) return '';
@@ -127,6 +128,7 @@ export default function MockChatPanel({
               {scheduledAt ? ` · ${formatSlot(scheduledAt)}` : ''}
             </p>
           </div>
+          <ViewCandidateProfileButton mockRegistrationId={mockRegistrationId} label="Profile" />
         </header>
       )}
 

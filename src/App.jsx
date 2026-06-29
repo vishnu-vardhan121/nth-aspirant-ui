@@ -40,6 +40,7 @@ import AdminAdminsPage from './pages/admin/AdminAdminsPage';
 import AdminJobsPage from './pages/admin/AdminJobsPage';
 import AdminJobApplicantsPage from './pages/admin/AdminJobApplicantsPage';
 import AdminMocksPage from './pages/admin/AdminMocksPage';
+import AdminInterviewerPerformancePage from './pages/admin/AdminInterviewerPerformancePage';
 import AdminMessagesPage from './pages/admin/AdminMessagesPage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminLeadsPage from './pages/admin/AdminLeadsPage';
@@ -55,6 +56,7 @@ import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
 import InterviewerMessagesPage from './pages/interviewer/InterviewerMessagesPage';
+import InterviewerPerformancePage from './pages/interviewer/InterviewerPerformancePage';
 import RefundPolicyPage from './pages/landing/legal/RefundPolicyPage';
 import ContactPage from './pages/landing/contact/ContactPage';
 import AboutPage from './pages/landing/about/AboutPage';
@@ -115,6 +117,7 @@ function App() {
           <Route path="jobs/:id/edit" element={<EditJobPage />} />
           <Route path="jobs/:id/applicants" element={<AdminJobApplicantsPage />} />
           <Route path="mocks" element={<AdminMocksPage />} />
+          <Route path="interviewer-performance" element={<AdminInterviewerPerformancePage />} />
           <Route path="settings" element={<AdminSettingsPage />} />
           <Route path="messages" element={<AdminMessagesPage />} />
           <Route path="leads" element={<AdminLeadsPage />} />
@@ -138,6 +141,7 @@ function App() {
           <Route index element={<InterviewerOverviewPage />} />
           <Route path="slots" element={<InterviewerSlotsPage />} />
           <Route path="mocks" element={<InterviewerMocksPage />} />
+          <Route path="performance" element={<InterviewerPerformancePage />} />
           <Route path="messages" element={<InterviewerMessagesPage />} />
         </Route>
         <Route

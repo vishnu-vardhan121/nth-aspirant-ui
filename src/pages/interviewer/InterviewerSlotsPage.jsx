@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useAppSelector } from '../../store/hooks';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, ButtonLoader } from '../../components/ui/Loader';
+import EditMeetLinkModal from '../../components/interviewer/EditMeetLinkModal';
+import { isValidHttpUrl, normalizeHttpUrl } from '../../lib/aspirantProfile';
+import { slotDurationMinutes, endAtFromStartAndMinutes } from '../../lib/mockSlotTiming';
 import { HiPlus } from 'react-icons/hi2';
 
 function formatDateTime(iso) {
@@ -34,11 +37,13 @@ export default function InterviewerSlotsPage() {
     return d.toISOString().slice(0, 10);
   });
   const [rescheduleSlot, setRescheduleSlot] = useState(null);
-  const [rescheduleForm, setRescheduleForm] = useState({ start: '', end: '' });
+  const [rescheduleForm, setRescheduleForm] = useState({ start: '', durationMins: 25 });
+  const [rescheduleReason, setRescheduleReason] = useState('');
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const [cancelSlot, setCancelSlot] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelSaving, setCancelSaving] = useState(false);
+  const [editMeetLinkSlot, setEditMeetLinkSlot] = useState(null);
   const [flash, setFlash] = useState({ type: '', text: '' });
 
   const showFlash = (type, text) => {
@@ -62,11 +67,11 @@ export default function InterviewerSlotsPage() {
 
   const openReschedule = (s) => {
     setRescheduleSlot(s);
+    setRescheduleReason('');
     const start = new Date(s.start_at);
-    const end = new Date(s.end_at);
     setRescheduleForm({
       start: start.toISOString().slice(0, 16),
-      end: end.toISOString().slice(0, 16),
+      durationMins: slotDurationMinutes(s.start_at, s.end_at),
     });
   };
 
@@ -80,6 +85,11 @@ export default function InterviewerSlotsPage() {
       showFlash('error', 'Enter date, start time, and number of slots.');
       return;
     }
+    if (!isValidHttpUrl(createForm.meetLink)) {
+      showFlash('error', 'Enter a valid Google Meet link (https://meet.google.com/...).');
+      return;
+    }
+    const meetLink = normalizeHttpUrl(createForm.meetLink);
     const durationMins =
       createForm.durationPreset === 'custom'
         ? Math.min(60, Math.max(15, Number(createForm.durationCustom) || 25))
@@ -92,7 +102,7 @@ export default function InterviewerSlotsPage() {
       p_start_at: startAt.toISOString(),
       p_end_at: endAt.toISOString(),
       p_slot_duration_mins: durationMins,
-      p_meet_link: createForm.meetLink?.trim() || null,
+      p_meet_link: meetLink,
     });
     setCreateSaving(false);
     if (data?.ok) {
@@ -109,9 +119,9 @@ export default function InterviewerSlotsPage() {
     e.preventDefault();
     if (!rescheduleSlot) return;
     const startAt = new Date(rescheduleForm.start);
-    const endAt = new Date(rescheduleForm.end);
-    if (endAt <= startAt) {
-      showFlash('error', 'End time must be after start time.');
+    const endAt = endAtFromStartAndMinutes(rescheduleForm.start, rescheduleForm.durationMins);
+    if (isNaN(startAt.getTime())) {
+      showFlash('error', 'Enter a valid date and time.');
       return;
     }
     setRescheduleSaving(true);
@@ -119,11 +129,13 @@ export default function InterviewerSlotsPage() {
       p_slot_id: rescheduleSlot.id,
       p_new_start_at: startAt.toISOString(),
       p_new_end_at: endAt.toISOString(),
+      p_reason: rescheduleReason.trim() || null,
     });
     setRescheduleSaving(false);
     if (data?.ok) {
       setRescheduleSlot(null);
-      showFlash('success', 'Slot rescheduled. Aspirant will be notified.');
+      setRescheduleReason('');
+      showFlash('success', 'Slot rescheduled. The aspirant was notified via Messages.');
       loadSlots();
     } else {
       showFlash('error', data?.error ?? 'Failed to reschedule.');
@@ -142,7 +154,7 @@ export default function InterviewerSlotsPage() {
     if (data?.ok) {
       setCancelSlot(null);
       setCancelReason('');
-      showFlash('success', 'Slot cancelled. Aspirant will be notified.');
+      showFlash('success', 'Slot cancelled. The aspirant was notified via Messages.');
       loadSlots();
     } else {
       showFlash('error', data?.error ?? 'Failed to cancel.');
@@ -263,28 +275,39 @@ export default function InterviewerSlotsPage() {
                         Join
                       </a>
                     ) : (
-                      '—'
+                      <span className="text-slate-400">Not set</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm">
-                    {s.status === 'booked' && (
-                      <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2">
+                      {s.status !== 'cancelled' && (
                         <button
                           type="button"
-                          onClick={() => openReschedule(s)}
-                          className="text-indigo-600 hover:underline font-medium"
+                          onClick={() => setEditMeetLinkSlot(s)}
+                          className="font-medium text-indigo-600 hover:underline"
                         >
-                          Reschedule
+                          {s.meet_link ? 'Edit link' : 'Add link'}
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => { setCancelSlot(s); setCancelReason(''); }}
-                          className="text-red-600 hover:underline font-medium"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    )}
+                      )}
+                      {s.status === 'booked' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openReschedule(s)}
+                            className="font-medium text-indigo-600 hover:underline"
+                          >
+                            Reschedule
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setCancelSlot(s); setCancelReason(''); }}
+                            className="font-medium text-red-600 hover:underline"
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -365,20 +388,22 @@ export default function InterviewerSlotsPage() {
               ) : null}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Meet link <span className="text-slate-400 font-normal">(optional, same for all slots)</span>
+                  Google Meet link <span className="text-red-600">*</span>
                 </label>
                 <input
                   type="url"
                   value={createForm.meetLink}
                   onChange={(e) => setCreateForm((f) => ({ ...f, meetLink: e.target.value }))}
-                  placeholder="https://meet.google.com/..."
+                  placeholder="https://meet.google.com/abc-defg-hij"
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                  required
                 />
+                <p className="mt-1 text-xs text-slate-500">Same link for all slots in this window. Aspirants need it when they book.</p>
               </div>
               <div className="flex gap-2 pt-2">
                 <button
                   type="submit"
-                  disabled={createSaving}
+                  disabled={createSaving || !createForm.meetLink.trim()}
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {createSaving ? <ButtonLoader className="inline h-4 w-4 text-white" /> : 'Publish slots'}
@@ -401,6 +426,9 @@ export default function InterviewerSlotsPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <h2 className="text-lg font-semibold text-slate-900 mb-2">Reschedule slot</h2>
             <p className="text-sm text-slate-600 mb-4">
+              The aspirant will receive a message with the new time. Add a reason if this is due to a technical issue or conflict.
+            </p>
+            <p className="text-sm text-slate-600 mb-4">
               {formatDateTime(rescheduleSlot.start_at)} – {formatDateTime(rescheduleSlot.end_at)}
               {rescheduleSlot.aspirant_name && (
                 <span className="block mt-1">Aspirant: {rescheduleSlot.aspirant_name}</span>
@@ -408,7 +436,7 @@ export default function InterviewerSlotsPage() {
             </p>
             <form onSubmit={handleRescheduleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New start</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">New date & time</label>
                 <input
                   type="datetime-local"
                   value={rescheduleForm.start}
@@ -418,13 +446,27 @@ export default function InterviewerSlotsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New end</label>
-                <input
-                  type="datetime-local"
-                  value={rescheduleForm.end}
-                  onChange={(e) => setRescheduleForm((f) => ({ ...f, end: e.target.value }))}
+                <label className="block text-sm font-medium text-slate-700 mb-1">Duration (minutes)</label>
+                <select
+                  value={rescheduleForm.durationMins}
+                  onChange={(e) => setRescheduleForm((f) => ({ ...f, durationMins: Number(e.target.value) }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value={20}>20</option>
+                  <option value={25}>25</option>
+                  <option value={30}>30</option>
+                  <option value={45}>45</option>
+                  <option value={60}>60</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason (recommended)</label>
+                <textarea
+                  value={rescheduleReason}
+                  onChange={(e) => setRescheduleReason(e.target.value)}
+                  placeholder="e.g. Technical issue with the original slot / Meet link"
+                  rows={3}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                  required
                 />
               </div>
               <div className="flex gap-2 pt-2">
@@ -433,7 +475,7 @@ export default function InterviewerSlotsPage() {
                   disabled={rescheduleSaving}
                   className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
                 >
-                  {rescheduleSaving ? <ButtonLoader className="inline h-4 w-4 text-white" /> : 'Reschedule'}
+                  {rescheduleSaving ? <ButtonLoader className="inline h-4 w-4 text-white" /> : 'Reschedule & notify'}
                 </button>
                 <button
                   type="button"
@@ -448,6 +490,17 @@ export default function InterviewerSlotsPage() {
         </div>
       )}
 
+      <EditMeetLinkModal
+        open={!!editMeetLinkSlot}
+        slotId={editMeetLinkSlot?.id}
+        initialLink={editMeetLinkSlot?.meet_link || ''}
+        onClose={() => setEditMeetLinkSlot(null)}
+        onSaved={() => {
+          showFlash('success', 'Meet link updated.');
+          loadSlots();
+        }}
+      />
+
       {cancelSlot && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
@@ -455,13 +508,15 @@ export default function InterviewerSlotsPage() {
             <p className="text-sm text-slate-600 mb-4">
               {formatDateTime(cancelSlot.start_at)} – {cancelSlot.aspirant_name ?? 'No aspirant'}
             </p>
-            <p className="text-sm text-slate-600 mb-2">The aspirant will be notified. Optional reason (internal):</p>
+            <p className="text-sm text-slate-600 mb-2">
+              The aspirant will be notified via Messages. Please add a reason (e.g. technical issue):
+            </p>
             <form onSubmit={handleCancelSubmit} className="space-y-4">
-              <input
-                type="text"
+              <textarea
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
-                placeholder="Reason (optional)"
+                placeholder="e.g. Meet link not working / interviewer unavailable"
+                rows={3}
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
               />
               <div className="flex gap-2 pt-2">

@@ -103,7 +103,7 @@ export function profileToForm(profile) {
     fullName: profile.full_name ?? '',
     email: profile.email ?? '',
     phone: profile.phone ?? '',
-    city: profile.city ?? '',
+    city: isPlaceholderCity(profile.city) ? '' : (profile.city ?? ''),
     country: profile.country ?? 'India',
     isFresher,
     yearsExperience:
@@ -343,6 +343,13 @@ export async function saveAspirantProfile(supabase, payload) {
 
 const PLACEHOLDER_CITIES = new Set(['pending', '—', '-', 'tbd']);
 
+/** True when city is empty or a placeholder saved before real onboarding (e.g. contact popup). */
+export function isPlaceholderCity(city) {
+  const trimmed = String(city ?? '').trim();
+  if (!trimmed) return true;
+  return PLACEHOLDER_CITIES.has(trimmed.toLowerCase());
+}
+
 export const ONBOARDING_PATH = '/onboarding?welcome=1';
 
 /** Education step: qualification / branch "Other" must include manual text. */
@@ -373,40 +380,99 @@ export function validateEducationFields(form) {
   return null;
 }
 
-/** True when onboarding form requirements are satisfied (resume, skills, LinkedIn, etc.). */
-export function isAspirantProfileComplete(profile) {
-  if (!profile) return false;
+function aspirantProfileCompletionChecks(profile) {
+  const missing = [];
+  if (!profile) return ['Profile not loaded'];
 
   const name = String(profile.full_name ?? '').trim();
   const city = String(profile.city ?? '').trim();
-  if (!name || PLACEHOLDER_CITIES.has(city.toLowerCase())) return false;
-  if (!String(profile.phone ?? '').trim()) return false;
-  if (!Array.isArray(profile.job_domains) || profile.job_domains.length === 0) {
-    if (!String(profile.job_domain ?? '').trim()) return false;
-  }
-  if (!String(profile.role_title ?? profile.primary_role ?? '').trim()) return false;
-  if (!Array.isArray(profile.skills) || profile.skills.length === 0) return false;
-  if (!String(profile.linkedin_url ?? '').trim()) return false;
-  if (!String(profile.resume_url ?? '').trim()) return false;
-  if (!String(profile.highest_qualification ?? '').trim()) return false;
-  if (!String(profile.degree_branch ?? '').trim()) return false;
+  if (!name) missing.push('Full name');
+  if (isPlaceholderCity(city)) missing.push('Current city');
+  if (!String(profile.phone ?? '').trim()) missing.push('Mobile number');
+
+  if (jobDomainsFromProfile(profile).length === 0) missing.push('Target domain');
+  if (!String(profile.role_title ?? profile.primary_role ?? '').trim()) missing.push('Role title');
+  if (!Array.isArray(profile.skills) || profile.skills.length === 0) missing.push('Skills');
+  if (!String(profile.linkedin_url ?? '').trim()) missing.push('LinkedIn profile');
+  if (!String(profile.resume_url ?? '').trim()) missing.push('Resume');
+  if (!String(profile.highest_qualification ?? '').trim()) missing.push('Highest qualification');
+  if (!String(profile.degree_branch ?? '').trim()) missing.push('Branch / course');
   if (profile.degree_branch === 'other' && !String(profile.degree_branch_other ?? '').trim()) {
-    return false;
+    missing.push('Branch / course (specify Other)');
   }
   if (profile.highest_qualification === 'other') {
     const customQual = String(profile.education?.graduation?.type ?? '').trim();
-    if (!customQual || customQual === 'other') return false;
+    if (!customQual || customQual === 'other') missing.push('Qualification (specify Other)');
   }
-  if (!String(profile.college_name ?? '').trim()) return false;
+  if (!String(profile.college_name ?? '').trim()) missing.push('College name');
 
   const gradYear = profile.is_currently_studying
-    ? profile.expected_graduation_year
+    ? (profile.expected_graduation_year ?? profile.graduation_year)
     : profile.graduation_year;
-  if (gradYear == null || gradYear === '') return false;
+  if (gradYear == null || gradYear === '') {
+    missing.push(profile.is_currently_studying ? 'Expected graduation year' : 'Graduation year');
+  }
 
-  if (profile.graduation_score == null && !profile.is_currently_studying) return false;
+  const score = profile.graduation_score;
+  const hasScore = score != null && String(score).trim() !== '';
+  if (!hasScore && !profile.is_currently_studying) missing.push('CGPA / percentage');
 
-  return true;
+  return missing;
+}
+
+/** Human-readable list of fields still required for mock booking. */
+export function getAspirantProfileIncompleteReasons(profile) {
+  return aspirantProfileCompletionChecks(profile);
+}
+
+/** First onboarding step (0–4) that still has missing profile data. */
+export function getFirstIncompleteOnboardingStep(profile) {
+  if (!profile) return 0;
+
+  const name = String(profile.full_name ?? '').trim();
+  const city = String(profile.city ?? '').trim();
+  if (!name || isPlaceholderCity(city) || !String(profile.phone ?? '').trim()) return 0;
+
+  if (jobDomainsFromProfile(profile).length === 0) return 1;
+  if (!String(profile.role_title ?? profile.primary_role ?? '').trim()) return 1;
+
+  if (!String(profile.highest_qualification ?? '').trim()) return 2;
+  if (!String(profile.degree_branch ?? '').trim()) return 2;
+  if (profile.degree_branch === 'other' && !String(profile.degree_branch_other ?? '').trim()) {
+    return 2;
+  }
+  if (profile.highest_qualification === 'other') {
+    const customQual = String(profile.education?.graduation?.type ?? '').trim();
+    if (!customQual || customQual === 'other') return 2;
+  }
+  if (!String(profile.college_name ?? '').trim()) return 2;
+
+  const gradYear = profile.is_currently_studying
+    ? (profile.expected_graduation_year ?? profile.graduation_year)
+    : profile.graduation_year;
+  if (gradYear == null || gradYear === '') return 2;
+
+  const score = profile.graduation_score;
+  const hasScore = score != null && String(score).trim() !== '';
+  if (!hasScore && !profile.is_currently_studying) return 2;
+
+  if (!Array.isArray(profile.skills) || profile.skills.length === 0) return 3;
+
+  if (!String(profile.linkedin_url ?? '').trim()) return 4;
+  if (!String(profile.resume_url ?? '').trim()) return 4;
+
+  return 0;
+}
+
+/** Onboarding URL that opens the step with the first missing field. */
+export function getOnboardingPathForProfile(profile) {
+  const step = getFirstIncompleteOnboardingStep(profile);
+  return `/onboarding?welcome=1&step=${step}`;
+}
+
+/** True when onboarding form requirements are satisfied (resume, skills, LinkedIn, etc.). */
+export function isAspirantProfileComplete(profile) {
+  return aspirantProfileCompletionChecks(profile).length === 0;
 }
 
 /** Show first-visit contact popup when name or mobile is missing (admin needs both). */
@@ -488,7 +554,7 @@ export function buildContactDetailsPayload({ fullName, phone, userId, email, pro
   form.fullName = fullName.trim();
   form.phone = phone.trim();
   form.email = (email || form.email || '').trim();
-  if (!form.city.trim() || PLACEHOLDER_CITIES.has(form.city.trim().toLowerCase())) {
+  if (isPlaceholderCity(form.city)) {
     form.city = '—';
   }
   return buildAspirantPayload(form, userId);

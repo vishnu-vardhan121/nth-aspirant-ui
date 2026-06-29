@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { HiXMark } from 'react-icons/hi2';
+import { AspirantIdentity } from './users/AspirantIdentity';
 import { supabase } from '../../lib/supabase';
 import { PageLoader, Loader } from '../../components/ui/Loader';
 
@@ -125,8 +126,15 @@ function CandidateDetailModal({ row, onClose, onSaved }) {
       >
         <div className="shrink-0 flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-200">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-slate-900 truncate">{row.full_name}</h2>
-            <p className="text-xs text-slate-500 mt-0.5">{formatDate(row.created_at)}</p>
+            <AspirantIdentity
+              name={row.full_name}
+              phone={row.phone}
+              email={row.email}
+              showEmail={false}
+              nameClassName="text-lg font-semibold text-slate-900 truncate"
+              phoneClassName="mt-0.5 text-sm font-medium tabular-nums text-slate-600"
+            />
+            <p className="text-xs text-slate-500 mt-1">{formatDate(row.created_at)}</p>
           </div>
           <button type="button" onClick={onClose} className="shrink-0 p-1.5 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close">
             <HiXMark className="w-5 h-5" />
@@ -518,7 +526,16 @@ export default function AdminTalentPoolPage() {
                     onClick={() => setSelected(r)}
                   >
                     <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{formatDate(r.created_at)}</td>
-                    <td className="px-4 py-3 font-medium text-slate-900">{r.full_name}</td>
+                    <td className="px-4 py-3">
+                      <AspirantIdentity
+                        name={r.full_name}
+                        phone={r.phone}
+                        email={r.email}
+                        showEmail={false}
+                        nameClassName="font-medium text-slate-900"
+                        phoneClassName="mt-0.5 text-xs font-medium tabular-nums text-slate-500"
+                      />
+                    </td>
                     <td className="px-4 py-3 text-slate-700 max-w-[200px] truncate" title={r.email}>
                       {r.email}
                     </td>

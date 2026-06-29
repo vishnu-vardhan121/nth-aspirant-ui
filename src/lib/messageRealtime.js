@@ -34,11 +34,7 @@ export function subscribeToAspirantMessages(uid, onInsert, options = {}) {
 
   ch.on(
     'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'messages', filter: `to_aspirant_id=eq.${uidStr}` },
-    handler,
-  ).on(
-    'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'messages', filter: 'to_aspirant_id=is.null' },
+    { event: 'INSERT', schema: 'public', table: 'messages' },
     handler,
   ).subscribe((status) => {
     if (status === 'CHANNEL_ERROR') {
@@ -67,13 +63,38 @@ export function subscribeToInterviewerMessages(uid, onInsert) {
 
   ch.on(
     'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'messages', filter: `to_interviewer_id=eq.${uidStr}` },
-    () => onInsert(),
-  ).on(
-    'postgres_changes',
-    { event: 'INSERT', schema: 'public', table: 'messages', filter: `from_interviewer_id=eq.${uidStr}` },
+    { event: 'INSERT', schema: 'public', table: 'messages' },
     () => onInsert(),
   ).subscribe();
+
+  return () => {
+    supabase.removeChannel(ch);
+  };
+}
+
+/**
+ * Subscribe to new messages for admin inbox refresh (RLS-scoped).
+ * @param {() => void} onInsert
+ * @param {{ channelId?: string }} [options]
+ * @returns {() => void} cleanup
+ */
+export function subscribeToAdminMessages(onInsert, options = {}) {
+  if (typeof supabase.channel !== 'function') return () => {};
+
+  const channelName = options.channelId ?? 'admin-messages';
+  const ch = supabase.channel(channelName);
+
+  ch.on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'messages' },
+    () => onInsert(),
+  ).subscribe((status) => {
+    if (status === 'CHANNEL_ERROR') {
+      console.warn(
+        '[Realtime] admin messages channel error – enable Replication for table "messages" in Supabase.',
+      );
+    }
+  });
 
   return () => {
     supabase.removeChannel(ch);

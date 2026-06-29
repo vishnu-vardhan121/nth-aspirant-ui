@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight } from 'react-icons/hi2';
+import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight, HiChartBar } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 
@@ -47,7 +47,7 @@ export default function InterviewerLayout() {
             <span className="font-semibold text-slate-700 text-sm">Interviewer</span>
           </Link>
         </div>
-        <nav className="p-2 flex-1 min-h-0 overflow-y-auto">
+        <nav className="nth-scroll-y flex-1 min-h-0 overflow-x-hidden overflow-y-auto p-2">
           <Link to="/interviewer" className={navLinkClass(isActive('/interviewer', true))}>
             <HiHome className="w-5 h-5 shrink-0" />
             Overview
@@ -59,6 +59,10 @@ export default function InterviewerLayout() {
           <Link to="/interviewer/mocks" className={navLinkClass(isActive('/interviewer/mocks'))}>
             <HiAcademicCap className="w-5 h-5 shrink-0" />
             My Mocks
+          </Link>
+          <Link to="/interviewer/performance" className={navLinkClass(isActive('/interviewer/performance'))}>
+            <HiChartBar className="w-5 h-5 shrink-0" />
+            My performance
           </Link>
           <Link to="/interviewer/messages" className={navLinkClass(isActive('/interviewer/messages'))}>
             <HiChatBubbleLeftRight className="w-5 h-5 shrink-0" />
