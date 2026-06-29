@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
-import { isAspirantProfileComplete, ONBOARDING_PATH } from '../../../lib/aspirantProfile';
+import { isAspirantProfileComplete, getOnboardingPathForProfile } from '../../../lib/aspirantProfile';
 
 /** Redirect to onboarding when profile is incomplete before gated dashboard actions. */
 export function useProfileOnboardingGate() {
@@ -10,8 +10,8 @@ export function useProfileOnboardingGate() {
   const profileComplete = isAspirantProfileComplete(profile);
 
   const goToOnboarding = useCallback(() => {
-    navigate(ONBOARDING_PATH);
-  }, [navigate]);
+    navigate(getOnboardingPathForProfile(profile));
+  }, [navigate, profile]);
 
   /** @returns {boolean} true when the action may proceed */
   const requireCompleteProfile = useCallback(() => {

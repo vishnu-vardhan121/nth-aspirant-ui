@@ -1,13 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { normalizeHttpUrl, isAspirantProfileComplete } from '../../../lib/aspirantProfile';
 import { isSubscriptionActive } from '../../../lib/planLimits';
+import { getMockBookingGuidance } from '../../../lib/mockBookingGuidance';
 import { useAppSelector } from '../../../store/hooks';
 import { useProfileOnboardingGate } from '../hooks/useProfileOnboardingGate';
 import { PageLoader } from '../../../components/ui/Loader';
 import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
 import CompleteProfileBanner from '../components/CompleteProfileBanner';
+import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
+import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
 import { HiCalendarDays, HiCheckCircle, HiClock, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
@@ -74,12 +77,33 @@ export default function MocksPage() {
   const [noticesModalOpen, setNoticesModalOpen] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
   const infoRef = useRef(null);
+  const bookSectionRef = useRef(null);
 
   const withinMonthlyLimit = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
   const pastBookingGap =
     !usage?.next_book_after || new Date(usage.next_book_after) <= new Date();
-  const canBook = withinMonthlyLimit && pastBookingGap;
+  const hasActiveMock = myRegistrations.some((r) => r.status === 'scheduled' || r.status === 'requested');
+  const canBook = withinMonthlyLimit && pastBookingGap && !hasActiveMock;
+  const canRequestMock = canBook;
+
+  const mockGuidance = useMemo(
+    () =>
+      getMockBookingGuidance({
+        usage,
+        plan: aspirantProfile?.plan ?? null,
+        planStartedAt: aspirantProfile?.plan_started_at ?? null,
+      }),
+    [usage, aspirantProfile?.plan, aspirantProfile?.plan_started_at],
+  );
+
   const NOTICES_PREVIEW = 5;
+  const unreadNoticeCount = mockNotices.filter((n) => !n.read_at).length;
+  const latestCancelled = myRegistrations.find((r) => r.status === 'cancelled');
+  const latestScheduled = myRegistrations.find((r) => r.status === 'scheduled');
+
+  const scrollToBookSection = () => {
+    bookSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const fetchUsage = () => {
     supabase.rpc('get_mock_usage').then(({ data }) => {
@@ -122,6 +146,46 @@ export default function MocksPage() {
     fetchPendingRescheduleIds();
     setLoading(false);
   }, []);
+
+  useEffect(() => {
+    const onInvalidate = () => {
+      fetchMockNotices();
+      fetchMyRegistrations();
+    };
+    window.addEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
+    return () => window.removeEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let unsubscribe = () => {};
+
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (cancelled) return;
+      const uid = session?.user?.id;
+      if (!uid) return;
+
+      unsubscribe = subscribeToAspirantMessages(
+        uid,
+        () => {
+          fetchMockNotices();
+          fetchMyRegistrations();
+        },
+        { channelId: `mocks-page-messages-${uid}` },
+      );
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  }, []);
+
+  const openNoticesModal = () => {
+    setNoticesModalOpen(true);
+    supabase.rpc('mark_my_mock_notices_read').then(() => fetchMockNotices());
+  };
 
   useEffect(() => {
     if (!slotsFrom || !slotsTo) return;
@@ -205,6 +269,13 @@ export default function MocksPage() {
   const showRequestForm = requestWithoutSlot || requestModalOpen;
   const openRequestForm = () => {
     if (!requireCompleteProfile()) return;
+    if (hasActiveMock) {
+      setRequestMessage({
+        type: 'error',
+        text: 'You already have a mock scheduled or pending. Finish it before requesting another.',
+      });
+      return;
+    }
     setRequestModalOpen(true);
     setRequestWithoutSlot(true);
   };
@@ -219,7 +290,40 @@ export default function MocksPage() {
 
   return (
     <div className="space-y-6">
-      {showCompleteProfileBanner ? <CompleteProfileBanner /> : null}
+      {showCompleteProfileBanner ? <CompleteProfileBanner profile={aspirantProfile} /> : null}
+
+      {(latestCancelled || unreadNoticeCount > 0) && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-semibold">
+            {latestCancelled && !latestScheduled
+              ? 'Your mock slot was cancelled or changed'
+              : 'You have mock updates'}
+          </p>
+          <p className="mt-1 text-amber-900/90">
+            {latestCancelled && !latestScheduled
+              ? 'Check Messages for the reason and new time (if rescheduled). You can book another slot when ready.'
+              : 'Open Messages or Notices below for reschedule/cancel details.'}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link
+              to="/dashboard/messages"
+              className="inline-flex items-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              View Messages
+              {unreadNoticeCount > 0 ? ` (${unreadNoticeCount})` : ''}
+            </Link>
+            {canBook && (
+              <button
+                type="button"
+                onClick={scrollToBookSection}
+                className="inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
+              >
+                Book a new slot
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Header: title, info, usage, actions */}
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
@@ -240,6 +344,7 @@ export default function MocksPage() {
                 <div className="absolute left-0 top-full z-50 mt-1 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left sm:w-72">
                   <p className="text-xs font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">How mocks work</p>
                   <ul className="text-xs text-[rgb(var(--nth-text-secondary-light))] space-y-1.5">
+                    <li><strong>One at a time</strong> — Finish or cancel your current mock before booking another.</li>
                     <li><strong>Allowance</strong> — {usage?.limit >= 0 ? `${usage.limit} mocks per subscription month` : 'Unlimited mocks'} (scheduled + completed count).</li>
                     <li><strong>Book a slot</strong> — Pick date/time; get Meet link.</li>
                     <li><strong>Request a slot</strong> — Admin assigns; you get notified.</li>
@@ -261,43 +366,73 @@ export default function MocksPage() {
             <button
               type="button"
               onClick={openRequestForm}
-              className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-center ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
+              disabled={!canRequestMock && profileComplete}
+              className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-center disabled:cursor-not-allowed disabled:opacity-60 ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
             >
-              {!profileComplete ? 'Complete profile to request mock' : 'Request for mock'}
+              {!profileComplete
+                ? 'Complete profile to request mock'
+                : hasActiveMock
+                  ? 'Mock already scheduled'
+                  : 'Request for mock'}
             </button>
           )}
         </div>
       </div>
 
       {usage?.active && usage.period_start && usage.period_end ? (
-        <section className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm text-slate-700">
-          <p>
-            <span className="font-semibold text-slate-900">This subscription month:</span>{' '}
-            {formatPeriodDate(usage.period_start)} – {formatPeriodDate(usage.period_end)}
+        <section className="space-y-3">
+          {mockGuidance.alerts.map((alert) => (
+            <div
+              key={`${alert.title}-${alert.severity}`}
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                alert.severity === 'urgent'
+                  ? 'border-amber-300 bg-amber-50 text-amber-950'
+                  : alert.severity === 'neutral'
+                    ? 'border-slate-200 bg-slate-50 text-slate-700'
+                    : 'border-indigo-200 bg-indigo-50/80 text-indigo-950'
+              }`}
+            >
+              <p className="font-semibold">{alert.title}</p>
+              <p className="mt-1 text-xs leading-relaxed opacity-90">{alert.message}</p>
+              {alert.bookBy ? (
+                <p className="mt-2 text-xs font-semibold">
+                  Book by: {formatPeriodDate(alert.bookBy)}
+                  {alert.remaining > 0 ? ` · ${alert.remaining} mock${alert.remaining === 1 ? '' : 's'} left` : ''}
+                </p>
+              ) : null}
+              {alert.nextBookAfter ? (
+                <p className="mt-1 text-xs">
+                  Next booking opens: {formatPeriodDate(alert.nextBookAfter)}
+                </p>
+              ) : null}
+            </div>
+          ))}
+
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">Your mock dates</p>
+            <ul className="mt-2 space-y-1.5 text-xs">
+              {mockGuidance.timeline.map((row) => (
+                <li
+                  key={row.key}
+                  className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 ${
+                    row.emphasis ? 'font-semibold text-indigo-900' : ''
+                  }`}
+                >
+                  <span className="text-slate-600">{row.label}</span>
+                  <span className="tabular-nums text-slate-900">{formatPeriodDate(row.date)}</span>
+                </li>
+              ))}
+            </ul>
             {usage.limit >= 0 ? (
-              <>
-                {' '}
-                · <span className="font-medium">{usage.used} / {usage.limit}</span> mocks booked or completed
-              </>
+              <p className="mt-2 border-t border-indigo-100/80 pt-2 text-xs text-slate-600">
+                This period: <span className="font-medium text-slate-900">{usage.used} / {usage.limit}</span>{' '}
+                mocks booked or completed
+                {usage.min_days_between ? (
+                  <> · wait {usage.min_days_between} days between completed mocks</>
+                ) : null}
+              </p>
             ) : null}
-          </p>
-          {usage.next_book_after ? (
-            <p className="mt-1 text-xs text-slate-600">
-              You can book your next mock from{' '}
-              <span className="font-medium">{formatPeriodDate(usage.next_book_after)}</span>
-              {usage.min_days_between ? ` (${usage.min_days_between}-day gap after your last completed mock).` : '.'}
-            </p>
-          ) : usage.min_days_between ? (
-            <p className="mt-1 text-xs text-slate-600">
-              Up to {usage.limit >= 0 ? usage.limit : 'unlimited'} mocks per subscription month; wait at least{' '}
-              {usage.min_days_between} days between completed mocks.
-            </p>
-          ) : null}
-          {!withinMonthlyLimit && usage.limit >= 0 ? (
-            <p className="mt-1 text-xs text-amber-800">
-              Monthly allowance used. Your next month starts {formatPeriodDate(usage.period_end)}.
-            </p>
-          ) : null}
+          </div>
         </section>
       ) : null}
 
@@ -307,11 +442,16 @@ export default function MocksPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-[rgb(var(--nth-text-primary-light))] flex items-center gap-2">
               <HiMegaphone className="w-4 h-4" /> Notices
+              {unreadNoticeCount > 0 && (
+                <span className="bg-[hsl(var(--nth-primary))] text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
+                  {unreadNoticeCount > 99 ? '99+' : unreadNoticeCount}
+                </span>
+              )}
             </h2>
             {mockNotices.length > NOTICES_PREVIEW && (
               <button
                 type="button"
-                onClick={() => setNoticesModalOpen(true)}
+                onClick={openNoticesModal}
                 className="text-xs font-medium text-[hsl(var(--nth-primary))] hover:underline"
               >
                 View all ({mockNotices.length})
@@ -407,7 +547,7 @@ export default function MocksPage() {
 
       {/* Book a slot */}
       {usage?.active && (
-        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 sm:p-6 shadow-sm">
+        <section ref={bookSectionRef} className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 sm:p-6 shadow-sm scroll-mt-4">
           <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-4">Book a slot</h2>
           <div className="flex flex-wrap items-end gap-3 mb-4">
             <div>
@@ -429,6 +569,12 @@ export default function MocksPage() {
               />
             </div>
           </div>
+          {hasActiveMock ? (
+            <p className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              You already have a mock scheduled or pending. Finish that session (or wait for it to be cancelled) before
+              booking another slot.
+            </p>
+          ) : null}
           {slotMessage.text && (
             <p className={`text-sm mb-3 ${slotMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{slotMessage.text}</p>
           )}
@@ -467,7 +613,13 @@ export default function MocksPage() {
                       onClick={() => handleBookSlot(slot.id)}
                       className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {bookingSlotId === slot.id ? 'Booking…' : canBook ? 'Book' : 'Limit reached'}
+                      {bookingSlotId === slot.id
+                        ? 'Booking…'
+                        : hasActiveMock
+                          ? 'Mock in progress'
+                          : canBook
+                            ? 'Book'
+                            : 'Limit reached'}
                     </button>
                   )}
                 </li>
@@ -524,6 +676,15 @@ export default function MocksPage() {
                         Scheduled: {formatDateTime(r.scheduled_at)}
                       </p>
                     )}
+                    {r.status === 'cancelled' && (
+                      <p className="mt-2 text-sm text-amber-800">
+                        This slot was cancelled. Check{' '}
+                        <Link to="/dashboard/messages" className="font-medium underline">
+                          Messages
+                        </Link>{' '}
+                        for details.
+                      </p>
+                    )}
                     {r.status === 'completed' ? (
                       <div className="mt-2">
                         <MockFeedbackDisplay registration={r} />
@@ -562,6 +723,18 @@ export default function MocksPage() {
                           : pendingRescheduleIds.includes(r.id)
                             ? 'Reschedule requested'
                             : 'Request reschedule'}
+                      </button>
+                    )}
+                    {r.status === 'cancelled' && canBook && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!requireCompleteProfile()) return;
+                          scrollToBookSection();
+                        }}
+                        className="nth-btn-primary px-3 py-1.5 rounded-lg text-sm font-medium"
+                      >
+                        Book another slot
                       </button>
                     )}
                   </div>

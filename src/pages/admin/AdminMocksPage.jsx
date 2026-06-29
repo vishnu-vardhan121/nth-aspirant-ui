@@ -5,6 +5,8 @@ import { HiCalendarDays, HiLink, HiCheckCircle, HiUserGroup, HiClock, HiCalendar
 import MockFeedbackModal, { createEmptyMockFeedbackForm } from '../../components/mock/MockFeedbackModal';
 import MockFeedbackDisplay from '../../components/mock/MockFeedbackDisplay';
 import { formatFeedbackSummary, submitMockFeedback } from '../../lib/mockFeedback';
+import { isValidHttpUrl, normalizeHttpUrl } from '../../lib/aspirantProfile';
+import { slotDurationMinutes, endAtFromStartAndMinutes } from '../../lib/mockSlotTiming';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -16,6 +18,80 @@ function formatDateTime(createdAt) {
   if (!createdAt) return '—';
   const d = new Date(createdAt);
   return isNaN(d.getTime()) ? '—' : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function PendingRequestRow({ registration, interviewers, onAssign, onSchedule, onDetail, formatDate: fmtDate }) {
+  const [interviewerId, setInterviewerId] = useState(registration.interviewer_id ?? '');
+  const [assigning, setAssigning] = useState(false);
+
+  useEffect(() => {
+    setInterviewerId(registration.interviewer_id ?? '');
+  }, [registration.interviewer_id, registration.id]);
+
+  const handleAssign = async (e) => {
+    e.stopPropagation();
+    if (!interviewerId) return;
+    setAssigning(true);
+    await onAssign(registration, interviewerId);
+    setAssigning(false);
+  };
+
+  return (
+    <tr className="hover:bg-amber-50/30">
+      <td className="px-4 py-2.5">
+        <button type="button" onClick={onDetail} className="text-left hover:underline">
+          <span className="font-medium text-slate-900">{registration.aspirant_name ?? '—'}</span>
+          {registration.aspirant_email ? (
+            <span className="block text-xs text-slate-500 truncate max-w-[180px]">{registration.aspirant_email}</span>
+          ) : null}
+        </button>
+      </td>
+      <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{fmtDate(registration.created_at)}</td>
+      <td className="px-4 py-2.5 text-xs text-slate-700 max-w-[200px]">
+        {registration.availability_notes ? (
+          <span className="line-clamp-2" title={registration.availability_notes}>{registration.availability_notes}</span>
+        ) : (
+          <span className="text-slate-400">—</span>
+        )}
+      </td>
+      <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-wrap items-center gap-2">
+          <select
+            value={interviewerId}
+            onChange={(e) => setInterviewerId(e.target.value)}
+            className="min-w-[140px] rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-xs"
+          >
+            <option value="">Select…</option>
+            {interviewers.map((i) => (
+              <option key={i.id} value={i.id}>{i.name ?? i.email}</option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={handleAssign}
+            disabled={!interviewerId || assigning}
+            className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+          >
+            {assigning ? '…' : 'Assign'}
+          </button>
+        </div>
+        {registration.interviewer_name ? (
+          <p className="mt-1 text-xs text-emerald-700">Current: {registration.interviewer_name}</p>
+        ) : (
+          <p className="mt-1 text-xs text-amber-700">Not assigned yet</p>
+        )}
+      </td>
+      <td className="px-4 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={onSchedule}
+          className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-700"
+        >
+          Set schedule
+        </button>
+      </td>
+    </tr>
+  );
 }
 
 const SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; // used by slot forms only
@@ -43,7 +119,7 @@ export default function AdminMocksPage() {
   const [loading, setLoading] = useState(true);
   const [scheduleModal, setScheduleModal] = useState(null);
   const [scheduleSaving, setScheduleSaving] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState({ scheduledAt: '', meetLink: '', adminNotes: '', notify: true });
+  const [scheduleForm, setScheduleForm] = useState({ scheduledAt: '', meetLink: '', adminNotes: '', interviewerId: '', notify: true });
   const [flash, setFlash] = useState({ type: '', text: '' });
   const [interviewers, setInterviewers] = useState([]);
   const [createSlotsForm, setCreateSlotsForm] = useState({ interviewerId: '', date: '', startTime: '14:00', numSlots: 4, durationPreset: '25', durationCustom: 25, meetLink: '' });
@@ -58,7 +134,8 @@ export default function AdminMocksPage() {
   const [slotsInterviewerId, setSlotsInterviewerId] = useState('');
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [rescheduleSlotAdmin, setRescheduleSlotAdmin] = useState(null);
-  const [rescheduleFormAdmin, setRescheduleFormAdmin] = useState({ start: '', end: '' });
+  const [rescheduleFormAdmin, setRescheduleFormAdmin] = useState({ start: '', durationMins: 25 });
+  const [rescheduleReasonAdmin, setRescheduleReasonAdmin] = useState('');
   const [rescheduleSavingAdmin, setRescheduleSavingAdmin] = useState(false);
   const [cancelSlotAdmin, setCancelSlotAdmin] = useState(null);
   const [cancelReasonAdmin, setCancelReasonAdmin] = useState('');
@@ -71,6 +148,7 @@ export default function AdminMocksPage() {
   const [completeForm, setCompleteForm] = useState(() => createEmptyMockFeedbackForm());
   const [completeSaving, setCompleteSaving] = useState(false);
   const [registrationDetailModal, setRegistrationDetailModal] = useState(null);
+  const [detailAssignInterviewerId, setDetailAssignInterviewerId] = useState('');
   const [registrationsPage, setRegistrationsPage] = useState(0);
   const [registrationsSearch, setRegistrationsSearch] = useState('');
   const [registrationsStatusFilter, setRegistrationsStatusFilter] = useState('');
@@ -169,6 +247,11 @@ export default function AdminMocksPage() {
       setFlashMsg('error', 'Slot duration must be between 15 and 60 minutes.');
       return;
     }
+    if (!isValidHttpUrl(createSlotsForm.meetLink)) {
+      setFlashMsg('error', 'Enter a valid Google Meet link (https://meet.google.com/...).');
+      return;
+    }
+    const meetLink = normalizeHttpUrl(createSlotsForm.meetLink);
     const startAt = new Date(`${createSlotsForm.date}T${createSlotsForm.startTime}:00`);
     const endAt = new Date(startAt.getTime() + createSlotsForm.numSlots * durationMins * 60 * 1000);
     setCreateSlotsSaving(true);
@@ -177,7 +260,7 @@ export default function AdminMocksPage() {
       p_start_at: startAt.toISOString(),
       p_end_at: endAt.toISOString(),
       p_slot_duration_mins: durationMins,
-      p_meet_link: createSlotsForm.meetLink?.trim() || null,
+      p_meet_link: meetLink,
     });
     setCreateSlotsSaving(false);
     if (data?.ok) {
@@ -245,6 +328,11 @@ export default function AdminMocksPage() {
     }
   };
 
+  const openRegistrationDetail = (registration) => {
+    setRegistrationDetailModal(registration);
+    setDetailAssignInterviewerId(registration.interviewer_id ?? '');
+  };
+
   const openScheduleModal = (r) => {
     setScheduleModal(r);
     const d = r.scheduled_at ? new Date(r.scheduled_at) : new Date();
@@ -253,13 +341,44 @@ export default function AdminMocksPage() {
       scheduledAt: local,
       meetLink: r.meet_link ?? '',
       adminNotes: r.admin_notes ?? '',
+      interviewerId: r.interviewer_id ?? '',
       notify: true,
     });
+  };
+
+  const handleAssignInterviewer = async (registration, interviewerId) => {
+    if (!registration?.id || !interviewerId) {
+      setFlashMsg('error', 'Select an interviewer.');
+      return;
+    }
+    const { data } = await supabase.rpc('admin_assign_mock_interviewer', {
+      p_registration_id: registration.id,
+      p_interviewer_id: interviewerId,
+    });
+    if (data?.ok) {
+      fetchMocks();
+      setRegistrationDetailModal((prev) =>
+        prev?.id === registration.id
+          ? { ...prev, interviewer_id: interviewerId, interviewer_name: interviewers.find((i) => i.id === interviewerId)?.name }
+          : prev
+      );
+      setFlashMsg('success', 'Interviewer assigned. They will see this request in My Mocks.');
+    } else {
+      setFlashMsg('error', data?.error ?? 'Failed to assign interviewer.');
+    }
   };
 
   const handleScheduleSubmit = async (e) => {
     e.preventDefault();
     if (!scheduleModal) return;
+    if (!scheduleForm.interviewerId) {
+      setFlashMsg('error', 'Select an interviewer to assign.');
+      return;
+    }
+    if (!scheduleForm.scheduledAt) {
+      setFlashMsg('error', 'Date and time required.');
+      return;
+    }
     setScheduleSaving(true);
     const scheduledAt = scheduleForm.scheduledAt ? new Date(scheduleForm.scheduledAt).toISOString() : null;
     const { data } = await supabase.rpc('admin_schedule_mock', {
@@ -267,6 +386,7 @@ export default function AdminMocksPage() {
       p_scheduled_at: scheduledAt,
       p_meet_link: scheduleForm.meetLink.trim() || null,
       p_admin_notes: scheduleForm.adminNotes.trim() || null,
+      p_interviewer_id: scheduleForm.interviewerId,
     });
     setScheduleSaving(false);
     if (data?.ok) {
@@ -285,7 +405,7 @@ export default function AdminMocksPage() {
       setScheduleModal(null);
       fetchMocks();
       fetchSlots();
-      setFlashMsg('success', 'Schedule saved.');
+      setFlashMsg('success', 'Schedule saved and interviewer assigned.');
     } else {
       setFlashMsg('error', data?.error ?? 'Failed to save schedule.');
     }
@@ -293,9 +413,10 @@ export default function AdminMocksPage() {
 
   const openRescheduleSlotAdmin = (slot) => {
     setRescheduleSlotAdmin(slot);
+    setRescheduleReasonAdmin('');
     setRescheduleFormAdmin({
       start: new Date(slot.start_at).toISOString().slice(0, 16),
-      end: new Date(slot.end_at).toISOString().slice(0, 16),
+      durationMins: slotDurationMinutes(slot.start_at, slot.end_at),
     });
   };
 
@@ -303,9 +424,9 @@ export default function AdminMocksPage() {
     e.preventDefault();
     if (!rescheduleSlotAdmin) return;
     const startAt = new Date(rescheduleFormAdmin.start);
-    const endAt = new Date(rescheduleFormAdmin.end);
-    if (endAt <= startAt) {
-      setFlashMsg('error', 'End time must be after start time.');
+    const endAt = endAtFromStartAndMinutes(rescheduleFormAdmin.start, rescheduleFormAdmin.durationMins);
+    if (isNaN(startAt.getTime())) {
+      setFlashMsg('error', 'Enter a valid date and time.');
       return;
     }
     setRescheduleSavingAdmin(true);
@@ -313,11 +434,13 @@ export default function AdminMocksPage() {
       p_slot_id: rescheduleSlotAdmin.id,
       p_new_start_at: startAt.toISOString(),
       p_new_end_at: endAt.toISOString(),
+      p_reason: rescheduleReasonAdmin.trim() || null,
     });
     setRescheduleSavingAdmin(false);
     if (data?.ok) {
       setRescheduleSlotAdmin(null);
-      setFlashMsg('success', 'Slot rescheduled. Aspirant will be notified if booked.');
+      setRescheduleReasonAdmin('');
+      setFlashMsg('success', 'Slot rescheduled. Aspirant was notified via Messages.');
       fetchSlots();
       fetchMocks();
     } else {
@@ -337,7 +460,7 @@ export default function AdminMocksPage() {
     if (data?.ok) {
       setCancelSlotAdmin(null);
       setCancelReasonAdmin('');
-      setFlashMsg('success', 'Slot cancelled. Aspirant will be notified if it was booked.');
+      setFlashMsg('success', 'Slot cancelled. Aspirant was notified via Messages.');
       fetchSlots();
       fetchMocks();
     } else {
@@ -384,7 +507,9 @@ export default function AdminMocksPage() {
   const slotsAvailable = slots.filter((s) => s.status === 'available').length;
   const slotsBooked = slots.filter((s) => s.status === 'booked').length;
   const slotsCancelled = slots.filter((s) => s.status === 'cancelled').length;
-  const pendingRequests = registrations.filter((r) => r.status === 'requested').length;
+  const pendingRequestList = registrations.filter((r) => r.status === 'requested');
+  const pendingRequests = pendingRequestList.length;
+  const unassignedPending = pendingRequestList.filter((r) => !r.interviewer_id).length;
 
   return (
     <div className="space-y-6">
@@ -597,13 +722,23 @@ export default function AdminMocksPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Meet link (optional)</label>
-                  <input type="url" value={createSlotsForm.meetLink} onChange={(e) => setCreateSlotsForm((f) => ({ ...f, meetLink: e.target.value }))} placeholder="https://meet.google.com/..." className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Google Meet link <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={createSlotsForm.meetLink}
+                    onChange={(e) => setCreateSlotsForm((f) => ({ ...f, meetLink: e.target.value }))}
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                    className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    required
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Required. Same link for all slots in this window.</p>
                 </div>
                 {interviewers.length === 0 && <p className="text-sm text-amber-700">Mark at least one admin as Interviewer on the Admins page to create slots.</p>}
                 <div className="flex gap-2 pt-2">
                   <button type="button" onClick={() => setCreateSlotsModalOpen(false)} disabled={createSlotsSaving} className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50">Cancel</button>
-                  <button type="submit" disabled={createSlotsSaving || interviewers.length === 0} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{createSlotsSaving ? 'Creating…' : 'Create slots'}</button>
+                  <button type="submit" disabled={createSlotsSaving || interviewers.length === 0 || !createSlotsForm.meetLink.trim()} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{createSlotsSaving ? 'Creating…' : 'Create slots'}</button>
                 </div>
               </form>
             </div>
@@ -620,18 +755,41 @@ export default function AdminMocksPage() {
               {formatDateTime(rescheduleSlotAdmin.start_at)} – {rescheduleSlotAdmin.interviewer_name}
               {rescheduleSlotAdmin.aspirant_name && <span className="block mt-1">Booked by: {rescheduleSlotAdmin.aspirant_name}</span>}
             </p>
+            <p className="text-sm text-slate-600 mb-4">
+              The aspirant will be notified via Messages with the new time and reason.
+            </p>
             <form onSubmit={handleRescheduleSlotAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New start</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">New date & time</label>
                 <input type="datetime-local" value={rescheduleFormAdmin.start} onChange={(e) => setRescheduleFormAdmin((f) => ({ ...f, start: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">New end</label>
-                <input type="datetime-local" value={rescheduleFormAdmin.end} onChange={(e) => setRescheduleFormAdmin((f) => ({ ...f, end: e.target.value }))} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" required />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Duration (minutes)</label>
+                <select
+                  value={rescheduleFormAdmin.durationMins}
+                  onChange={(e) => setRescheduleFormAdmin((f) => ({ ...f, durationMins: Number(e.target.value) }))}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+                >
+                  <option value={20}>20</option>
+                  <option value={25}>25</option>
+                  <option value={30}>30</option>
+                  <option value={45}>45</option>
+                  <option value={60}>60</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason (recommended)</label>
+                <textarea
+                  value={rescheduleReasonAdmin}
+                  onChange={(e) => setRescheduleReasonAdmin(e.target.value)}
+                  placeholder="e.g. Technical issue with original slot / Meet link"
+                  rows={3}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={rescheduleSavingAdmin} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{rescheduleSavingAdmin ? 'Saving…' : 'Reschedule'}</button>
-                <button type="button" onClick={() => setRescheduleSlotAdmin(null)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
+                <button type="submit" disabled={rescheduleSavingAdmin} className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50">{rescheduleSavingAdmin ? 'Saving…' : 'Reschedule & notify'}</button>
+                <button type="button" onClick={() => { setRescheduleSlotAdmin(null); setRescheduleReasonAdmin(''); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
               </div>
             </form>
           </div>
@@ -647,10 +805,19 @@ export default function AdminMocksPage() {
               {formatDateTime(cancelSlotAdmin.start_at)} – {cancelSlotAdmin.interviewer_name}
               {cancelSlotAdmin.aspirant_name && <span className="block mt-1">Booked by: {cancelSlotAdmin.aspirant_name}</span>}
             </p>
+            <p className="text-sm text-slate-600 mb-4">
+              The aspirant will be notified via Messages. Add a reason (e.g. technical issue).
+            </p>
             <form onSubmit={handleCancelSlotAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Reason / message to aspirant (optional)</label>
-                <input type="text" value={cancelReasonAdmin} onChange={(e) => setCancelReasonAdmin(e.target.value)} placeholder="e.g. Slot no longer available" className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <label className="block text-sm font-medium text-slate-700 mb-1">Reason for aspirant</label>
+                <textarea
+                  value={cancelReasonAdmin}
+                  onChange={(e) => setCancelReasonAdmin(e.target.value)}
+                  placeholder="e.g. Slot no longer available / Meet link issue"
+                  rows={3}
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
               </div>
               <div className="flex gap-2 pt-2">
                 <button type="submit" disabled={cancelSavingAdmin} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{cancelSavingAdmin ? 'Cancelling…' : 'Cancel slot'}</button>
@@ -734,19 +901,53 @@ export default function AdminMocksPage() {
         </section>
       )}
 
-      {/* Students waiting for a slot */}
+      {/* Students waiting for a slot — assign interviewer + schedule */}
       {pendingRequests > 0 && (
-        <section className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm text-amber-800">
-            <strong>{pendingRequests}</strong> student{pendingRequests !== 1 ? 's' : ''} waiting for a slot — set date, time, and Meet link in <strong>All mock registrations</strong> (click “Set schedule”).
-          </p>
+        <section className="rounded-xl border border-amber-200 bg-amber-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-amber-200/80">
+            <p className="text-sm font-medium text-amber-950">
+              <strong>{pendingRequests}</strong> mock request{pendingRequests !== 1 ? 's' : ''} waiting
+              {unassignedPending > 0 ? (
+                <span className="font-normal text-amber-800"> · {unassignedPending} unassigned</span>
+              ) : null}
+            </p>
+            <p className="text-xs text-amber-800 mt-1">
+              Assign an interviewer (visible to all interviewers in their request queue), then set date, time, and Meet link.
+            </p>
+          </div>
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full text-left text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-2 font-semibold text-slate-700">Student</th>
+                  <th className="px-4 py-2 font-semibold text-slate-700">Requested</th>
+                  <th className="px-4 py-2 font-semibold text-slate-700">Notes</th>
+                  <th className="px-4 py-2 font-semibold text-slate-700 min-w-[200px]">Assign interviewer</th>
+                  <th className="px-4 py-2 font-semibold text-slate-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {pendingRequestList.map((r) => (
+                  <PendingRequestRow
+                    key={r.id}
+                    registration={r}
+                    interviewers={interviewers}
+                    onAssign={handleAssignInterviewer}
+                    onSchedule={() => openScheduleModal(r)}
+                    onDetail={() => openRegistrationDetail(r)}
+                    formatDate={formatDate}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
 
       {/* All mock registrations: search + filter + compact table, click row → detail modal */}
       <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
         <h2 className="text-lg font-semibold text-slate-900 px-4 pt-4 pb-1">All mock registrations</h2>
-        <p className="text-sm text-slate-600 px-4 pb-2">Search or filter, then click a row to view details and actions.</p>
+        <p className="text-sm text-slate-600 px-4 pb-2">Search or filter. Click a row for full details. Assign interviewer on pending requests above or when scheduling.</p>
         <div className="px-4 pb-4 flex flex-wrap items-center gap-3">
           <input
             type="text"
@@ -779,6 +980,7 @@ export default function AdminMocksPage() {
               <tr>
                 <th className="px-4 py-2.5 font-semibold text-slate-700">Student</th>
                 <th className="px-4 py-2.5 font-semibold text-slate-700">Status</th>
+                <th className="px-4 py-2.5 font-semibold text-slate-700">Interviewer</th>
                 <th className="px-4 py-2.5 font-semibold text-slate-700">Registered</th>
                 <th className="px-4 py-2.5 font-semibold text-slate-700">Scheduled</th>
                 <th className="px-4 py-2.5 font-semibold text-slate-700 w-8" aria-label="View" />
@@ -787,7 +989,7 @@ export default function AdminMocksPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredRegistrations.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
                     {registrations.length === 0 ? 'No mock registrations yet.' : 'No matches. Try a different search or filter.'}
                   </td>
                 </tr>
@@ -795,7 +997,7 @@ export default function AdminMocksPage() {
                 paginatedRegistrations.map((r) => (
                   <tr
                     key={r.id}
-                    onClick={() => setRegistrationDetailModal(r)}
+                    onClick={() => openRegistrationDetail(r)}
                     className="hover:bg-indigo-50/50 cursor-pointer group"
                   >
                     <td className="px-4 py-2.5">
@@ -814,6 +1016,15 @@ export default function AdminMocksPage() {
                       >
                         {r.status}
                       </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-slate-600 text-xs max-w-[140px]">
+                      {r.interviewer_name ? (
+                        <span className="font-medium text-slate-800">{r.interviewer_name}</span>
+                      ) : r.status === 'requested' ? (
+                        <span className="text-amber-700">Unassigned</span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                     <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{formatDate(r.created_at)}</td>
                     <td className="px-4 py-2.5 text-slate-600 whitespace-nowrap">{r.scheduled_at ? formatDateTime(r.scheduled_at) : '—'}</td>
@@ -902,6 +1113,36 @@ export default function AdminMocksPage() {
                     <div><dt className="text-slate-500">Mocks conducted</dt><dd className="font-medium text-slate-900">{byAspirant[registrationDetailModal.aspirant_id] ?? 0}</dd></div>
                   </dl>
                 </div>
+                {registrationDetailModal.status === 'requested' && (
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50/40 p-4">
+                    <p className="text-xs font-semibold text-indigo-800 uppercase tracking-wider mb-2">Assign interviewer</p>
+                    <p className="text-sm text-slate-600 mb-3">
+                      Assign before scheduling so the interviewer sees this request in My Mocks, or pick one when you set the schedule.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={detailAssignInterviewerId}
+                        onChange={(e) => setDetailAssignInterviewerId(e.target.value)}
+                        className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+                      >
+                        <option value="">Select interviewer…</option>
+                        {interviewers.map((i) => (
+                          <option key={i.id} value={i.id}>
+                            {i.name ?? i.email}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => handleAssignInterviewer(registrationDetailModal, detailAssignInterviewerId)}
+                        disabled={!detailAssignInterviewerId}
+                        className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        Assign
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {registrationDetailModal.meet_link ? (
                   <div className="rounded-xl bg-indigo-50/80 border border-indigo-200 p-4">
                     <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider mb-1">Meeting link</p>
@@ -945,6 +1186,27 @@ export default function AdminMocksPage() {
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Set schedule</h3>
             <p className="text-sm text-slate-600 mb-4">For {scheduleModal.aspirant_name ?? scheduleModal.aspirant_email}</p>
             <form onSubmit={handleScheduleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Assign interviewer</label>
+                <select
+                  value={scheduleForm.interviewerId}
+                  onChange={(e) => setScheduleForm((f) => ({ ...f, interviewerId: e.target.value }))}
+                  required
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white"
+                >
+                  <option value="">Select interviewer…</option>
+                  {interviewers.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name ?? i.email}
+                    </option>
+                  ))}
+                </select>
+                {interviewers.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700">Mark an admin as Interviewer on the Admins page first.</p>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-500">This mock will appear in their My Mocks list.</p>
+                )}
+              </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Date & time</label>
                 <input

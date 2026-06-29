@@ -21,10 +21,14 @@ import {
   isLinkedInProfileUrl,
   isValidHttpUrl,
   isValidMobileNumber,
+  isPlaceholderCity,
   MOBILE_VALIDATION_MESSAGE,
   toFormEducation,
   validateEducationFields,
   validateJobDomains,
+  getFirstIncompleteOnboardingStep,
+  getAspirantProfileIncompleteReasons,
+  isAspirantProfileComplete,
 } from '../../lib/aspirantProfile';
 import {
   JOB_DOMAIN_SUGGESTIONS,
@@ -124,32 +128,59 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!user?.id || aspirantLoading || formInitializedRef.current) return;
 
+    const profileForm = profileToForm(aspirantProfile);
     const draft = loadOnboardingDraft(user.id);
+    let nextForm;
+
     if (draft?.form) {
-      setForm({
+      nextForm = {
         ...defaultProfileForm,
+        ...profileForm,
         ...draft.form,
-        email: user.email ?? draft.form.email ?? '',
+        email: user.email ?? draft.form.email ?? profileForm.email ?? '',
         education: {
           ...defaultEducation,
+          ...toFormEducation(profileForm.education),
           ...toFormEducation(draft.form.education),
         },
-      });
-      if (Number.isFinite(draft.step)) setStep(Math.min(Math.max(0, draft.step), STEPS.length - 1));
-      if (typeof draft.skillInput === 'string') setSkillInput(draft.skillInput);
-      if (typeof draft.secondarySkillInput === 'string') setSecondarySkillInput(draft.secondarySkillInput);
+      };
+      if (isPlaceholderCity(nextForm.city)) {
+        nextForm.city = profileForm.city;
+      }
     } else {
-      const base = profileToForm(aspirantProfile);
-      setForm({
-        ...base,
-        email: user.email ?? base.email,
-        education: base.education ?? { ...defaultEducation },
-      });
+      nextForm = {
+        ...profileForm,
+        email: user.email ?? profileForm.email,
+        education: profileForm.education ?? { ...defaultEducation },
+      };
+    }
+
+    setForm(nextForm);
+
+    const urlStepParam = searchParams.get('step');
+    const urlStep = urlStepParam != null ? Number(urlStepParam) : NaN;
+    const continuingCompletion =
+      aspirantProfile && !isAspirantProfileComplete(aspirantProfile);
+    const firstIncomplete = getFirstIncompleteOnboardingStep(aspirantProfile);
+
+    let nextStep = 0;
+    if (Number.isFinite(urlStep) && urlStep >= 0 && urlStep < STEPS.length) {
+      nextStep = urlStep;
+    } else if (continuingCompletion) {
+      nextStep = firstIncomplete;
+    } else if (draft && Number.isFinite(draft.step)) {
+      nextStep = Math.min(Math.max(0, draft.step), STEPS.length - 1);
+    }
+    setStep(nextStep);
+
+    if (typeof draft?.skillInput === 'string') setSkillInput(draft.skillInput);
+    if (typeof draft?.secondarySkillInput === 'string') {
+      setSecondarySkillInput(draft.secondarySkillInput);
     }
 
     setFormReady(true);
     formInitializedRef.current = true;
-  }, [user?.id, user?.email, aspirantProfile, aspirantLoading]);
+  }, [user?.id, user?.email, aspirantProfile, aspirantLoading, searchParams]);
 
   // Persist in-progress onboarding so switching browser tabs does not lose work.
   useEffect(() => {
@@ -198,7 +229,9 @@ export default function OnboardingPage() {
       if (!form.fullName.trim()) return 'Full name is required.';
       if (!form.phone.trim()) return 'Mobile number is required.';
       if (!isValidMobileNumber(form.phone)) return MOBILE_VALIDATION_MESSAGE;
-      if (!form.city.trim()) return 'Current city is required.';
+      if (!form.city.trim() || isPlaceholderCity(form.city)) {
+        return 'Enter your current city (e.g. Hyderabad).';
+      }
     }
     if (index === 1) {
       const domainErr = validateJobDomains(form);
@@ -256,10 +289,30 @@ export default function OnboardingPage() {
       if (form.portfolioUrl.trim() && !isValidHttpUrl(form.portfolioUrl)) {
         return 'Portfolio URL must be a valid http(s) link.';
       }
-      if (!resumeFile) return 'Please upload your resume to continue.';
+      if (!resumeFile && !aspirantProfile?.resume_url) {
+        return 'Please upload your resume to continue.';
+      }
     }
     return null;
   };
+
+  const validateAllSteps = () => {
+    for (let i = 0; i < STEPS.length; i++) {
+      const err = validateStep(i);
+      if (err) return { step: i, error: err };
+    }
+    if (!resumeFile && !aspirantProfile?.resume_url) {
+      return { step: 4, error: 'Please upload your resume to continue.' };
+    }
+    return null;
+  };
+
+  const continuingCompletion =
+    aspirantProfile && !isAspirantProfileComplete(aspirantProfile);
+  const missingFields = continuingCompletion
+    ? getAspirantProfileIncompleteReasons(aspirantProfile)
+    : [];
+  const allStepsReady = validateAllSteps() === null;
 
   const goNext = () => {
     const err = validateStep(step);
@@ -276,13 +329,12 @@ export default function OnboardingPage() {
     setStep((s) => Math.max(s - 1, 0));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const err = validateStep(step);
-    if (err) {
-      setMessage({ type: 'error', text: err });
-      return;
-    }
+  const goToStep = (index) => {
+    setMessage({ type: '', text: '' });
+    setStep(index);
+  };
+
+  const saveProfile = async () => {
     setMessage({ type: '', text: '' });
     setSubmitting(true);
 
@@ -295,28 +347,47 @@ export default function OnboardingPage() {
 
     const payload = buildAspirantPayload(form, session.user.id);
 
-    const ext = resumeFile.name.split('.').pop()?.toLowerCase() || 'pdf';
-    const storagePath = `${session.user.id}/resume.${ext}`;
-    const { error: uploadError } = await supabase.storage
-      .from('resumes')
-      .upload(storagePath, resumeFile, { upsert: true });
-    if (uploadError) {
-      setMessage({ type: 'error', text: uploadError.message ?? 'Failed to upload resume.' });
-      setSubmitting(false);
-      return;
+    if (resumeFile) {
+      const ext = resumeFile.name.split('.').pop()?.toLowerCase() || 'pdf';
+      const storagePath = `${session.user.id}/resume.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('resumes')
+        .upload(storagePath, resumeFile, { upsert: true });
+      if (uploadError) {
+        setMessage({ type: 'error', text: uploadError.message ?? 'Failed to upload resume.' });
+        setSubmitting(false);
+        return;
+      }
+      payload.resume_url = storagePath;
+    } else if (aspirantProfile?.resume_url) {
+      payload.resume_url = aspirantProfile.resume_url;
     }
-    payload.resume_url = storagePath;
 
     try {
       const profile = await saveAspirantProfile(supabase, payload);
       dispatch(setAspirantProfile(profile ?? payload));
       clearOnboardingDraft(session.user.id);
-      navigate('/dashboard/profile', { replace: true });
+      navigate('/dashboard/mocks', { replace: true });
     } catch (e) {
       setMessage({ type: 'error', text: e.message ?? 'Failed to save profile.' });
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleFormAction = async (e) => {
+    e.preventDefault();
+    if (allStepsReady || step === STEPS.length - 1) {
+      const check = validateAllSteps();
+      if (check) {
+        if (check.step !== step) setStep(check.step);
+        setMessage({ type: 'error', text: check.error });
+        return;
+      }
+      await saveProfile();
+      return;
+    }
+    goNext();
   };
 
   const branchOptions = getBranchOptions(form.highestQualification);
@@ -443,11 +514,23 @@ export default function OnboardingPage() {
               Complete your profile
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-slate-400 sm:text-base">
-              {welcomeFromPayment
-                ? 'Your plan is active. Tell us about your experience so we can schedule your mock interviews.'
-                : 'Tell us about your experience and skills so we can match you with the right opportunities.'}
+              {continuingCompletion
+                ? 'Update the fields below to finish your profile and book mock interviews.'
+                : welcomeFromPayment
+                  ? 'Your plan is active. Tell us about your experience so we can schedule your mock interviews.'
+                  : 'Tell us about your experience and skills so we can match you with the right opportunities.'}
             </p>
           </div>
+
+          {continuingCompletion && missingFields.length > 0 ? (
+            <div
+              className="mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100"
+              role="status"
+            >
+              <p className="font-medium text-amber-50">Still needed</p>
+              <p className="mt-1 text-amber-100/90">{missingFields.join(', ')}</p>
+            </div>
+          ) : null}
 
           <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
             <p className="mb-2 text-center text-xs font-medium text-slate-400 sm:hidden">
@@ -455,18 +538,35 @@ export default function OnboardingPage() {
             </p>
             <div className="mb-3 hidden gap-2 text-[11px] font-medium uppercase tracking-wide text-slate-500 sm:flex sm:justify-between">
               {STEPS.map((s, i) => (
-                <span
-                  key={s.id}
-                  className={`shrink-0 ${
-                    i === step
-                      ? 'text-[hsl(var(--nth-primary))]'
-                      : i < step
-                        ? 'text-slate-300'
-                        : ''
-                  }`}
-                >
-                  {s.title}
-                </span>
+                continuingCompletion ? (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => goToStep(i)}
+                    className={`shrink-0 transition-colors hover:text-slate-200 ${
+                      i === step
+                        ? 'text-[hsl(var(--nth-primary))]'
+                        : i < step
+                          ? 'text-slate-300'
+                          : ''
+                    }`}
+                  >
+                    {s.title}
+                  </button>
+                ) : (
+                  <span
+                    key={s.id}
+                    className={`shrink-0 ${
+                      i === step
+                        ? 'text-[hsl(var(--nth-primary))]'
+                        : i < step
+                          ? 'text-slate-300'
+                          : ''
+                    }`}
+                  >
+                    {s.title}
+                  </span>
+                )
               ))}
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -478,7 +578,7 @@ export default function OnboardingPage() {
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-8 shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-          <form onSubmit={step === STEPS.length - 1 ? handleSubmit : (e) => { e.preventDefault(); goNext(); }} className="space-y-6">
+          <form onSubmit={handleFormAction} className="space-y-6">
             {step === 0 && (
               <div className="space-y-5">
                 <h2 className="text-lg font-semibold text-white">Personal details</h2>
@@ -931,6 +1031,9 @@ export default function OnboardingPage() {
                     className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-white/10 file:text-white file:font-medium hover:file:bg-white/15"
                   />
                   {resumeFile && <p className="mt-1 text-sm text-slate-500">{resumeFile.name}</p>}
+                  {!resumeFile && aspirantProfile?.resume_url ? (
+                    <p className="mt-1 text-sm text-emerald-400/90">Your current resume is already on file. Upload only if you want to replace it.</p>
+                  ) : null}
                 </div>
               </div>
             )}
@@ -952,7 +1055,15 @@ export default function OnboardingPage() {
                 disabled={submitting}
                 className="nth-btn-primary flex-1 py-3 rounded-xl text-base font-semibold disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {submitting ? <ButtonLoader label="Saving…" /> : step === STEPS.length - 1 ? 'Save & continue' : 'Continue'}
+                {submitting ? (
+                  <ButtonLoader label="Saving…" />
+                ) : allStepsReady ? (
+                  'Save profile'
+                ) : step === STEPS.length - 1 ? (
+                  'Save & continue'
+                ) : (
+                  'Continue'
+                )}
               </button>
             </div>
           </form>

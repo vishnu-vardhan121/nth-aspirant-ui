@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { HiXMark } from 'react-icons/hi2';
 import { supabase } from '../../../lib/supabase';
 import { PLANS } from './constants';
+import { AspirantNameWithPhone } from './AspirantIdentity';
 
 export default function EditPlanModal({ user, onClose, onSuccess }) {
   const [plan, setPlan] = useState(user?.plan || 'base');
@@ -34,8 +35,11 @@ export default function EditPlanModal({ user, onClose, onSuccess }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60" onClick={onClose}>
       <div className="w-full max-w-sm rounded-xl bg-white border border-slate-200 shadow-xl p-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Edit plan — {user.full_name ?? user.email}</h2>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-slate-900">Edit plan</h2>
+            <AspirantNameWithPhone name={user.full_name} phone={user.phone} email={user.email} className="mt-1" />
+          </div>
           <button type="button" onClick={onClose} className="p-1 rounded-lg text-slate-500 hover:bg-slate-100" aria-label="Close">
             <HiXMark className="w-5 h-5" />
           </button>
