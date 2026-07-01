@@ -11,7 +11,7 @@ import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
 import CompleteProfileBanner from '../components/CompleteProfileBanner';
 import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
 import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
-import { HiCalendarDays, HiCheckCircle, HiClock, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
+import { HiCalendarDays, HiCheckCircle, HiClock, HiExclamationTriangle, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -61,6 +61,7 @@ export default function MocksPage() {
   });
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [bookingSlotId, setBookingSlotId] = useState(null);
+  const [confirmBookingSlot, setConfirmBookingSlot] = useState(null);
   const [slotMessage, setSlotMessage] = useState({ type: '', text: '' });
   const [requestWithoutSlot, setRequestWithoutSlot] = useState(false);
   const [requestPreferredDate, setRequestPreferredDate] = useState('');
@@ -192,19 +193,27 @@ export default function MocksPage() {
     fetchAvailableSlots();
   }, [slotsFrom, slotsTo]);
 
-  const handleBookSlot = async (slotId) => {
+  const openBookConfirm = (slot) => {
     if (!requireCompleteProfile()) return;
+    setConfirmBookingSlot(slot);
+  };
+
+  const handleBookSlot = async () => {
+    if (!confirmBookingSlot) return;
+    const slotId = confirmBookingSlot.id;
     setSlotMessage({ type: '', text: '' });
     setBookingSlotId(slotId);
     const { data } = await supabase.rpc('book_mock_slot', { p_slot_id: slotId });
     setBookingSlotId(null);
     if (data?.ok) {
+      setConfirmBookingSlot(null);
       setSlotMessage({ type: 'success', text: 'Slot booked. See "My mock registrations" below for the Meet link and time.' });
       fetchUsage();
       fetchMyRegistrations();
       fetchMockNotices();
       fetchAvailableSlots();
     } else {
+      setConfirmBookingSlot(null);
       setSlotMessage({ type: 'error', text: data?.error ?? 'Could not book slot.' });
     }
   };
@@ -610,7 +619,7 @@ export default function MocksPage() {
                     <button
                       type="button"
                       disabled={!canBook || bookingSlotId !== null}
-                      onClick={() => handleBookSlot(slot.id)}
+                      onClick={() => openBookConfirm(slot)}
                       className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {bookingSlotId === slot.id
@@ -745,6 +754,73 @@ export default function MocksPage() {
           </ul>
         </div>
       </section>
+
+      {/* Book slot confirmation */}
+      {confirmBookingSlot && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+          onClick={() => !bookingSlotId && setConfirmBookingSlot(null)}
+        >
+          <div
+            className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-md w-full p-5"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="book-slot-confirm-title"
+          >
+            <div className="flex items-start gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700">
+                <HiExclamationTriangle className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <h3 id="book-slot-confirm-title" className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">
+                  Confirm your slot?
+                </h3>
+                <p className="mt-2 text-sm text-[rgb(var(--nth-text-secondary-light))]">
+                  You are booking a mock on{' '}
+                  <span className="font-semibold text-[rgb(var(--nth-text-primary-light))]">
+                    {formatDate(confirmBookingSlot.start_at)}
+                  </span>{' '}
+                  at{' '}
+                  <span className="font-semibold text-[rgb(var(--nth-text-primary-light))]">
+                    {formatSlotTime(confirmBookingSlot.start_at)}
+                  </span>{' '}
+                  with{' '}
+                  <span className="font-semibold text-[rgb(var(--nth-text-primary-light))]">
+                    {confirmBookingSlot.interviewer_name ?? 'your interviewer'}
+                  </span>
+                  .
+                </p>
+                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm text-amber-950">
+                  <p className="font-semibold">Please be available at the scheduled time.</p>
+                  <p className="mt-1 text-xs leading-relaxed text-amber-900/90">
+                    Your interviewer will join the mock at sharp time. Late joins or no-shows may count against your mock
+                    allowance. Only book if you are sure you can attend on time.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setConfirmBookingSlot(null)}
+                disabled={bookingSlotId !== null}
+                className="nth-btn-secondary w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-sm disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBookSlot}
+                disabled={bookingSlotId !== null}
+                className="nth-btn-primary w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-sm font-semibold disabled:opacity-50 disabled:transform-none"
+              >
+                {bookingSlotId ? 'Booking…' : 'Yes, I will be available'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Request reschedule modal */}
       {rescheduleModal && (

@@ -29,6 +29,8 @@ function userToRow(u) {
     : '';
 
   const profileLabel = (u.profile_status ?? 'active') === 'inactive' ? 'Placed' : 'Active';
+  const pipelineLabel =
+    (u.placement_pipeline_status ?? 'none') === 'ready' ? 'Placement-ready' : 'In pool';
   const placement = (u.profile_status ?? 'active') === 'inactive' && u.placed_in
     ? `${u.placed_in}${u.placed_at ? ` (${u.placed_at})` : ''}`
     : '';
@@ -52,6 +54,7 @@ function userToRow(u) {
     'Latest mock scores': mockScores,
     'Recommended for (all mocks)': roleFit,
     'Profile status': profileLabel,
+    'Placement pipeline': pipelineLabel,
     Placement: placement,
     'Mocks (period)': `${u.mocks_conducted_in_period ?? 0}/${u.mock_limit ?? 0}`,
     Plan: u.plan ?? '',

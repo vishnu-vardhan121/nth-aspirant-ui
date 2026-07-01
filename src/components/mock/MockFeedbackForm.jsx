@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { HiLightBulb, HiTag, HiChatBubbleLeftRight, HiBriefcase, HiXMark } from 'react-icons/hi2';
+import { HiLightBulb, HiTag, HiChatBubbleLeftRight, HiBriefcase, HiXMark, HiUserGroup } from 'react-icons/hi2';
 import { ButtonLoader } from '../ui/Loader';
 import {
   MOCK_TOPIC_MAX,
   MOCK_RATING_OPTIONS,
+  PLACEMENT_RECOMMENDATION_OPTIONS,
   createEmptyMockFeedbackForm,
   toggleTopicInForm,
   toggleRoleFitInForm,
@@ -126,6 +127,22 @@ export default function MockFeedbackForm({
           <ScoreSlider label="Communication" value={form.communication_score} onChange={(v) => setForm({ communication_score: v })} />
         </div>
 
+        <label className="mt-4 block min-w-0">
+          <span className="text-sm font-semibold text-slate-800">
+            Communication note <span className="font-normal text-violet-600">(admin only)</span>
+          </span>
+          <p className="mt-0.5 text-xs text-slate-500">
+            Internal reference for admins — clarity, accent, confidence, etc. Not shared with the aspirant.
+          </p>
+          <textarea
+            value={form.communication_admin_note}
+            onChange={(e) => setForm({ communication_admin_note: e.target.value })}
+            rows={2}
+            placeholder="e.g. Clear explanations but needs more confidence; fine for service companies, polish for product…"
+            className="mt-2 w-full max-w-full resize-y rounded-xl border border-violet-200 bg-violet-50/30 px-4 py-3 text-sm outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+          />
+        </label>
+
         <label className="mt-6 block min-w-0">
           <span className="text-sm font-semibold text-slate-800">
             Overall summary <span className="text-red-500">*</span>
@@ -157,6 +174,21 @@ export default function MockFeedbackForm({
 
       <FormSection
         step={4}
+        title="Moving to placements?"
+        hint="If you select Yes, the aspirant will see they are placement-ready. Notes are admin-only."
+        icon={HiUserGroup}
+        isModal={isModal}
+        badge={
+          form.placement_recommendation
+            ? PLACEMENT_RECOMMENDATION_OPTIONS.find((o) => o.value === form.placement_recommendation)?.shortLabel ?? 'Selected'
+            : 'Pick one'
+        }
+      >
+        <PlacementRecommendationPicker form={form} onChange={onChange} />
+      </FormSection>
+
+      <FormSection
+        step={5}
         title="Role fit (internal)"
         hint="Optional — which roles/stacks this candidate is ready for. Used by admins to filter users; not shared with the aspirant."
         icon={HiBriefcase}
@@ -312,6 +344,59 @@ function TopicPicker({ form, onChange, onError }) {
           <p className="mt-1.5 text-[10px] text-amber-700">Maximum {MOCK_TOPIC_MAX} topics — remove one to add another.</p>
         ) : null}
       </div>
+    </div>
+  );
+}
+
+function PlacementRecommendationPicker({ form, onChange }) {
+  const selected = form.placement_recommendation ?? '';
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div
+        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+        role="group"
+        aria-label="Moving to placements"
+      >
+        {PLACEMENT_RECOMMENDATION_OPTIONS.map((opt) => {
+          const on = selected === opt.value;
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange({ ...form, placement_recommendation: opt.value })}
+              className={[
+                'flex min-h-[52px] flex-1 flex-col items-center justify-center rounded-xl border px-4 py-3 text-center shadow-sm transition-all',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
+                on
+                  ? 'border-indigo-600 bg-indigo-600 text-white shadow-md'
+                  : 'border-slate-300 bg-white text-slate-800 hover:border-indigo-400 hover:bg-indigo-50/60 active:bg-indigo-50',
+              ].join(' ')}
+            >
+              <span className="text-sm font-bold">{opt.shortLabel}</span>
+              <span className={`mt-0.5 text-[11px] font-medium leading-tight ${on ? 'text-indigo-100' : 'text-slate-500'}`}>
+                {opt.hint}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      <label className="block min-w-0">
+        <span className="text-sm font-semibold text-slate-800">
+          Placement note <span className="font-normal text-violet-600">(admin only)</span>
+        </span>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Context for admins — company types, blockers, or what is still needed before placement.
+        </p>
+        <textarea
+          value={form.placement_recommendation_note}
+          onChange={(e) => onChange({ ...form, placement_recommendation_note: e.target.value })}
+          rows={2}
+          placeholder="e.g. Ready for mid-tier product companies after one more system design mock…"
+          className="mt-2 w-full max-w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        />
+      </label>
     </div>
   );
 }

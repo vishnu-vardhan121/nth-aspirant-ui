@@ -7,8 +7,9 @@ import {
   hasLegacyMockFeedback,
   hasStructuredMockFeedback,
 } from '../../lib/mockFeedback';
+import MockFeedbackInternalNotes from './MockFeedbackInternalNotes';
 
-export default function MockFeedbackDisplay({ registration, compact = false }) {
+export default function MockFeedbackDisplay({ registration, compact = false, showAdminFields = false }) {
   if (!registration || !hasAnyMockFeedback(registration)) return null;
 
   const areas = getTechFeedbackAreas(registration);
@@ -118,6 +119,8 @@ export default function MockFeedbackDisplay({ registration, compact = false }) {
           </ul>
         </div>
       ) : null}
+
+      {showAdminFields ? <MockFeedbackInternalNotes registration={registration} /> : null}
 
       {registration.completed_at ? (
         <p className="text-xs text-slate-500">

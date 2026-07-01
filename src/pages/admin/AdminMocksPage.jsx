@@ -1152,7 +1152,7 @@ export default function AdminMocksPage() {
                   </div>
                 ) : null}
                 {registrationDetailModal.status === 'completed' ? (
-                  <MockFeedbackDisplay registration={registrationDetailModal} />
+                  <MockFeedbackDisplay registration={registrationDetailModal} showAdminFields />
                 ) : null}
               </div>
             </div>
