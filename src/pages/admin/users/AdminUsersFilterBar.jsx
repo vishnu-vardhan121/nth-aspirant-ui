@@ -10,6 +10,7 @@ import {
 } from '../../../lib/aspirantFilterOptions';
 import { MOCK_TOPIC_FILTER_OPTIONS, MOCK_ROLE_FIT_CATEGORIES } from '../../../lib/mockFeedbackTopics';
 import { INITIAL_USER_FILTERS } from './constants';
+import { PLACEMENT_READINESS_FILTER_OPTIONS } from '../placementFilterOptions';
 
 const selectClass =
   'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100';
@@ -31,6 +32,15 @@ function FilterGroup({ label, children }) {
       <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
       <div className="flex flex-wrap items-center gap-2">{children}</div>
     </div>
+  );
+}
+
+function FilterField({ label, children }) {
+  return (
+    <label className="flex min-w-[10rem] flex-col gap-1">
+      <span className="text-xs font-medium text-slate-700">{label}</span>
+      {children}
+    </label>
   );
 }
 
@@ -80,13 +90,24 @@ export default function AdminUsersFilterBar({ filters, onPatch, onQualificationC
 
       {expanded ? (
         <div className="grid gap-3 px-4 pb-4 lg:grid-cols-2 xl:grid-cols-3">
-          <FilterGroup label="Plan & track">
-            <select value={filters.profileStatus} onChange={set('profileStatus')} className={selectClass}>
-              <option value="">All profiles</option>
-              <option value="active">Active in pool</option>
-              <option value="inactive">Placed / inactive</option>
-            </select>
-            <select value={filters.plan} onChange={set('plan')} className={selectClass}>
+          <FilterGroup label="Plan & profile">
+            <FilterField label="Profile status">
+              <select value={filters.profileStatus} onChange={set('profileStatus')} className={selectClass}>
+                <option value="">All profiles</option>
+                <option value="active">Active in pool</option>
+                <option value="inactive">Placed / inactive</option>
+              </select>
+            </FilterField>
+            <FilterField label="Placement readiness">
+              <select value={filters.placementPipeline} onChange={set('placementPipeline')} className={selectClass}>
+                {PLACEMENT_READINESS_FILTER_OPTIONS.map((o) => (
+                  <option key={o.value || 'any'} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+            <select value={filters.plan} onChange={set('plan')} className={selectClass} aria-label="Subscription plan">
               <option value="">All plans</option>
               <option value="base">Base</option>
               <option value="silver">Silver</option>
@@ -261,7 +282,6 @@ export default function AdminUsersFilterBar({ filters, onPatch, onQualificationC
                 </optgroup>
               ))}
             </select>
-            <p className="text-xs text-slate-500">From interviewer mock feedback — not shown to aspirants</p>
           </FilterGroup>
         </div>
       ) : null}

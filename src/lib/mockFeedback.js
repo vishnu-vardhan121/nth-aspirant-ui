@@ -26,6 +26,13 @@ export const MOCK_FEEDBACK_AREA_DEFS = [];
 
 export const MOCK_SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
+/** Interviewer: recommend moving candidate to placement pipeline. */
+export const PLACEMENT_RECOMMENDATION_OPTIONS = [
+  { value: 'yes', label: 'Yes — ready for placement pipeline', shortLabel: 'Yes', hint: 'Aspirant sees placement-ready' },
+  { value: 'no', label: 'No — not ready yet', shortLabel: 'No', hint: 'Stay in mock pool' },
+  { value: 'not_yet', label: 'Not yet — needs more mocks / prep', shortLabel: 'Not yet', hint: 'More mocks needed' },
+];
+
 const MIN_OVERALL = 30;
 const MIN_TOPIC_TEXT = 20;
 
@@ -47,6 +54,9 @@ export function createEmptyMockFeedbackForm() {
     communication_score: 5,
     feedback_notes: '',
     overall_suggestions: '',
+    communication_admin_note: '',
+    placement_recommendation: '',
+    placement_recommendation_note: '',
     selectedKeys: [],
     topics: {},
     role_fit_keys: [],
@@ -119,6 +129,9 @@ export function buildTechFeedbackPayload(form) {
     version: 2,
     overall_suggestions: form.overall_suggestions?.trim() || null,
     role_fit: form.role_fit_keys ?? [],
+    placement_recommendation: form.placement_recommendation || null,
+    placement_recommendation_note: form.placement_recommendation_note?.trim() || null,
+    communication_admin_note: form.communication_admin_note?.trim() || null,
     areas,
   };
 }
@@ -132,6 +145,10 @@ export function validateMockFeedbackForm(form) {
   }
   if (!form.feedback_notes?.trim() || form.feedback_notes.trim().length < MIN_OVERALL) {
     return `Overall summary is required (at least ${MIN_OVERALL} characters).`;
+  }
+
+  if (!form.placement_recommendation || !['yes', 'no', 'not_yet'].includes(form.placement_recommendation)) {
+    return 'Select whether this candidate is ready for the placement pipeline.';
   }
 
   const keys = form.selectedKeys ?? [];
@@ -197,6 +214,33 @@ export function getRoleFitKeys(reg) {
   const raw = reg?.tech_feedback;
   if (raw && Array.isArray(raw.role_fit)) return raw.role_fit;
   return [];
+}
+
+export function getPlacementRecommendation(reg) {
+  return reg?.placement_recommendation ?? null;
+}
+
+export function getPlacementRecommendationNote(reg) {
+  const note = reg?.placement_recommendation_note?.trim?.();
+  return note || '';
+}
+
+export function getCommunicationAdminNote(reg) {
+  const note = reg?.communication_admin_note?.trim?.();
+  return note || '';
+}
+
+export function getPlacementRecommendationLabel(value) {
+  return PLACEMENT_RECOMMENDATION_OPTIONS.find((o) => o.value === value)?.label ?? value ?? '—';
+}
+
+export function hasInternalMockFeedback(reg) {
+  return Boolean(
+    getPlacementRecommendation(reg) ||
+      getPlacementRecommendationNote(reg) ||
+      getCommunicationAdminNote(reg) ||
+      getRoleFitKeys(reg).length > 0,
+  );
 }
 
 export function hasStructuredMockFeedback(reg) {

@@ -27,7 +27,11 @@ import PaymentRejectedModal from '../pages/dashboard/subscription/components/Pay
 import { isPlanActivationMessage } from '../lib/paymentActivationRealtime';
 import { isAspirantProfileComplete, needsAspirantContactDetails } from '../lib/aspirantProfile';
 import AspirantContactModal from '../pages/dashboard/components/AspirantContactModal';
-import { emitMessagesInvalidate } from '../lib/messagesEvents';
+import PlacementReadyBanner from '../pages/dashboard/components/PlacementReadyBanner';
+import UpcomingMockBanner from '../pages/dashboard/components/UpcomingMockBanner';
+import { useUpcomingScheduledMocks } from '../pages/dashboard/hooks/useUpcomingScheduledMocks';
+import { emitMessagesInvalidate, MESSAGES_INVALIDATE_EVENT } from '../lib/messagesEvents';
+import { fetchAspirantProfile } from '../store/slices/aspirantSlice';
 
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
@@ -42,7 +46,7 @@ const SIDEBAR_BOTTOM_LINKS = [
   { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
 ];
 
-function SidebarNavLinks({ links, location, onNavClick }) {
+function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0 }) {
   return (
     <div className="space-y-1">
       {links.map((link) => {
@@ -51,6 +55,7 @@ function SidebarNavLinks({ links, location, onNavClick }) {
           link.to === '/dashboard'
             ? location.pathname === '/dashboard'
             : location.pathname.startsWith(link.to);
+        const showMockBadge = link.to === '/dashboard/mocks' && scheduledMockCount > 0;
         return (
           <Link
             key={link.to}
@@ -63,16 +68,31 @@ function SidebarNavLinks({ links, location, onNavClick }) {
             }`}
           >
             <span
-              className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition-colors ${
+              className={`relative flex h-8 w-8 items-center justify-center rounded-lg shrink-0 border transition-colors ${
                 isActive
                   ? 'bg-white/10 text-slate-100 border-white/25'
                   : 'bg-white/[0.06] text-slate-300 border-white/15 group-hover:bg-white/12 group-hover:text-slate-100'
               }`}
             >
               <Icon className="w-4 h-4" />
+              {showMockBadge ? (
+                <span
+                  className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-400 px-1 text-[10px] font-bold text-amber-950 ring-2 ring-[#0f172a]"
+                  title="Mock scheduled"
+                >
+                  !
+                </span>
+              ) : null}
             </span>
             <span className="truncate">{link.label}</span>
-            {isActive && <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-slate-300" />}
+            {showMockBadge ? (
+              <span className="ml-auto shrink-0 rounded-full bg-amber-400/90 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-950">
+                Scheduled
+              </span>
+            ) : null}
+            {isActive && !showMockBadge ? (
+              <span className="absolute right-3 h-1.5 w-1.5 rounded-full bg-slate-300" />
+            ) : null}
           </Link>
         );
       })}
@@ -80,7 +100,7 @@ function SidebarNavLinks({ links, location, onNavClick }) {
   );
 }
 
-function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true }) {
+function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true, scheduledMockCount = 0 }) {
   const location = useLocation();
   const userInitial = (user?.email || '?').trim().charAt(0).toUpperCase() || '?';
 
@@ -103,7 +123,7 @@ function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = tru
         <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
           Navigation
         </p>
-        <SidebarNavLinks links={SIDEBAR_MAIN_LINKS} location={location} onNavClick={onNavClick} />
+        <SidebarNavLinks links={SIDEBAR_MAIN_LINKS} location={location} onNavClick={onNavClick} scheduledMockCount={scheduledMockCount} />
       </nav>
       <div className="shrink-0 border-t border-white/10 p-3 pt-2">
         <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
@@ -195,6 +215,7 @@ export default function DashboardLayout() {
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const { count: scheduledMockCount } = useUpcomingScheduledMocks(user?.id);
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
@@ -219,6 +240,14 @@ export default function DashboardLayout() {
   const dismissNotification = useCallback(() => {
     setMessageNotification((prev) => ({ ...prev, show: false }));
   }, []);
+
+  useEffect(() => {
+    const onInvalidate = () => {
+      if (user?.id) dispatch(fetchAspirantProfile(user.id));
+    };
+    window.addEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
+    return () => window.removeEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
+  }, [user?.id, dispatch]);
 
   useEffect(() => {
     const prime = () => primeMessageSound();
@@ -293,7 +322,7 @@ export default function DashboardLayout() {
             'linear-gradient(180deg, #0b1220 0%, #101827 48%, #0f172a 100%)',
         }}
       >
-        <SidebarContent user={user} onSignOutClick={openSignOutConfirm} onNavClick={() => {}} />
+        <SidebarContent user={user} onSignOutClick={openSignOutConfirm} onNavClick={() => {}} scheduledMockCount={scheduledMockCount} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -331,6 +360,7 @@ export default function DashboardLayout() {
               onSignOutClick={openSignOutConfirm}
               onNavClick={closeMobileSidebar}
               showHeaderLink={false}
+              scheduledMockCount={scheduledMockCount}
             />
           </aside>
         </>
@@ -340,6 +370,8 @@ export default function DashboardLayout() {
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <DashboardNavbar onMenuClick={() => setMobileSidebarOpen(true)} />
         <div className="nth-scroll-y flex-1 min-h-0 min-w-0 overflow-x-hidden p-3 sm:p-6 md:p-8">
+          <UpcomingMockBanner userId={user?.id} />
+          <PlacementReadyBanner profile={aspirantProfile} />
           <Outlet />
         </div>
       </main>

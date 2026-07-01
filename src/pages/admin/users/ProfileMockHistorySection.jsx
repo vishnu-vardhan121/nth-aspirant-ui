@@ -3,6 +3,10 @@ import {
   getOverallSuggestions,
   getMockRatingLabel,
   getRoleFitKeys,
+  getPlacementRecommendation,
+  getPlacementRecommendationNote,
+  getCommunicationAdminNote,
+  getPlacementRecommendationLabel,
 } from '../../../lib/mockFeedback';
 import { getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
 import { mergeRoleFitKeys } from './aggregateMockRoleFit';
@@ -26,6 +30,9 @@ function ScorePill({ label, value }) {
 function MockCard({ mock, index }) {
   const areas = getTechFeedbackAreas(mock);
   const roleFit = getRoleFitKeys(mock);
+  const placement = getPlacementRecommendation(mock);
+  const placementNote = getPlacementRecommendationNote(mock);
+  const commAdminNote = getCommunicationAdminNote(mock);
   const overallSuggestions = getOverallSuggestions(mock);
   const isCompleted = mock.status === 'completed';
 
@@ -118,6 +125,27 @@ function MockCard({ mock, index }) {
                     </ProfileBadge>
                   ))}
                 </div>
+              </div>
+            ) : null}
+
+            {placement || placementNote || commAdminNote ? (
+              <div className="rounded-lg border border-violet-200 bg-violet-50/40 p-3 space-y-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-800">Internal notes</p>
+                {placement ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">Placement pipeline</p>
+                    <p className="mt-0.5 text-sm font-medium text-slate-900">{getPlacementRecommendationLabel(placement)}</p>
+                    {placementNote ? (
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{placementNote}</p>
+                    ) : null}
+                  </div>
+                ) : null}
+                {commAdminNote ? (
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">Communication (admin)</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-sm text-slate-700">{commAdminNote}</p>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </>

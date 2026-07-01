@@ -51,5 +51,6 @@ export function buildUsersListRpcParams(filters) {
   // Only after migration 105 — omit when unset so older DB signatures still match.
   if (f.roleFitKey) params.p_role_fit_key = f.roleFitKey;
   if (f.profileStatus) params.p_profile_status = f.profileStatus;
+  if (f.placementPipeline) params.p_placement_pipeline_status = f.placementPipeline;
   return params;
 }

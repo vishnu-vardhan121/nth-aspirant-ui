@@ -643,6 +643,33 @@ button:focus-visible {
   color: #fff !important;
 }
 
+/* Secondary outline button — pairs with .nth-btn-primary on modals and forms */
+.nth-btn-secondary,
+.nth-btn-secondary:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1.5px solid rgb(var(--nth-border-light));
+  color: rgb(var(--nth-text-primary-light)) !important;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+}
+.nth-btn-secondary:hover,
+.nth-btn-secondary:focus-visible {
+  background: rgb(var(--nth-bg-soft));
+  border-color: hsl(var(--nth-primary) / 0.35);
+  color: rgb(var(--nth-text-primary-light)) !important;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+.nth-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /*
  * Global a / a:hover forces primary color on all links.
  * Gradient CTAs (spotlight, money-back) are <a>/<Link> with bg-gradient + text-white —
