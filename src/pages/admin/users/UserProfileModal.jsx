@@ -29,6 +29,7 @@ import { formatAspirantPhone } from './AspirantIdentity';
 
 function ProfileHeader({ profile, onClose }) {
   const placed = profile?.profile_status === 'inactive';
+  const placementReady = profile?.placement_pipeline_status === 'ready' && !placed;
   const initials = (profile?.full_name ?? profile?.email ?? '?')
     .split(/\s+/)
     .slice(0, 2)
@@ -67,6 +68,9 @@ function ProfileHeader({ profile, onClose }) {
                 <ProfileBadge tone={placed ? 'amber' : 'emerald'}>
                   {placed ? 'Placed' : 'In pool'}
                 </ProfileBadge>
+                {placementReady ? (
+                  <ProfileBadge tone="emerald">Placement-ready</ProfileBadge>
+                ) : null}
                 <ProfileBadge tone={profile.is_active ? 'emerald' : 'slate'}>
                   {profile.is_active ? 'Sub active' : 'Sub expired'}
                 </ProfileBadge>

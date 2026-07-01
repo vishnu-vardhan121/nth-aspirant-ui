@@ -15,20 +15,34 @@ const tdClass = 'px-4 py-3.5 align-middle text-sm text-slate-700';
 
 function PlacementDisplay({ user }) {
   const placed = (user.profile_status ?? 'active') === 'inactive';
-  if (!placed) {
-    return <span className="text-xs text-slate-500">In pool</span>;
+  const ready = (user.placement_pipeline_status ?? 'none') === 'ready';
+
+  if (placed) {
+    return (
+      <div className="text-xs text-slate-600">
+        <span className="font-medium text-slate-800">Placed</span>
+        {user.placed_in ? (
+          <p className="mt-0.5 max-w-[160px] truncate" title={user.placed_in}>
+            {user.placed_in}
+          </p>
+        ) : null}
+        {user.placed_at ? <p className="text-slate-400">{user.placed_at}</p> : null}
+      </div>
+    );
   }
-  return (
-    <div className="text-xs text-slate-600">
-      <span className="font-medium text-slate-800">Placed</span>
-      {user.placed_in ? (
-        <p className="mt-0.5 max-w-[160px] truncate" title={user.placed_in}>
-          {user.placed_in}
-        </p>
-      ) : null}
-      {user.placed_at ? <p className="text-slate-400">{user.placed_at}</p> : null}
-    </div>
-  );
+
+  if (ready) {
+    return (
+      <div className="text-xs">
+        <span className="font-medium text-emerald-800">Placement-ready</span>
+        {user.placement_ready_at ? (
+          <p className="mt-0.5 text-slate-500">{new Date(user.placement_ready_at).toLocaleDateString('en-IN')}</p>
+        ) : null}
+      </div>
+    );
+  }
+
+  return <span className="text-xs text-slate-500">In training pool</span>;
 }
 
 function MockCell({ user }) {
