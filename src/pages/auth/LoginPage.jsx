@@ -22,7 +22,14 @@ import { HiEye, HiEyeSlash } from 'react-icons/hi2';
 export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const location = useLocation();
-  const returnAfterSignIn = useMemo(() => getSafeReturnPath(searchParams, '/dashboard'), [searchParams]);
+  const returnAfterSignIn = useMemo(() => {
+    const fromState = location.state?.from;
+    if (fromState?.pathname && typeof fromState.pathname === 'string') {
+      const path = `${fromState.pathname}${fromState.search || ''}`;
+      if (path.startsWith('/') && !path.startsWith('//')) return path;
+    }
+    return getSafeReturnPath(searchParams, '/dashboard');
+  }, [location.state?.from, searchParams]);
   const resetSuccess = searchParams.get('reset') === '1';
   const verifiedSuccess = searchParams.get('verified') === '1';
   const signupSuccess = searchParams.get('signup') === '1';
@@ -79,12 +86,13 @@ export default function LoginPage() {
       const { data: roleData } = await supabase.rpc('get_my_role');
       const role = roleData?.role ?? null;
       const defaultPath = getPostLoginPathForRole(role);
-      const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer'];
+      const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer', '/support'];
       const useReturn =
-        allowedReturnPaths.includes(returnAfterSignIn) &&
-        ((role === 'aspirant' && returnAfterSignIn === '/dashboard') ||
-          (role === 'admin' && returnAfterSignIn === '/admin') ||
-          (role === 'interviewer' && returnAfterSignIn === '/interviewer'));
+        (role === 'aspirant' &&
+          (returnAfterSignIn === '/dashboard' || returnAfterSignIn.startsWith('/support'))) ||
+        (role === 'admin' && returnAfterSignIn === '/admin') ||
+        (role === 'interviewer' && returnAfterSignIn === '/interviewer') ||
+        (returnAfterSignIn.startsWith('/support') && ['aspirant', 'admin', 'interviewer'].includes(role));
       navigate(useReturn ? returnAfterSignIn : defaultPath, { replace: true });
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Something went wrong.' });

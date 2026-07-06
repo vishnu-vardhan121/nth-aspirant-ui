@@ -1,4 +1,5 @@
 import { INITIAL_USER_FILTERS, PAGE_SIZE } from './constants';
+import { isPremierInstituteSelection, parseCollegeStandingOption } from '../../../lib/aspirantFilterOptions';
 
 export { INITIAL_USER_FILTERS };
 
@@ -23,6 +24,7 @@ export function filtersReducer(state, action) {
 
 export function buildUsersListRpcParams(filters) {
   const f = filters;
+  const standing = parseCollegeStandingOption(f.tier || '');
   const params = {
     p_plan: f.plan || null,
     p_track: f.track || null,
@@ -32,8 +34,8 @@ export function buildUsersListRpcParams(filters) {
     p_degree_branch: f.branch || null,
     p_graduation_year: f.batch ? parseInt(f.batch, 10) : null,
     p_graduation_score_min: f.cgpaMin ? parseFloat(f.cgpaMin) : null,
-    p_premier_institute_type: null,
-    p_institute_tier: f.tier || null,
+    p_premier_institute_type: isPremierInstituteSelection(f.tier) ? standing.premierInstituteType : null,
+    p_institute_tier: f.tier && !isPremierInstituteSelection(f.tier) ? standing.instituteTier : null,
     p_communication_level: f.communication || null,
     p_notice_period: f.noticePeriod || null,
     p_skills: f.skills.trim() || null,

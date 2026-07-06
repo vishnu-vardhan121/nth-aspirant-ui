@@ -1,6 +1,6 @@
 /** Catalog of mock interview topics — stable keys for DB filters. */
 
-/** Cap per mock — each topic needs score, rating, feedback + suggestions (long form). */
+/** Cap per mock — each topic needs score, rating, and feedback; suggestions optional. */
 export const MOCK_TOPIC_MAX = 10;
 
 /** Interviewer-only role-fit tags (optional; not shown to aspirants). Defined in UI — backend stores keys as sent. */

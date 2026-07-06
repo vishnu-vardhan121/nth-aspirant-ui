@@ -8,6 +8,7 @@ import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
 import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight, HiChartBar } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
+import { useInterviewerMessageUnread } from '../hooks/useInterviewerMessageUnread';
 
 const navLinkClass = (isActive) =>
   `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
@@ -22,6 +23,7 @@ export default function InterviewerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const interviewer = useAppSelector((state) => state.interviewer.profile);
+  const { unreadTotal } = useInterviewerMessageUnread();
 
   const isActive = (path, exact) =>
     exact ? location.pathname === path : location.pathname === path || location.pathname.startsWith(path + '/');
@@ -64,9 +66,16 @@ export default function InterviewerLayout() {
             <HiChartBar className="w-5 h-5 shrink-0" />
             My performance
           </Link>
-          <Link to="/interviewer/messages" className={navLinkClass(isActive('/interviewer/messages'))}>
-            <HiChatBubbleLeftRight className="w-5 h-5 shrink-0" />
-            Messages
+          <Link to="/interviewer/messages" className={`${navLinkClass(isActive('/interviewer/messages'))} justify-between`}>
+            <span className="flex items-center gap-2">
+              <HiChatBubbleLeftRight className="w-5 h-5 shrink-0" />
+              Messages
+            </span>
+            {unreadTotal > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-semibold text-white">
+                {unreadTotal > 99 ? '99+' : unreadTotal}
+              </span>
+            ) : null}
           </Link>
         </nav>
         <div className="p-3 border-t border-slate-200 shrink-0">

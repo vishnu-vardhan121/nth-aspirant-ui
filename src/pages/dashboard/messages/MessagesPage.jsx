@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import { PageLoader } from '../../../components/ui/Loader';
 import { isMessageSoundMuted, setMessageSoundMuted, primeMessageSound } from '../../../lib/messageSound';
+import BrowserNotificationPrompt from '../../../components/BrowserNotificationPrompt';
+import { showIncomingAspirantMessageNotification } from '../../../lib/browserNotifications';
 import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
-import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
+import { emitMessagesInvalidate, MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
 import {
   NTH_TEAM_KEY,
   MOCK_UPDATES_KEY,
@@ -75,6 +77,11 @@ function buildChats(messages) {
   }
 
   return Array.from(byKey.values()).sort((a, b) => {
+    const ua = a.unreadCount || 0;
+    const ub = b.unreadCount || 0;
+    if (ua > 0 && ub === 0) return -1;
+    if (ub > 0 && ua === 0) return 1;
+    if (ua !== ub) return ub - ua;
     const tA = a.lastMessage?.created_at || 0;
     const tB = b.lastMessage?.created_at || 0;
     return new Date(tB) - new Date(tA);
@@ -146,6 +153,7 @@ export default function MessagesPage() {
           console.warn('[Messages] mark read failed:', error.message);
         }
         await fetchMessages();
+        emitMessagesInvalidate();
       } finally {
         markingRef.current = false;
       }
@@ -200,7 +208,8 @@ export default function MessagesPage() {
 
       unsubscribe = subscribeToAspirantMessages(
         uid,
-        () => {
+        (row) => {
+          showIncomingAspirantMessageNotification(row);
           loadMessages();
         },
         { channelId: `messages-page-${uid}` },
@@ -227,16 +236,6 @@ export default function MessagesPage() {
     }
   }, [loading, helpMode, handleSelectChat]);
 
-  // Open the chat with the most unread messages first (unless help mode).
-  useEffect(() => {
-    if (loading || helpMode || selectedChatKey) return;
-    const built = ensureNthTeamChat(buildChats(messages));
-    const withUnread = built.filter((c) => c.unreadCount > 0);
-    if (withUnread.length > 0) {
-      const top = withUnread.sort((a, b) => b.unreadCount - a.unreadCount)[0];
-      handleSelectChat(top.key);
-    }
-  }, [loading, helpMode, messages, selectedChatKey, handleSelectChat]);
   useEffect(() => {
     const el = chatScrollRef.current;
     if (!el) return;
@@ -299,7 +298,7 @@ export default function MessagesPage() {
           type="button"
           onClick={toggleSoundMuted}
           className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-          title={soundMuted ? 'Unmute new message sound' : 'Mute new message sound'}
+          title={soundMuted ? 'Unmute message sound' : 'Mute message sound'}
           aria-label={soundMuted ? 'Unmute sound' : 'Mute sound'}
         >
           {soundMuted ? (
@@ -309,6 +308,7 @@ export default function MessagesPage() {
           )}
         </button>
       </div>
+      <BrowserNotificationPrompt className="mb-4" />
       <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
         {helpMode
           ? 'Chat with the Naveen Talent Hub team about your account, mocks, jobs, or payments. We reply here in Messages.'
@@ -335,6 +335,7 @@ export default function MessagesPage() {
               {chats.map((chat) => {
                 const last = chat.lastMessage ?? chat.messages[chat.messages.length - 1];
                 const isSelected = selectedChat?.key === chat.key;
+                const unread = (chat.unreadCount || 0) > 0;
                 const Icon = chat.icon;
                 return (
                   <li key={chat.key}>
@@ -342,27 +343,33 @@ export default function MessagesPage() {
                       type="button"
                       onClick={() => handleSelectChat(chat.key)}
                       className={`w-full text-left px-3 py-3 flex items-start gap-3 hover:bg-white/80 transition-colors border-b border-[rgb(var(--nth-border-light))]/50 ${
-                        isSelected ? 'bg-white border-l-2 border-l-[hsl(var(--nth-primary))]' : ''
+                        isSelected
+                          ? 'bg-white border-l-2 border-l-[hsl(var(--nth-primary))]'
+                          : unread
+                            ? 'bg-[hsl(var(--nth-primary))]/[0.06]'
+                            : ''
                       }`}
                     >
-                      <span className="w-10 h-10 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
+                      <span className="relative w-10 h-10 rounded-full bg-[hsl(var(--nth-primary))]/15 flex items-center justify-center shrink-0">
                         <Icon className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
                       </span>
                       <span className="flex-1 min-w-0">
-                        <p className="font-medium text-[rgb(var(--nth-text-primary-light))] truncate flex items-center gap-2">
+                        <p className={`truncate ${unread ? 'font-semibold text-[rgb(var(--nth-text-primary-light))]' : 'font-medium text-[rgb(var(--nth-text-primary-light))]'}`}>
                           {chat.label}
-                          {chat.unreadCount > 0 && (
-                            <span className="bg-[hsl(var(--nth-primary))] text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
-                              {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
-                            </span>
-                          )}
                         </p>
                         <p className="text-xs text-[rgb(var(--nth-text-muted-light))] truncate mt-0.5">
                           {lastPreview(last?.body)}
                         </p>
                       </span>
-                      <span className="text-[10px] text-[rgb(var(--nth-text-muted-light))] shrink-0">
-                        {formatChatTime(last?.created_at)}
+                      <span className="shrink-0 flex flex-col items-end gap-1.5">
+                        <span className="text-[10px] text-[rgb(var(--nth-text-muted-light))]">
+                          {formatChatTime(last?.created_at)}
+                        </span>
+                        {unread ? (
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-[hsl(var(--nth-primary))] px-1.5 text-[10px] font-semibold text-white">
+                            {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+                          </span>
+                        ) : null}
                       </span>
                     </button>
                   </li>

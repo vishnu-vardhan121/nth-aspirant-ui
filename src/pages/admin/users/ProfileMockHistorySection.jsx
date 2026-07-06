@@ -7,6 +7,7 @@ import {
   getPlacementRecommendationNote,
   getCommunicationAdminNote,
   getPlacementRecommendationLabel,
+  topicSuggestionsForDisplay,
 } from '../../../lib/mockFeedback';
 import { getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
 import { mergeRoleFitKeys } from './aggregateMockRoleFit';
@@ -86,7 +87,9 @@ function MockCard({ mock, index }) {
               <div className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Topic feedback</p>
                 <div className="space-y-2">
-                  {areas.map((area) => (
+                  {areas.map((area) => {
+                    const topicSuggestions = topicSuggestionsForDisplay(area.suggestions);
+                    return (
                     <div key={`${mock.id}-${area.key}`} className="rounded-lg border border-indigo-100 bg-white p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <p className="text-sm font-semibold text-slate-900">{area.label}</p>
@@ -104,13 +107,14 @@ function MockCard({ mock, index }) {
                           <span className="font-medium text-slate-800">Feedback:</span> {area.feedback}
                         </p>
                       ) : null}
-                      {area.suggestions ? (
+                      {topicSuggestions ? (
                         <p className="mt-1 text-sm leading-relaxed text-slate-600">
-                          <span className="font-medium text-slate-700">Suggestions:</span> {area.suggestions}
+                          <span className="font-medium text-slate-700">Suggestions:</span> {topicSuggestions}
                         </p>
                       ) : null}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : null}

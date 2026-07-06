@@ -31,8 +31,9 @@ export default function InterviewerScheduleMockModal({
 
   if (!open || !mock) return null;
 
-  const title = mode === 'take' ? 'Take & schedule mock' : 'Schedule mock';
-  const submitLabel = mode === 'take' ? 'Take & schedule' : 'Save schedule';
+  const isReschedule = mode === 'schedule' && Boolean(mock?.scheduled_at);
+  const title = mode === 'take' ? 'Take & schedule mock' : isReschedule ? 'Reschedule mock' : 'Schedule mock';
+  const submitLabel = mode === 'take' ? 'Take & schedule' : isReschedule ? 'Save new time' : 'Save schedule';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -89,6 +90,10 @@ export default function InterviewerScheduleMockModal({
         {mode === 'take' ? (
           <p className="mb-4 text-xs text-slate-500">
             This assigns the mock to you and notifies the aspirant with the time and Meet link.
+          </p>
+        ) : isReschedule ? (
+          <p className="mb-4 text-xs text-slate-500">
+            Change the date, time, or Meet link. The aspirant will get a new message with the updated details.
           </p>
         ) : null}
 

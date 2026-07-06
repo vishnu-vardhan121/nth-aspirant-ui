@@ -3,6 +3,7 @@ import {
   getOverallSuggestions,
   getMockRatingLabel,
   getMockRatingClass,
+  topicSuggestionsForDisplay,
   hasAnyMockFeedback,
   hasLegacyMockFeedback,
   hasStructuredMockFeedback,
@@ -82,7 +83,9 @@ export default function MockFeedbackDisplay({ registration, compact = false, sho
         <div className="space-y-2 border-t border-emerald-200/60 pt-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-700">Topics</p>
           <ul className="space-y-2">
-            {areas.map((a) => (
+            {areas.map((a) => {
+              const topicSuggestions = topicSuggestionsForDisplay(a.suggestions);
+              return (
               <li
                 key={`${a.key}-${a.label}`}
                 className="rounded-lg border border-emerald-100 bg-white/80 px-3 py-3 text-sm"
@@ -108,14 +111,15 @@ export default function MockFeedbackDisplay({ registration, compact = false, sho
                 ) : a.notes ? (
                   <p className="mt-2 whitespace-pre-wrap text-xs text-slate-600">{a.notes}</p>
                 ) : null}
-                {a.suggestions ? (
+                {topicSuggestions ? (
                   <div className="mt-2 rounded-md bg-indigo-50/80 px-2 py-1.5">
                     <p className="text-[10px] font-semibold uppercase text-indigo-700">Suggestions</p>
-                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-indigo-900">{a.suggestions}</p>
+                    <p className="mt-0.5 whitespace-pre-wrap text-xs text-indigo-900">{topicSuggestions}</p>
                   </div>
                 ) : null}
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
       ) : null}

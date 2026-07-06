@@ -4,7 +4,7 @@ import {
   JOB_DOMAIN_OPTIONS,
   QUALIFICATION_OPTIONS,
   COMMUNICATION_LEVEL_OPTIONS,
-  INSTITUTE_TIER_SELECT_OPTIONS,
+  COLLEGE_STANDING_OPTIONS,
   NOTICE_PERIOD_OPTIONS,
   getBranchOptions,
 } from '../../../lib/aspirantFilterOptions';
@@ -170,9 +170,9 @@ export default function AdminUsersFilterBar({ filters, onPatch, onQualificationC
               placeholder="CGPA ≥"
               className={`${inputClass} w-24`}
             />
-            <select value={filters.tier} onChange={set('tier')} className={selectClass}>
-              <option value="">All tiers</option>
-              {INSTITUTE_TIER_SELECT_OPTIONS.map((o) => (
+            <select value={filters.tier} onChange={set('tier')} className={selectClass} aria-label="College standing">
+              <option value="">All college standing</option>
+              {COLLEGE_STANDING_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
                   {o.label}
                 </option>

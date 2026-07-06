@@ -2,20 +2,24 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { HiChatBubbleLeftRight, HiXMark } from 'react-icons/hi2';
 
-const AUTO_DISMISS_MS = 6000;
+const AUTO_DISMISS_MS = 8000;
 
 /**
- * Full notification card for new messages (not a tiny toast).
- * Shows title, body preview, View button; auto-dismisses after AUTO_DISMISS_MS.
+ * In-app alert for new messages. Can include Allow for Chrome notifications.
  */
-export default function MessageNotification({ notification, onDismiss }) {
-  const { show, title, bodyPreview, link } = notification;
+export default function MessageNotification({
+  notification,
+  onDismiss,
+  onAllowNotifications,
+  allowingNotifications = false,
+}) {
+  const { show, title, bodyPreview, link, promptEnableNotifications } = notification;
 
   useEffect(() => {
-    if (!show) return;
+    if (!show || promptEnableNotifications) return;
     const t = setTimeout(onDismiss, AUTO_DISMISS_MS);
     return () => clearTimeout(t);
-  }, [show, onDismiss]);
+  }, [show, promptEnableNotifications, onDismiss]);
 
   if (!show) return null;
 
@@ -31,18 +35,36 @@ export default function MessageNotification({ notification, onDismiss }) {
         </span>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-[rgb(var(--nth-text-primary-light))]">{title}</p>
-          {bodyPreview && (
+          {bodyPreview ? (
             <p className="text-sm text-[rgb(var(--nth-text-muted-light))] mt-0.5 line-clamp-2">
               {bodyPreview}
             </p>
-          )}
-          <Link
-            to={link || '/dashboard/messages'}
-            onClick={onDismiss}
-            className="inline-block mt-2 text-sm font-medium text-[hsl(var(--nth-primary))] hover:underline"
-          >
-            View messages →
-          </Link>
+          ) : null}
+          {promptEnableNotifications ? (
+            <p className="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-2.5 py-2 leading-snug">
+              Allow Chrome notifications so you don&apos;t miss replies when this tab is in the background.
+              Unread counts still show in Messages if you skip this.
+            </p>
+          ) : null}
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {promptEnableNotifications && onAllowNotifications ? (
+              <button
+                type="button"
+                onClick={onAllowNotifications}
+                disabled={allowingNotifications}
+                className="text-sm font-semibold text-white bg-[hsl(var(--nth-primary))] hover:opacity-90 disabled:opacity-60 rounded-lg px-3 py-1.5"
+              >
+                {allowingNotifications ? 'Asking…' : 'Allow notifications'}
+              </button>
+            ) : null}
+            <Link
+              to={link || '/dashboard/messages'}
+              onClick={onDismiss}
+              className="text-sm font-medium text-[hsl(var(--nth-primary))] hover:underline"
+            >
+              View messages →
+            </Link>
+          </div>
         </div>
         <button
           type="button"

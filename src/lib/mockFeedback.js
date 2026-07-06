@@ -36,6 +36,26 @@ export const PLACEMENT_RECOMMENDATION_OPTIONS = [
 const MIN_OVERALL = 30;
 const MIN_TOPIC_TEXT = 20;
 
+/** Stored when interviewer leaves per-topic suggestions blank (backend requires ≥20 chars). */
+export const TOPIC_SUGGESTIONS_PLACEHOLDER = 'No additional suggestions for this topic.';
+
+export function isTopicSuggestionsPlaceholder(suggestions) {
+  return (suggestions?.trim() ?? '') === TOPIC_SUGGESTIONS_PLACEHOLDER;
+}
+
+/** Payload for submit_mock_feedback — empty UI field becomes a hidden placeholder. */
+export function topicSuggestionsForPayload(suggestions) {
+  const s = suggestions?.trim();
+  return s || TOPIC_SUGGESTIONS_PLACEHOLDER;
+}
+
+/** Aspirant-facing display — omit blank and placeholder values. */
+export function topicSuggestionsForDisplay(suggestions) {
+  const s = suggestions?.trim();
+  if (!s || isTopicSuggestionsPlaceholder(s)) return '';
+  return s;
+}
+
 function emptyTopicRow() {
   return {
     score: 5,
@@ -61,6 +81,23 @@ export function createEmptyMockFeedbackForm() {
     topics: {},
     role_fit_keys: [],
   };
+}
+
+/** True if the user has entered anything worth keeping (accidental close guard). */
+export function hasMockFeedbackDraft(form) {
+  if (!form) return false;
+  if ((form.selectedKeys?.length ?? 0) > 0) return true;
+  if (form.feedback_notes?.trim()) return true;
+  if (form.overall_suggestions?.trim()) return true;
+  if (form.communication_admin_note?.trim()) return true;
+  if (form.placement_recommendation) return true;
+  if (form.placement_recommendation_note?.trim()) return true;
+  if ((form.role_fit_keys?.length ?? 0) > 0) return true;
+  if (form.overall_score !== 5 || form.communication_score !== 5) return true;
+  for (const row of Object.values(form.topics ?? {})) {
+    if (row?.feedback?.trim() || row?.suggestions?.trim() || row?.label?.trim()) return true;
+  }
+  return false;
 }
 
 export function toggleTopicInForm(form, topicKey, topicMeta) {
@@ -121,7 +158,7 @@ export function buildTechFeedbackPayload(form) {
       score: row.score,
       rating: row.rating,
       feedback: row.feedback?.trim() || '',
-      suggestions: row.suggestions?.trim() || '',
+      suggestions: topicSuggestionsForPayload(row.suggestions),
       notes: row.feedback?.trim() || '',
     };
   });
@@ -172,8 +209,9 @@ export function validateMockFeedbackForm(form) {
     if (!row.feedback?.trim() || row.feedback.trim().length < MIN_TOPIC_TEXT) {
       return `Feedback for ${label} is required (at least ${MIN_TOPIC_TEXT} characters).`;
     }
-    if (!row.suggestions?.trim() || row.suggestions.trim().length < MIN_TOPIC_TEXT) {
-      return `Suggestions for ${label} are required (at least ${MIN_TOPIC_TEXT} characters).`;
+    const suggestions = row.suggestions?.trim();
+    if (suggestions && suggestions.length < MIN_TOPIC_TEXT) {
+      return `Suggestions for ${label} need at least ${MIN_TOPIC_TEXT} characters if provided.`;
     }
   }
 
@@ -257,6 +295,44 @@ export function hasAnyMockFeedback(reg) {
   return hasStructuredMockFeedback(reg) || hasLegacyMockFeedback(reg);
 }
 
+/** Build feedback form from an existing registration (for edit). */
+export function mockFeedbackFormFromRegistration(reg) {
+  if (!reg || !hasAnyMockFeedback(reg)) return createEmptyMockFeedbackForm();
+
+  const areas = getTechFeedbackAreas(reg);
+  const selectedKeys = [];
+  const topics = {};
+
+  for (const area of areas) {
+    const key = area.key || makeCustomTopicKey(area.label || 'topic');
+    if (selectedKeys.includes(key)) continue;
+    selectedKeys.push(key);
+    const def = getMockTopicDef(key);
+    topics[key] = {
+      score: area.score ?? 5,
+      rating: area.rating || 'average',
+      feedback: area.feedback || '',
+      suggestions: topicSuggestionsForDisplay(area.suggestions),
+      label: area.label || def?.label || key,
+      category: area.category ?? def?.category ?? null,
+      isCustom: key.startsWith('custom_') || Boolean(area.isCustom),
+    };
+  }
+
+  return {
+    overall_score: reg.overall_score ?? 5,
+    communication_score: reg.communication_score ?? 5,
+    feedback_notes: reg.feedback_notes || '',
+    overall_suggestions: getOverallSuggestions(reg),
+    communication_admin_note: getCommunicationAdminNote(reg),
+    placement_recommendation: getPlacementRecommendation(reg) || '',
+    placement_recommendation_note: getPlacementRecommendationNote(reg),
+    selectedKeys,
+    topics,
+    role_fit_keys: getRoleFitKeys(reg),
+  };
+}
+
 export function formatFeedbackSummary(reg) {
   const areas = getTechFeedbackAreas(reg);
   if (areas.length > 0 && reg.overall_score != null) {
@@ -283,4 +359,13 @@ export async function submitMockFeedback(supabase, registrationId, form) {
 
   if (error) return { ok: false, error: error.message };
   return data ?? { ok: false, error: 'Failed to submit feedback' };
+}
+
+/** Admin: remove mistaken feedback; mock returns to scheduled with slot/schedule unchanged. */
+export async function revertMockFeedback(supabase, registrationId) {
+  const { data, error } = await supabase.rpc('revert_mock_feedback', {
+    p_registration_id: registrationId,
+  });
+  if (error) return { ok: false, error: error.message };
+  return data ?? { ok: false, error: 'Failed to revert feedback' };
 }

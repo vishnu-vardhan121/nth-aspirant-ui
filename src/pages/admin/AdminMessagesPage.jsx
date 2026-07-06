@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { subscribeToAdminMessages } from '../../lib/messageRealtime';
+import { sendMessageToActivePremiumMembers } from '../../lib/adminPremiumBroadcast';
 import { Loader, LoaderDots } from '../../components/ui/Loader';
-import { HiUserGroup, HiMegaphone, HiChatBubbleLeftRight } from 'react-icons/hi2';
+import { HiUserGroup, HiMegaphone, HiChatBubbleLeftRight, HiSparkles } from 'react-icons/hi2';
 
 const BROADCAST_ID = '__broadcast__';
+const PREMIUM_BROADCAST_ID = '__premium__';
 const SEND_TO_SHORTLISTED = 'shortlisted';
 const SEND_TO_ALL_APPLICANTS = 'all_applicants';
 
@@ -29,7 +31,15 @@ export default function AdminMessagesPage() {
   const [flash, setFlash] = useState({ type: '', text: '' });
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [individualSearch, setIndividualSearch] = useState('');
+  const [activePremiumCount, setActivePremiumCount] = useState(null);
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    supabase.rpc('get_admin_users_summary').then(({ data }) => {
+      if (data?.active_users != null) setActivePremiumCount(Number(data.active_users) || 0);
+    });
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -59,13 +69,16 @@ export default function AdminMessagesPage() {
   // Open individual chat when navigated with state (e.g. from Job Applicants "Send message")
   useEffect(() => {
     const openId = location.state?.openAspirantId;
-    if (!openId || !aspirants.length) return;
+    if (!openId) return;
     const aspirant = aspirants.find((a) => a.id === openId);
-    if (aspirant) {
-      setSelected({ type: 'individual', id: aspirant.id, label: aspirant.full_name || aspirant.email || 'Chat', drive: null });
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [aspirants, location.state?.openAspirantId, location.pathname, navigate]);
+    const label =
+      aspirant?.full_name ||
+      aspirant?.email ||
+      location.state?.openAspirantName ||
+      'Aspirant';
+    setSelected({ type: 'individual', id: openId, label, drive: null });
+    navigate(location.pathname, { replace: true, state: {} });
+  }, [aspirants, location.state?.openAspirantId, location.state?.openAspirantName, location.pathname, navigate]);
 
   useEffect(() => {
     if (!selected.type || !selected.id) {
@@ -157,6 +170,28 @@ export default function AdminMessagesPage() {
       } else {
         showFlash('error', data?.error ?? 'Failed to send.');
       }
+    } else if (selected.type === 'premium') {
+      const confirmed = window.confirm(
+        `Send this message to all active premium members (Base, Silver, Gold with a valid subscription)?${
+          activePremiumCount != null ? `\n\nAbout ${activePremiumCount} member(s) will receive a personal message.` : ''
+        }\n\nSending runs on the server — you do not need to keep this page open while it completes.`,
+      );
+      if (!confirmed) {
+        setSending(false);
+        return;
+      }
+      const result = await sendMessageToActivePremiumMembers(supabase, text);
+      setSending(false);
+      if (result.ok) {
+        setBody('');
+        if (result.recipient_count === 0) {
+          showFlash('error', 'No active premium members found.');
+        } else {
+          showFlash('success', `Sent to ${result.recipient_count} active premium member(s).`);
+        }
+      } else {
+        showFlash('error', result.error ?? 'Failed to send.');
+      }
     } else {
       setSending(false);
     }
@@ -165,20 +200,86 @@ export default function AdminMessagesPage() {
   const isDrive = selected.type === 'drive';
   const isIndividual = selected.type === 'individual';
   const isBroadcast = selected.type === 'broadcast';
-  const canCompose = isDrive || isIndividual || isBroadcast;
+  const isPremium = selected.type === 'premium';
+  const canCompose = isDrive || isIndividual || isBroadcast || isPremium;
   const currentDrive = selected.drive || (isDrive ? drives.find((d) => d.job_id === selected.id) : null);
+
+  const filteredAspirants = useMemo(() => {
+    const q = individualSearch.trim().toLowerCase();
+    if (!q) return aspirants;
+    return aspirants.filter(
+      (a) =>
+        (a.full_name || '').toLowerCase().includes(q) ||
+        (a.email || '').toLowerCase().includes(q) ||
+        (a.last_preview || '').toLowerCase().includes(q),
+    );
+  }, [aspirants, individualSearch]);
+
+  const unreadAspirants = useMemo(
+    () => filteredAspirants.filter((a) => (a.unread_count || 0) > 0),
+    [filteredAspirants],
+  );
+  const readAspirants = useMemo(
+    () => filteredAspirants.filter((a) => !(a.unread_count || 0)),
+    [filteredAspirants],
+  );
+
+  const renderAspirantRow = (a) => {
+    const unread = (a.unread_count || 0) > 0;
+    return (
+      <button
+        key={a.id}
+        type="button"
+        onClick={() => setSelected({ type: 'individual', id: a.id, label: a.full_name || a.email, drive: null })}
+        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
+          isIndividual && selected.id === a.id
+            ? 'bg-indigo-100 text-indigo-900 font-medium'
+            : unread
+              ? 'bg-amber-50/80 text-slate-900 hover:bg-amber-50'
+              : 'text-slate-700 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-start gap-2">
+          <HiChatBubbleLeftRight className="w-4 h-4 shrink-0 mt-0.5 text-slate-400" />
+          <span className="min-w-0 flex-1">
+            <span className={`flex items-center gap-2 truncate ${unread ? 'font-bold' : 'font-medium'}`}>
+              {a.full_name || a.email}
+              {unread ? (
+                <span className="bg-indigo-600 text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center shrink-0">
+                  {a.unread_count > 99 ? '99+' : a.unread_count}
+                </span>
+              ) : null}
+            </span>
+            {a.last_preview ? (
+              <span className={`mt-0.5 block truncate text-xs ${unread ? 'text-slate-700' : 'text-slate-500'}`}>
+                {a.last_preview}
+              </span>
+            ) : null}
+          </span>
+        </div>
+      </button>
+    );
+  };
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[400px]">
       <h1 className="text-2xl font-bold text-slate-900 mb-2">Messages</h1>
-      <p className="text-slate-600 mb-4">
-        Job groups = messages only to applicants for that job. Choose shortlisted only or all applicants per job.
+      <p className="text-slate-600 mb-1">
+        <strong className="font-medium text-slate-800">NTH Team chats</strong> — when an aspirant messages you from Dashboard → Messages →
+        Naveen Talent Hub Team, it appears under <em>Individual chat</em> below.
+      </p>
+      <p className="text-slate-500 text-sm mb-4">
+        Help desk form tickets (website / Support page) are in{' '}
+        <Link to="/admin/help-desk" className="font-medium text-indigo-600 hover:underline">
+          Help desk
+        </Link>
+        , not here.
       </p>
 
       <div className="flex flex-1 min-h-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
         {/* Left: conversation list – job groups (like WhatsApp groups) then individuals */}
-        <aside className="w-80 shrink-0 flex flex-col border-r border-slate-200 bg-slate-50/50">
-          <div className="p-2 border-b border-slate-200 bg-white">
+        <aside className="w-80 shrink-0 flex flex-col min-h-0 border-r border-slate-200 bg-slate-50/50">
+          <div className="nth-scroll-y flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">Job groups</p>
             <p className="text-xs text-slate-400 px-2 pb-1">One group per job – only that job’s applicants receive messages.</p>
             {loading ? (
@@ -186,70 +287,112 @@ export default function AdminMessagesPage() {
             ) : drives.length === 0 ? (
               <p className="text-slate-400 text-sm px-2 py-1">No jobs with applicants yet.</p>
             ) : (
-              drives.map((d) => (
-                <button
-                  key={d.job_id}
-                  type="button"
-                  onClick={() => setSelected({
-                    type: 'drive',
-                    id: d.job_id,
-                    label: `${d.job_title} – ${d.company_name}`,
-                    drive: d,
-                  })}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-start gap-2 ${
-                    isDrive && selected.id === d.job_id
-                      ? 'bg-indigo-100 text-indigo-900 ring-1 ring-indigo-200'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  <HiUserGroup className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span className="flex-1 min-w-0">
-                    <span className="font-medium truncate flex items-center gap-2">
-                      {d.job_title}
-                      {(d.unread_count || 0) > 0 && (
-                        <span className="bg-indigo-600 text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
-                          {d.unread_count > 99 ? '99+' : d.unread_count}
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-xs text-slate-500 block truncate">{d.company_name}</span>
-                    <span className="text-xs text-slate-500">{(d.shortlisted_count || 0)} shortlisted · {(d.applicant_count || 0)} applicants</span>
-                  </span>
-                </button>
-              ))
-            )}
-          </div>
-          <div className="flex-1 overflow-auto p-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">Individual chat</p>
-            {aspirants.length === 0 ? (
-              <p className="text-slate-400 text-sm px-2 py-1">No aspirants.</p>
-            ) : (
-              aspirants.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => setSelected({ type: 'individual', id: a.id, label: a.full_name || a.email, drive: null })}
-                  className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-center gap-2 ${
-                    isIndividual && selected.id === a.id
-                      ? 'bg-indigo-100 text-indigo-900 font-medium'
-                      : 'text-slate-700 hover:bg-slate-100'
-                  }`}
-                >
-                  <HiChatBubbleLeftRight className="w-4 h-4 shrink-0 text-slate-400" />
-                  <span className="flex-1 truncate flex items-center gap-2">
-                    {a.full_name || a.email}
-                    {(a.unread_count || 0) > 0 && (
-                      <span className="bg-indigo-600 text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center shrink-0">
-                        {a.unread_count > 99 ? '99+' : a.unread_count}
+              <div className="space-y-1 mb-4">
+                {drives.map((d) => (
+                  <button
+                    key={d.job_id}
+                    type="button"
+                    onClick={() => setSelected({
+                      type: 'drive',
+                      id: d.job_id,
+                      label: `${d.job_title} – ${d.company_name}`,
+                      drive: d,
+                    })}
+                    className={`w-full min-w-0 text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-start gap-2 ${
+                      isDrive && selected.id === d.job_id
+                        ? 'bg-indigo-100 text-indigo-900 ring-1 ring-indigo-200'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <HiUserGroup className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span className="flex-1 min-w-0 overflow-hidden">
+                      <span className="font-medium flex items-center gap-2 min-w-0">
+                        <span className="truncate">{d.job_title}</span>
+                        {(d.unread_count || 0) > 0 && (
+                          <span className="bg-indigo-600 text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center shrink-0">
+                            {d.unread_count > 99 ? '99+' : d.unread_count}
+                          </span>
+                        )}
                       </span>
-                    )}
-                  </span>
-                </button>
-              ))
+                      <span className="text-xs text-slate-500 block truncate">{d.company_name}</span>
+                      <span className="text-xs text-slate-500 block truncate">
+                        {(d.shortlisted_count || 0)} shortlisted · {(d.applicant_count || 0)} applicants
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
             )}
+
+            <div className="border-t border-slate-200 pt-2">
+              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">NTH Team (individual)</p>
+              <p className="px-2 pb-2 text-[11px] leading-snug text-slate-400">
+                Only aspirants who messaged the team or received a personal reply.
+              </p>
+              <input
+                type="search"
+                value={individualSearch}
+                onChange={(e) => setIndividualSearch(e.target.value)}
+                placeholder="Search name or email…"
+                className="mb-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
+              />
+              {loading ? (
+                <div className="flex items-center gap-2 text-slate-400 text-sm px-2 py-1">
+                  <LoaderDots size="sm" /> Loading…
+                </div>
+              ) : filteredAspirants.length === 0 ? (
+                <p className="text-slate-400 text-sm px-2 py-1">
+                  {aspirants.length === 0
+                    ? 'No NTH Team chats yet.'
+                    : 'No matches for your search.'}
+                </p>
+              ) : (
+                <div className="space-y-2 pb-2">
+                  {unreadAspirants.length > 0 ? (
+                    <div>
+                      <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-600">
+                        Needs reply ({unreadAspirants.length})
+                      </p>
+                      <div className="space-y-1">{unreadAspirants.map(renderAspirantRow)}</div>
+                    </div>
+                  ) : null}
+                  {readAspirants.length > 0 ? (
+                    <div>
+                      {unreadAspirants.length > 0 ? (
+                        <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                          Earlier chats
+                        </p>
+                      ) : null}
+                      <div className="space-y-1">{readAspirants.map(renderAspirantRow)}</div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="p-2 border-t border-slate-200 bg-white">
+          <div className="shrink-0 p-2 border-t border-slate-200 bg-white space-y-1">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">Platform-wide</p>
+            <button
+              type="button"
+              onClick={() => setSelected({
+                type: 'premium',
+                id: PREMIUM_BROADCAST_ID,
+                label: 'Active premium members',
+                drive: null,
+              })}
+              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-start gap-2 ${
+                isPremium ? 'bg-emerald-100 text-emerald-900' : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <HiSparkles className="w-4 h-4 shrink-0 mt-0.5" />
+              <span className="min-w-0">
+                <span className="block">Active premium members</span>
+                <span className="text-xs font-normal text-slate-500">
+                  Base / Silver / Gold with valid subscription
+                  {activePremiumCount != null ? ` · ~${activePremiumCount}` : ''}
+                </span>
+              </span>
+            </button>
             <button
               type="button"
               onClick={() => setSelected({ type: 'broadcast', id: BROADCAST_ID, label: 'All aspirants (entire platform)', drive: null })}
@@ -282,6 +425,12 @@ export default function AdminMessagesPage() {
                   <p className="text-sm text-slate-500 truncate">{aspirants.find((a) => a.id === selected.id).email}</p>
                 )}
                 {isBroadcast && <p className="text-sm text-slate-500">Every aspirant on the platform will receive this message.</p>}
+                {isPremium && (
+                  <p className="text-sm text-slate-500">
+                    Personal message to each active premium member
+                    {activePremiumCount != null ? ` (~${activePremiumCount})` : ''}.
+                  </p>
+                )}
               </header>
 
               <div className="flex-1 overflow-auto p-4 flex flex-col gap-2 min-h-0 bg-slate-50/50">
@@ -330,7 +479,14 @@ export default function AdminMessagesPage() {
                     </>
                   )
                 ) : isBroadcast ? (
-                  <p className="text-slate-500 text-sm">Compose below to send to all aspirants on the platform (use job groups to message only that job’s applicants).</p>
+                  <p className="text-slate-500 text-sm">Compose below to send to all aspirants on the platform (including users without an active plan).</p>
+                ) : isPremium ? (
+                  <p className="text-slate-500 text-sm">
+                    Compose below to send one personal message to each active premium member (Base, Silver, or Gold with a valid subscription).
+                    They will see it in Dashboard → Messages → Naveen Talent Hub Team.
+                    Delivery runs on the server in one step — safe to navigate away after you see success.
+                    {activePremiumCount != null ? ` About ${activePremiumCount} recipient(s).` : ''}
+                  </p>
                 ) : null}
               </div>
 
