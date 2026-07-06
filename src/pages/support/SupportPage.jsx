@@ -38,6 +38,23 @@ export default function SupportPage() {
     return ticketsRes.data;
   }, []);
 
+  const handleThreadOpened = useCallback((request) => {
+    const id = request?.id;
+    if (!id) return;
+    setTickets((prev) =>
+      prev.map((t) => (t.id === id ? { ...t, unread_count: 0 } : t)),
+    );
+    void fetchMyHelpDeskAccess().then((accessRes) => {
+      if (accessRes.data?.ok) {
+        setAccess({
+          blocked: Boolean(accessRes.data.blocked),
+          reason: accessRes.data.reason || '',
+          unreadTotal: Number(accessRes.data.unread_total || 0),
+        });
+      }
+    });
+  }, []);
+
   useEffect(() => {
     loadTickets().then((list) => {
       const fromUrl = searchParams.get('ticket');
@@ -174,7 +191,7 @@ export default function SupportPage() {
                       key={selectedTicket.id}
                       requestId={selectedTicket.id}
                       viewerRole="user"
-                      onThreadLoaded={() => loadTickets()}
+                      onThreadLoaded={handleThreadOpened}
                     />
                   </div>
                 </>

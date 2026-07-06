@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import HelpDeskConversation from '../../components/helpDesk/HelpDeskConversation';import { PageLoader } from '../../components/ui/Loader';
 import HelpDeskBlockedPanel from './helpDesk/HelpDeskBlockedPanel';
 import {
@@ -36,8 +36,10 @@ export default function AdminHelpDeskPage() {
     main_open: 0,
     blocked_open: 0,
   });
+  const queryRef = useRef(query);
+  queryRef.current = query;
 
-  const loadSummary = async () => {
+  const loadSummary = useCallback(async () => {
     const { data } = await fetchAdminHelpDeskSummary();
     if (data?.ok) {
       setInboxSummary({
@@ -47,22 +49,43 @@ export default function AdminHelpDeskPage() {
         blocked_open: Number(data.blocked_open || 0),
       });
     }
-  };
+  }, []);
 
-  const loadRequests = async () => {
-    setLoading(true);
-    const { data } = await fetchAdminHelpRequests(statusFilter, query, inbox);
+  const loadRequests = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
+    const { data } = await fetchAdminHelpRequests(statusFilter, queryRef.current, inbox);
     const list = Array.isArray(data) ? data : [];
     setRequests(list);
     setSelectedId((prev) => (list.some((r) => r.id === prev) ? prev : list[0]?.id || ''));
     await loadSummary();
-    setLoading(false);
-  };
+    if (!silent) setLoading(false);
+  }, [statusFilter, inbox, loadSummary]);
+
+  /** Thread open marks messages read — update list locally; do not refetch full inbox (avoids RPC storms). */
+  const handleThreadOpened = useCallback(
+    (request) => {
+      const id = request?.id;
+      if (!id) return;
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                unread_count: 0,
+                last_preview: request.last_preview ?? r.last_preview,
+                last_message_at: request.last_message_at ?? r.last_message_at,
+              }
+            : r,
+        ),
+      );
+      void loadSummary();
+    },
+    [loadSummary],
+  );
 
   useEffect(() => {
-    loadRequests();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, inbox]);
+    void loadRequests();
+  }, [statusFilter, inbox]); // eslint-disable-line react-hooks/exhaustive-deps -- search runs on button only
 
   const hasRows = useMemo(() => requests.length > 0, [requests.length]);
   const summary = useMemo(() => {
@@ -343,7 +366,7 @@ export default function AdminHelpDeskPage() {
                   key={selectedRequest.id}
                   requestId={selectedRequest.id}
                   viewerRole="admin"
-                  onThreadLoaded={() => loadRequests()}
+                  onThreadLoaded={handleThreadOpened}
                 />
               </div>
             </>
