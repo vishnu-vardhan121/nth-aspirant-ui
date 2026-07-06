@@ -237,6 +237,7 @@ export default function DashboardLayout() {
   const { count: scheduledMockCount } = useUpcomingScheduledMocks(user?.id);
   const { unreadTotal: messagesUnread } = useAspirantMessageUnread();
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
+  const aspirantProfileLoaded = useAppSelector((state) => state.aspirant.profileLoaded);
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
   const [contactSaved, setContactSaved] = useState(false);
@@ -245,6 +246,7 @@ export default function DashboardLayout() {
   const needsOnboarding = !isAspirantProfileComplete(aspirantProfile);
   const isStaffAccount = Boolean(adminProfile);
   const showContactModal =
+    aspirantProfileLoaded &&
     !aspirantLoading &&
     !adminLoading &&
     !isStaffAccount &&
