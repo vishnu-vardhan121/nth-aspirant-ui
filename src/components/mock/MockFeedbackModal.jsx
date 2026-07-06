@@ -1,9 +1,9 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { HiCalendarDays, HiCheckCircle, HiClipboardDocumentCheck, HiUserCircle, HiXMark } from 'react-icons/hi2';
 import ViewCandidateProfileButton from '../interviewer/ViewCandidateProfileButton';
 import { ButtonLoader } from '../ui/Loader';
 import MockFeedbackForm, { createEmptyMockFeedbackForm } from './MockFeedbackForm';
-import { validateMockFeedbackForm } from '../../lib/mockFeedback';
+import { hasMockFeedbackDraft, validateMockFeedbackForm } from '../../lib/mockFeedback';
 
 export { createEmptyMockFeedbackForm };
 
@@ -27,11 +27,7 @@ function computeProgress(form) {
   if (keys.length > 0) {
     const allTopicsDone = keys.every((key) => {
       const row = form.topics?.[key];
-      return (
-        row?.rating &&
-        row?.feedback?.trim()?.length >= 20 &&
-        row?.suggestions?.trim()?.length >= 20
-      );
+      return row?.rating && row?.feedback?.trim()?.length >= 20;
     });
     if (allTopicsDone) done += 1;
   }
@@ -52,11 +48,21 @@ export default function MockFeedbackModal({
   submitting = false,
   title = 'Submit mock feedback',
   submitLabel = 'Submit & mark completed',
+  editing = false,
 }) {
   const formId = useId().replace(/:/g, '');
   const [error, setError] = useState('');
 
   const progress = useMemo(() => computeProgress(value), [value]);
+
+  const requestClose = useCallback(() => {
+    if (submitting) return;
+    if (hasMockFeedbackDraft(value)) {
+      const ok = window.confirm('Discard your feedback? Unsaved changes will be lost.');
+      if (!ok) return;
+    }
+    onClose?.();
+  }, [submitting, value, onClose]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -70,11 +76,11 @@ export default function MockFeedbackModal({
   useEffect(() => {
     if (!open) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape' && !submitting) onClose?.();
+      if (e.key === 'Escape' && !submitting) requestClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, submitting, onClose]);
+  }, [open, submitting, requestClose]);
 
   useEffect(() => {
     if (open) setError('');
@@ -98,7 +104,6 @@ export default function MockFeedbackModal({
   return (
     <div
       className="fixed inset-0 z-[120] flex items-stretch justify-center bg-slate-950/60 p-0 sm:items-center sm:p-4 lg:p-6"
-      onClick={submitting ? undefined : onClose}
       role="presentation"
     >
       <div
@@ -150,7 +155,7 @@ export default function MockFeedbackModal({
               <ViewCandidateProfileButton mockRegistrationId={registration.id} label="View profile" variant="outline" />
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 disabled={submitting}
                 className="rounded-xl p-2.5 text-slate-500 hover:bg-white/80 hover:text-slate-800 disabled:opacity-50"
                 aria-label="Close"
@@ -183,13 +188,19 @@ export default function MockFeedbackModal({
         <footer className="shrink-0 border-t border-slate-200 bg-white px-4 py-4 sm:px-6">
           <div className="mx-auto flex max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-slate-500 sm:max-w-sm">
-              Submitting marks this mock as <strong className="font-semibold text-slate-700">completed</strong> and
-              sends feedback to the aspirant.
+              {editing ? (
+                <>Saving updates the feedback on this mock and notifies the aspirant.</>
+              ) : (
+                <>
+                  Submitting marks this mock as <strong className="font-semibold text-slate-700">completed</strong> and
+                  sends feedback to the aspirant.
+                </>
+              )}
             </p>
             <div className="flex gap-2 sm:shrink-0">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={requestClose}
                 disabled={submitting}
                 className="flex-1 rounded-xl border border-slate-200 px-5 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60 sm:flex-none"
               >

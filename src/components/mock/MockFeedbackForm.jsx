@@ -84,7 +84,7 @@ export default function MockFeedbackForm({
         <FormSection
           step={2}
           title="Feedback per topic"
-          hint="Required for each selected topic — what you observed and what they should do next."
+          hint="Required for each selected topic — rating, score, and feedback. Per-topic suggestions are optional."
           icon={HiLightBulb}
           isModal={isModal}
         >
@@ -110,7 +110,7 @@ export default function MockFeedbackForm({
         <div className="rounded-2xl border border-amber-200 bg-amber-50/80 px-5 py-6 text-center">
           <p className="text-sm font-semibold text-amber-900">Select at least one topic above</p>
           <p className="mt-1 text-sm text-amber-800/90">
-            Then add scores, feedback, and suggestions for each area — overall assessment comes last.
+            Then add scores and feedback for each area (suggestions optional) — overall assessment comes last.
           </p>
         </div>
       )}
@@ -537,7 +537,7 @@ function TopicCard({ index, title, row, onPatch, onRemove, isModal }) {
 
         <label className="block min-w-0 flex-1">
           <span className="text-sm font-semibold text-slate-800">
-            Suggestions for aspirant <span className="text-red-500">*</span>
+            Suggestions for aspirant <span className="font-normal text-slate-400">(optional)</span>
           </span>
           <p className="mt-0.5 text-xs text-slate-500">Actionable next steps — what to study, practice, or revise.</p>
           <textarea
@@ -547,7 +547,7 @@ function TopicCard({ index, title, row, onPatch, onRemove, isModal }) {
             placeholder="What they should study, practice, or revise…"
             className="mt-2 w-full max-w-full resize-y rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           />
-          <CharHint current={suggestionsLen} min={MIN_TOPIC} />
+          {suggestionsLen > 0 ? <CharHint current={suggestionsLen} min={MIN_TOPIC} /> : null}
         </label>
       </div>
     </article>

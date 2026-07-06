@@ -91,14 +91,12 @@ export default function JobsPage() {
   }), [jobs]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Find Work</h1>
-          <p className="text-[rgb(var(--nth-text-secondary-light))] mt-1">
-            Browse open positions tailored for you.
-          </p>
-        </div>
+    <div className="space-y-4 sm:space-y-6 min-w-0">
+      <div>
+        <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Find Work</h1>
+        <p className="text-sm sm:text-base text-[rgb(var(--nth-text-secondary-light))] mt-1">
+          Browse open positions tailored for you.
+        </p>
       </div>
 
       {loading ? (

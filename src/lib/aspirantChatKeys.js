@@ -21,6 +21,10 @@ export function countUnreadInChat(messages, chatKey) {
   return messages.filter((m) => getChatKeyForMessage(m) === chatKey && !m.from_me && !m.read_at).length;
 }
 
+export function countTotalUnread(messages) {
+  return messages.filter((m) => !m.from_me && !m.read_at).length;
+}
+
 export function markMessagesReadOptimistic(messages, chatKey) {
   const now = new Date().toISOString();
   return messages.map((m) => {

@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../../../../lib/supabase';
 import { clearFormDraft, loadFormDraft, saveFormDraft } from '../../../../lib/formDraft';
+import { useAppSelector } from '../../../../store/hooks';
+import { fetchMyHelpDeskAccess } from '../../../../lib/helpDesk';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_REGEX = /^[6-9]\d{9}$/;
@@ -106,6 +109,19 @@ export default function HelpDeskForm({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submittedTicketId, setSubmittedTicketId] = useState('');
+  const [deskRestricted, setDeskRestricted] = useState(false);
+  const user = useAppSelector((state) => state.auth.user);
+
+  useEffect(() => {
+    if (!user) {
+      setDeskRestricted(false);
+      return;
+    }
+    fetchMyHelpDeskAccess().then(({ data }) => {
+      if (data?.ok) setDeskRestricted(Boolean(data.blocked));
+    });
+  }, [user]);
 
   useEffect(() => {
     if (prefilledRef.current) return;
@@ -176,6 +192,7 @@ export default function HelpDeskForm({
     setSubmitError('');
     setSubmitting(false);
     setSubmitted(false);
+    setSubmittedTicketId('');
     prefilledRef.current = false;
   };
 
@@ -209,31 +226,57 @@ export default function HelpDeskForm({
 
     clearFormDraft(draftKey);
     setSubmitted(true);
+    setSubmittedTicketId(data?.id ? String(data.id) : '');
     setForm(buildInitialForm());
     onSuccess?.(data);
   };
 
   if (submitted) {
+    const supportPath = submittedTicketId ? `/support?ticket=${submittedTicketId}` : '/support';
     return (
       <div className={`${styles.successWrap} ${className}`} role="status">
         <p className={`text-sm font-bold uppercase tracking-[0.1em] ${styles.successTitle}`}>Message received</p>
         <p className="mt-2 text-base font-semibold text-slate-900">Thank you for reaching out.</p>
         <p className={`mt-2 text-sm leading-relaxed ${styles.successBody}`}>
-          Our team will review your enquiry and respond using the contact details you provided.
+          {user
+            ? 'Open your support inbox to see replies and continue the conversation.'
+            : 'Sign in with the same email to see replies and send follow-up messages.'}
         </p>
-        <button
-          type="button"
-          onClick={resetForm}
-          className={`mt-5 text-sm font-semibold underline-offset-2 hover:underline ${styles.successBtn}`}
-        >
-          Send another message
-        </button>
+        <div className="mt-5 flex flex-wrap gap-3">
+          {user ? (
+            <Link
+              to={supportPath}
+              className={`text-sm font-semibold underline-offset-2 hover:underline ${styles.successBtn}`}
+            >
+              Open conversation
+            </Link>
+          ) : (
+            <Link
+              to={`/login?from=${encodeURIComponent(supportPath)}`}
+              className={`text-sm font-semibold underline-offset-2 hover:underline ${styles.successBtn}`}
+            >
+              Sign in to view replies
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={resetForm}
+            className={`text-sm font-semibold underline-offset-2 hover:underline ${styles.successBtn}`}
+          >
+            Send another message
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-4 ${className}`} noValidate>
+      {deskRestricted ? (
+        <p className={`rounded-lg border border-amber-200/80 bg-amber-500/10 px-3 py-2 text-xs ${variant === 'light' ? 'text-amber-900' : 'text-amber-200'}`}>
+          Your message will go to a restricted support queue.
+        </p>
+      ) : null}
       <div>
         <label htmlFor={`${idPrefix}-name`} className={`mb-1 block text-sm font-medium ${styles.label}`}>
           Name *

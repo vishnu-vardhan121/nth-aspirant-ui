@@ -6,12 +6,23 @@ import { isSubscriptionActive } from '../../../lib/planLimits';
 import { getMockBookingGuidance } from '../../../lib/mockBookingGuidance';
 import { useAppSelector } from '../../../store/hooks';
 import { useProfileOnboardingGate } from '../hooks/useProfileOnboardingGate';
+import { useAspirantMessageUnread } from '../../../hooks/useAspirantMessageUnread';
 import { PageLoader } from '../../../components/ui/Loader';
 import MockFeedbackDisplay from '../../../components/mock/MockFeedbackDisplay';
 import CompleteProfileBanner from '../components/CompleteProfileBanner';
 import { subscribeToAspirantMessages } from '../../../lib/messageRealtime';
 import { MESSAGES_INVALIDATE_EVENT } from '../../../lib/messagesEvents';
-import { HiCalendarDays, HiCheckCircle, HiClock, HiExclamationTriangle, HiInformationCircle, HiLink, HiMegaphone } from 'react-icons/hi2';
+import {
+  HiCalendarDays,
+  HiChatBubbleLeftRight,
+  HiCheckCircle,
+  HiChevronDown,
+  HiClock,
+  HiExclamationTriangle,
+  HiInformationCircle,
+  HiLink,
+  HiSparkles,
+} from 'react-icons/hi2';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -47,7 +58,6 @@ export default function MocksPage() {
 
   const [usage, setUsage] = useState(null);
   const [myRegistrations, setMyRegistrations] = useState([]);
-  const [mockNotices, setMockNotices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [slotsFrom, setSlotsFrom] = useState(() => {
@@ -75,10 +85,12 @@ export default function MocksPage() {
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const [rescheduleMessage, setRescheduleMessage] = useState({ type: '', text: '' });
   const [infoOpen, setInfoOpen] = useState(false);
-  const [noticesModalOpen, setNoticesModalOpen] = useState(false);
   const [requestModalOpen, setRequestModalOpen] = useState(false);
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState(null);
   const infoRef = useRef(null);
   const bookSectionRef = useRef(null);
+
+  const { unreadTotal: messagesUnread } = useAspirantMessageUnread();
 
   const withinMonthlyLimit = usage?.active && (usage.limit < 0 || usage.used < usage.limit);
   const pastBookingGap =
@@ -97,10 +109,11 @@ export default function MocksPage() {
     [usage, aspirantProfile?.plan, aspirantProfile?.plan_started_at],
   );
 
-  const NOTICES_PREVIEW = 5;
-  const unreadNoticeCount = mockNotices.filter((n) => !n.read_at).length;
-  const latestCancelled = myRegistrations.find((r) => r.status === 'cancelled');
-  const latestScheduled = myRegistrations.find((r) => r.status === 'scheduled');
+  const placementReady =
+    aspirantProfile?.placement_pipeline_status === 'ready' &&
+    aspirantProfile?.profile_status !== 'inactive';
+
+  const primaryAlert = mockGuidance.alerts[0] ?? null;
 
   const scrollToBookSection = () => {
     bookSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -118,10 +131,6 @@ export default function MocksPage() {
       .select('id, created_at, status, availability_notes, scheduled_at, meet_link, completed_at, technical_score, communication_score, problem_solving_score, overall_score, feedback_notes, tech_feedback')
       .order('created_at', { ascending: false })
       .then(({ data }) => setMyRegistrations(data ?? []));
-  };
-
-  const fetchMockNotices = () => {
-    supabase.rpc('get_my_mock_notices').then(({ data }) => setMockNotices(Array.isArray(data) ? data : []));
   };
 
   const fetchPendingRescheduleIds = () => {
@@ -143,14 +152,12 @@ export default function MocksPage() {
   useEffect(() => {
     fetchUsage();
     fetchMyRegistrations();
-    fetchMockNotices();
     fetchPendingRescheduleIds();
     setLoading(false);
   }, []);
 
   useEffect(() => {
     const onInvalidate = () => {
-      fetchMockNotices();
       fetchMyRegistrations();
     };
     window.addEventListener(MESSAGES_INVALIDATE_EVENT, onInvalidate);
@@ -170,7 +177,6 @@ export default function MocksPage() {
       unsubscribe = subscribeToAspirantMessages(
         uid,
         () => {
-          fetchMockNotices();
           fetchMyRegistrations();
         },
         { channelId: `mocks-page-messages-${uid}` },
@@ -182,11 +188,6 @@ export default function MocksPage() {
       unsubscribe();
     };
   }, []);
-
-  const openNoticesModal = () => {
-    setNoticesModalOpen(true);
-    supabase.rpc('mark_my_mock_notices_read').then(() => fetchMockNotices());
-  };
 
   useEffect(() => {
     if (!slotsFrom || !slotsTo) return;
@@ -207,10 +208,9 @@ export default function MocksPage() {
     setBookingSlotId(null);
     if (data?.ok) {
       setConfirmBookingSlot(null);
-      setSlotMessage({ type: 'success', text: 'Slot booked. See "My mock registrations" below for the Meet link and time.' });
+      setSlotMessage({ type: 'success', text: 'Slot booked. See My mocks above for the Meet link and time.' });
       fetchUsage();
       fetchMyRegistrations();
-      fetchMockNotices();
       fetchAvailableSlots();
     } else {
       setConfirmBookingSlot(null);
@@ -298,85 +298,52 @@ export default function MocksPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-4 sm:space-y-5 lg:max-w-5xl xl:max-w-6xl">
       {showCompleteProfileBanner ? <CompleteProfileBanner profile={aspirantProfile} /> : null}
 
-      {(latestCancelled || unreadNoticeCount > 0) && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <p className="font-semibold">
-            {latestCancelled && !latestScheduled
-              ? 'Your mock slot was cancelled or changed'
-              : 'You have mock updates'}
-          </p>
-          <p className="mt-1 text-amber-900/90">
-            {latestCancelled && !latestScheduled
-              ? 'Check Messages for the reason and new time (if rescheduled). You can book another slot when ready.'
-              : 'Open Messages or Notices below for reschedule/cancel details.'}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Link
-              to="/dashboard/messages"
-              className="inline-flex items-center rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-100"
-            >
-              View Messages
-              {unreadNoticeCount > 0 ? ` (${unreadNoticeCount})` : ''}
-            </Link>
-            {canBook && (
-              <button
-                type="button"
-                onClick={scrollToBookSection}
-                className="inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700"
-              >
-                Book a new slot
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Header: title, info, usage, actions */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-bold text-[rgb(var(--nth-text-primary-light))]">Mock Interviews</h1>
+      {/* Header */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex min-w-0 items-center gap-2">
+          <h1 className="text-xl font-bold text-[rgb(var(--nth-text-primary-light))] sm:text-2xl">Mock Interviews</h1>
           <div className="relative shrink-0" ref={infoRef}>
             <button
               type="button"
               onClick={() => setInfoOpen((o) => !o)}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full text-[rgb(var(--nth-text-muted-light))] hover:text-[hsl(var(--nth-primary))] hover:bg-[hsl(var(--nth-primary))]/10"
+              className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-[rgb(var(--nth-text-muted-light))] hover:bg-[hsl(var(--nth-primary))]/10 hover:text-[hsl(var(--nth-primary))]"
               aria-label="How mocks work"
             >
-              <HiInformationCircle className="w-5 h-5" />
+              <HiInformationCircle className="h-5 w-5" />
             </button>
             {infoOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setInfoOpen(false)} aria-hidden="true" />
-                <div className="absolute left-0 top-full z-50 mt-1 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-lg text-left sm:w-72">
-                  <p className="text-xs font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">How mocks work</p>
-                  <ul className="text-xs text-[rgb(var(--nth-text-secondary-light))] space-y-1.5">
+                <div className="absolute left-0 top-full z-50 mt-1 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-[rgb(var(--nth-border-light))] bg-white p-4 text-left shadow-lg sm:w-72">
+                  <p className="mb-2 text-xs font-semibold text-[rgb(var(--nth-text-primary-light))]">How mocks work</p>
+                  <ul className="space-y-1.5 text-xs text-[rgb(var(--nth-text-secondary-light))]">
                     <li><strong>One at a time</strong> — Finish or cancel your current mock before booking another.</li>
                     <li><strong>Allowance</strong> — {usage?.limit >= 0 ? `${usage.limit} mocks per subscription month` : 'Unlimited mocks'} (scheduled + completed count).</li>
                     <li><strong>Book a slot</strong> — Pick date/time; get Meet link.</li>
-                    <li><strong>Request a slot</strong> — Admin assigns; you get notified.</li>
-                    <li><strong>Reschedule</strong> — Click Request reschedule; admin approves or rejects.</li>
-                    <li><strong>Join</strong> — Use Meet link in My registrations.</li>
+                    <li><strong>Request a slot</strong> — Admin assigns; you get notified via Messages.</li>
+                    <li><strong>Reschedule</strong> — Request reschedule; admin approves or rejects.</li>
                   </ul>
                 </div>
               </>
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto">
-          {usage?.active && (
-            <span className="text-sm text-[rgb(var(--nth-text-muted-light))]">
-              {usage.used}{usage.limit >= 0 ? ` / ${usage.limit}` : ''} mocks this month
+
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          {usage?.active && usage.limit >= 0 ? (
+            <span className="w-fit shrink-0 rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold tabular-nums text-slate-800">
+              {usage.used} / {usage.limit} mocks
             </span>
-          )}
-          {usage?.active && withinMonthlyLimit && (
+          ) : null}
+          {usage?.active && withinMonthlyLimit ? (
             <button
               type="button"
               onClick={openRequestForm}
               disabled={!canRequestMock && profileComplete}
-              className={`w-full sm:w-auto px-4 py-2.5 text-sm font-medium text-center disabled:cursor-not-allowed disabled:opacity-60 ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
+              className={`w-full px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto ${!profileComplete ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100' : 'nth-btn-primary'}`}
             >
               {!profileComplete
                 ? 'Complete profile to request mock'
@@ -384,102 +351,91 @@ export default function MocksPage() {
                   ? 'Mock already scheduled'
                   : 'Request for mock'}
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {usage?.active && usage.period_start && usage.period_end ? (
-        <section className="space-y-3">
-          {mockGuidance.alerts.map((alert) => (
-            <div
-              key={`${alert.title}-${alert.severity}`}
-              className={`rounded-xl border px-4 py-3 text-sm ${
-                alert.severity === 'urgent'
-                  ? 'border-amber-300 bg-amber-50 text-amber-950'
-                  : alert.severity === 'neutral'
-                    ? 'border-slate-200 bg-slate-50 text-slate-700'
-                    : 'border-indigo-200 bg-indigo-50/80 text-indigo-950'
-              }`}
+      {(messagesUnread > 0 || placementReady) ? (
+        <div className="grid gap-3 lg:grid-cols-2">
+          {messagesUnread > 0 ? (
+            <Link
+              to="/dashboard/messages"
+              className="flex min-h-[48px] items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-950 hover:bg-indigo-100 lg:min-h-0"
             >
-              <p className="font-semibold">{alert.title}</p>
-              <p className="mt-1 text-xs leading-relaxed opacity-90">{alert.message}</p>
-              {alert.bookBy ? (
-                <p className="mt-2 text-xs font-semibold">
-                  Book by: {formatPeriodDate(alert.bookBy)}
-                  {alert.remaining > 0 ? ` · ${alert.remaining} mock${alert.remaining === 1 ? '' : 's'} left` : ''}
-                </p>
-              ) : null}
-              {alert.nextBookAfter ? (
-                <p className="mt-1 text-xs">
-                  Next booking opens: {formatPeriodDate(alert.nextBookAfter)}
-                </p>
-              ) : null}
-            </div>
-          ))}
+              <span className="flex items-center gap-2">
+                <HiChatBubbleLeftRight className="h-5 w-5 shrink-0 text-indigo-600" aria-hidden />
+                {messagesUnread} unread message{messagesUnread === 1 ? '' : 's'}
+              </span>
+              <span className="text-indigo-700">Open →</span>
+            </Link>
+          ) : null}
 
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-sm text-slate-700">
-            <p className="font-semibold text-slate-900">Your mock dates</p>
-            <ul className="mt-2 space-y-1.5 text-xs">
-              {mockGuidance.timeline.map((row) => (
-                <li
-                  key={row.key}
-                  className={`flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 ${
-                    row.emphasis ? 'font-semibold text-indigo-900' : ''
-                  }`}
-                >
-                  <span className="text-slate-600">{row.label}</span>
-                  <span className="tabular-nums text-slate-900">{formatPeriodDate(row.date)}</span>
-                </li>
-              ))}
-            </ul>
-            {usage.limit >= 0 ? (
-              <p className="mt-2 border-t border-indigo-100/80 pt-2 text-xs text-slate-600">
-                This period: <span className="font-medium text-slate-900">{usage.used} / {usage.limit}</span>{' '}
-                mocks booked or completed
-                {usage.min_days_between ? (
-                  <> · wait {usage.min_days_between} days between completed mocks</>
-                ) : null}
+          {placementReady ? (
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-950 lg:items-center">
+              <HiSparkles className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600 lg:mt-0" aria-hidden />
+              <p>
+                <span className="font-semibold">Placement-ready.</span>{' '}
+                Our team will reach out with suitable opportunities.
               </p>
-            ) : null}
-          </div>
-        </section>
+            </div>
+          ) : null}
+        </div>
       ) : null}
 
-      {/* Notices: compact preview + View all */}
-      {mockNotices.length > 0 && (
-        <section className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-[rgb(var(--nth-text-primary-light))] flex items-center gap-2">
-              <HiMegaphone className="w-4 h-4" /> Notices
-              {unreadNoticeCount > 0 && (
-                <span className="bg-[hsl(var(--nth-primary))] text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center">
-                  {unreadNoticeCount > 99 ? '99+' : unreadNoticeCount}
-                </span>
-              )}
-            </h2>
-            {mockNotices.length > NOTICES_PREVIEW && (
-              <button
-                type="button"
-                onClick={openNoticesModal}
-                className="text-xs font-medium text-[hsl(var(--nth-primary))] hover:underline"
-              >
-                View all ({mockNotices.length})
-              </button>
-            )}
-          </div>
-          <div className="max-h-[180px] overflow-y-auto space-y-2">
-            {mockNotices.slice(0, NOTICES_PREVIEW).map((n) => (
+      {usage?.active && usage.period_start && usage.period_end ? (
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {primaryAlert ? (
+            <div
+              className={`border-b px-4 py-3 text-sm ${
+                primaryAlert.severity === 'urgent'
+                  ? 'border-amber-200 bg-amber-50 text-amber-950'
+                  : primaryAlert.severity === 'neutral'
+                    ? 'border-slate-200 bg-slate-50 text-slate-700'
+                    : 'border-indigo-100 bg-indigo-50 text-indigo-950'
+              }`}
+            >
+              <p className="font-semibold">{primaryAlert.title}</p>
+              <p className="mt-1 text-xs leading-relaxed opacity-90 lg:text-sm">{primaryAlert.message}</p>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-medium lg:gap-x-4">
+                {primaryAlert.bookBy ? (
+                  <span>Book by {formatPeriodDate(primaryAlert.bookBy)}</span>
+                ) : null}
+                {primaryAlert.remaining > 0 ? (
+                  <span>{primaryAlert.remaining} mock{primaryAlert.remaining === 1 ? '' : 's'} left</span>
+                ) : null}
+                {primaryAlert.nextBookAfter ? (
+                  <span>Next booking {formatPeriodDate(primaryAlert.nextBookAfter)}</span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-2 p-3 sm:grid-cols-3 sm:p-4 lg:grid-cols-5 lg:gap-3">
+            {mockGuidance.timeline.map((row) => (
               <div
-                key={n.id}
-                className={`rounded-lg border p-3 text-sm ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}
+                key={row.key}
+                className={`rounded-lg border px-3 py-2.5 ${
+                  row.emphasis
+                    ? 'border-indigo-200 bg-indigo-50/80'
+                    : 'border-slate-100 bg-slate-50/80'
+                }`}
               >
-                <p className="text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap line-clamp-2">{n.body}</p>
-                <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-1">{formatDateTime(n.created_at)}</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">{row.label}</p>
+                <p className={`mt-0.5 text-sm tabular-nums ${row.emphasis ? 'font-bold text-indigo-900' : 'font-semibold text-slate-900'}`}>
+                  {formatPeriodDate(row.date)}
+                </p>
               </div>
             ))}
           </div>
+
+          {usage.limit >= 0 ? (
+            <p className="border-t border-slate-100 px-4 py-2.5 text-xs text-slate-600">
+              {usage.used} / {usage.limit} mocks this period
+              {usage.min_days_between ? ` · ${usage.min_days_between}-day gap after each completed mock` : ''}
+            </p>
+          ) : null}
         </section>
-      )}
+      ) : null}
 
       {/* Request modal */}
       {showRequestForm && (
@@ -531,50 +487,166 @@ export default function MocksPage() {
         </div>
       )}
 
-      {/* View all notices modal */}
-      {noticesModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setNoticesModalOpen(false)}>
-          <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-lg w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[rgb(var(--nth-border-light))]">
-              <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))]">All notices</h3>
-              <button type="button" onClick={() => setNoticesModalOpen(false)} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[rgb(var(--nth-text-muted-light))] hover:bg-slate-100 hover:text-[rgb(var(--nth-text-primary-light))]" aria-label="Close">×</button>
-            </div>
-            <div className="overflow-y-auto p-4 space-y-3">
-              {mockNotices.map((n) => (
-                <div key={n.id} className={`rounded-lg border p-3 text-sm ${n.read_at ? 'border-[rgb(var(--nth-border-light))] bg-slate-50/50' : 'border-[hsl(var(--nth-primary))]/30 bg-[hsl(var(--nth-primary))]/5'}`}>
-                  <p className="text-[rgb(var(--nth-text-primary-light))] whitespace-pre-wrap">{n.body}</p>
-                  <p className="text-xs text-[rgb(var(--nth-text-muted-light))] mt-2">{formatDateTime(n.created_at)}</p>
-                </div>
-              ))}
-            </div>
-            <div className="p-4 border-t border-[rgb(var(--nth-border-light))]">
-              <Link to="/dashboard/messages" className="text-sm font-medium text-[hsl(var(--nth-primary))] hover:underline">Open Messages</Link>
-            </div>
-          </div>
+      <div className="space-y-4 sm:space-y-5 xl:grid xl:grid-cols-5 xl:items-start xl:gap-6 xl:space-y-0">
+      {/* My registrations */}
+      <section className={usage?.active ? 'xl:col-span-3' : 'xl:col-span-full'}>
+        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-[rgb(var(--nth-text-primary-light))] sm:text-lg">
+          <HiCalendarDays className="h-5 w-5" />
+          My mocks
+        </h2>
+        <div className="overflow-hidden rounded-2xl border border-[rgb(var(--nth-border-light))] bg-white shadow-sm">
+          <ul className="divide-y divide-[rgb(var(--nth-border-light))]">
+            {myRegistrations.length === 0 ? (
+              <li className="px-4 py-8 text-center text-sm text-[rgb(var(--nth-text-muted-light))] sm:px-5">
+                No mock bookings yet. Book a slot below when you are ready.
+              </li>
+            ) : (
+              myRegistrations.map((r) => {
+                const joinHref = r.status === 'scheduled' ? normalizeHttpUrl(r.meet_link) : null;
+                const feedbackOpen = expandedFeedbackId === r.id;
+                return (
+                <li key={r.id} className="px-4 py-4 sm:px-5 lg:px-6">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+                    <div className="min-w-0 flex-1 space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-[rgb(var(--nth-text-primary-light))]">
+                        {r.scheduled_at ? formatDateTime(r.scheduled_at) : formatDate(r.created_at)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          r.status === 'completed'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : r.status === 'requested'
+                              ? 'bg-amber-100 text-amber-700'
+                              : r.status === 'scheduled'
+                                ? 'bg-blue-100 text-blue-700'
+                                : r.status === 'no_show'
+                                  ? 'bg-red-100 text-red-700'
+                                  : r.status === 'cancelled'
+                                    ? 'bg-slate-200 text-slate-600'
+                                    : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {r.status === 'completed' && <HiCheckCircle className="h-3.5 w-3.5" />}
+                        {(r.status === 'scheduled' || r.status === 'requested') && <HiClock className="h-3.5 w-3.5" />}
+                        {r.status === 'requested' ? 'Requested' : r.status}
+                      </span>
+                    </div>
+
+                    {r.status === 'cancelled' ? (
+                      <p className="text-sm text-amber-800">
+                        This slot was cancelled. Check{' '}
+                        <Link to="/dashboard/messages" className="font-medium underline">
+                          Messages
+                        </Link>{' '}
+                        for details.
+                      </p>
+                    ) : null}
+
+                    {r.status === 'completed' ? (
+                      <div>
+                        {feedbackOpen ? (
+                          <div className="space-y-2">
+                            <MockFeedbackDisplay registration={r} />
+                            <button
+                              type="button"
+                              onClick={() => setExpandedFeedbackId(null)}
+                              className="text-xs font-semibold text-indigo-700 hover:underline"
+                            >
+                              Hide feedback
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedFeedbackId(r.id)}
+                            className="flex w-full items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-3 py-3 text-left text-sm hover:bg-emerald-50"
+                          >
+                            <MockFeedbackDisplay registration={r} compact />
+                            <HiChevronDown className="h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
+                    </div>
+
+                    <div className="flex flex-col gap-2 lg:shrink-0 lg:min-w-[11rem] lg:items-stretch">
+                      {joinHref ? (
+                        <a
+                          href={joinHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="nth-btn-primary inline-flex w-full items-center justify-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold lg:w-full"
+                        >
+                          <HiLink className="h-4 w-4" /> Join Meet
+                        </a>
+                      ) : null}
+                      {r.status === 'scheduled' ? (
+                        <button
+                          type="button"
+                          disabled={pendingRescheduleIds.includes(r.id)}
+                          onClick={() => {
+                            if (!requireCompleteProfile()) return;
+                            setRescheduleModal(r);
+                            setRescheduleReason('');
+                            setRescheduleMessage({ type: '', text: '' });
+                          }}
+                          className={`w-full px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 lg:w-full ${
+                            !profileComplete
+                              ? 'rounded-xl border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
+                              : 'nth-btn-secondary'
+                          }`}
+                        >
+                          {!profileComplete
+                            ? 'Complete profile'
+                            : pendingRescheduleIds.includes(r.id)
+                              ? 'Reschedule requested'
+                              : 'Request reschedule'}
+                        </button>
+                      ) : null}
+                      {r.status === 'cancelled' && canBook ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!requireCompleteProfile()) return;
+                            scrollToBookSection();
+                          }}
+                          className="nth-btn-primary w-full rounded-xl px-4 py-2.5 text-sm font-semibold lg:w-full"
+                        >
+                          Book another slot
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </li>
+              );
+              })
+            )}
+          </ul>
         </div>
-      )}
+      </section>
 
       {/* Book a slot */}
       {usage?.active && (
-        <section ref={bookSectionRef} className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white p-4 sm:p-6 shadow-sm scroll-mt-4">
-          <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-4">Book a slot</h2>
-          <div className="flex flex-wrap items-end gap-3 mb-4">
+        <section ref={bookSectionRef} className="scroll-mt-4 overflow-hidden rounded-2xl border border-[rgb(var(--nth-border-light))] bg-white p-4 shadow-sm sm:p-5 xl:col-span-2 xl:sticky xl:top-4">
+          <h2 className="mb-4 text-base font-semibold text-[rgb(var(--nth-text-primary-light))] sm:text-lg">Book a slot</h2>
+          <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-none">
             <div>
-              <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">From date</label>
+              <label className="mb-1 block text-xs font-medium text-[rgb(var(--nth-text-muted-light))]">From date</label>
               <input
                 type="date"
                 value={slotsFrom}
                 onChange={(e) => setSlotsFrom(e.target.value)}
-                className="rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] bg-white px-3 py-2.5 text-sm text-[rgb(var(--nth-text-primary-light))]"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">To date</label>
+              <label className="mb-1 block text-xs font-medium text-[rgb(var(--nth-text-muted-light))]">To date</label>
               <input
                 type="date"
                 value={slotsTo}
                 onChange={(e) => setSlotsTo(e.target.value)}
-                className="rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] bg-white px-3 py-2.5 text-sm text-[rgb(var(--nth-text-primary-light))]"
               />
             </div>
           </div>
@@ -596,22 +668,21 @@ export default function MocksPage() {
               {availableSlots.map((slot) => (
                 <li
                   key={slot.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[rgb(var(--nth-border-light))] px-4 py-3 bg-slate-50/50"
+                  className="flex flex-col gap-3 rounded-xl border border-[rgb(var(--nth-border-light))] bg-slate-50/50 px-4 py-3 lg:flex-row lg:items-center lg:justify-between"
                 >
-                  <div className="min-w-0 flex-1 text-sm text-[rgb(var(--nth-text-primary-light))] break-words">
-                    <span className="font-medium">{formatDate(slot.start_at)}</span>
-                    <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
-                    <span>{formatSlotTime(slot.start_at)}</span>
-                    <span className="mx-2 text-[rgb(var(--nth-text-muted-light))]">·</span>
-                    <span>{slot.interviewer_name ?? 'Interviewer'}</span>
+                  <div className="min-w-0 flex-1 text-sm text-[rgb(var(--nth-text-primary-light))]">
+                    <p className="font-semibold">{formatDate(slot.start_at)}</p>
+                    <p className="mt-0.5 text-[rgb(var(--nth-text-secondary-light))]">
+                      {formatSlotTime(slot.start_at)} · {slot.interviewer_name ?? 'Interviewer'}
+                    </p>
                   </div>
                   {slot.booked_by_me ? (
-                    <span className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded-lg">Your slot</span>
+                    <span className="w-full shrink-0 rounded-lg bg-emerald-100 px-3 py-2 text-center text-sm font-medium text-emerald-700 lg:w-auto lg:min-w-[5.5rem]">Your slot</span>
                   ) : !profileComplete ? (
                     <button
                       type="button"
                       onClick={goToOnboarding}
-                      className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+                      className="w-full shrink-0 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100 lg:w-auto"
                     >
                       Complete profile
                     </button>
@@ -620,7 +691,7 @@ export default function MocksPage() {
                       type="button"
                       disabled={!canBook || bookingSlotId !== null}
                       onClick={() => openBookConfirm(slot)}
-                      className="nth-btn-primary px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="nth-btn-primary w-full shrink-0 px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 lg:w-auto lg:min-w-[5.5rem]"
                     >
                       {bookingSlotId === slot.id
                         ? 'Booking…'
@@ -638,122 +709,7 @@ export default function MocksPage() {
         </section>
       )}
 
-      {/* My registrations */}
-      <section>
-        <h2 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-3 flex items-center gap-2">
-          <HiCalendarDays className="w-5 h-5" />
-          My mock registrations
-        </h2>
-        <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white overflow-hidden shadow-sm">
-          <ul className="divide-y divide-[rgb(var(--nth-border-light))]">
-            {myRegistrations.length === 0 ? (
-              <li className="px-5 py-8 text-center text-[rgb(var(--nth-text-muted-light))] text-sm">
-                No mock bookings yet. Book a slot above to get started.
-              </li>
-            ) : (
-              myRegistrations.map((r) => {
-                const joinHref = r.status === 'scheduled' ? normalizeHttpUrl(r.meet_link) : null;
-                return (
-                <li key={r.id} className="px-5 py-4 flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-[rgb(var(--nth-text-primary-light))]">
-                        {formatDate(r.created_at)}
-                      </span>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-                          r.status === 'completed'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : r.status === 'requested'
-                              ? 'bg-amber-100 text-amber-700'
-                              : r.status === 'scheduled'
-                                ? 'bg-blue-100 text-blue-700'
-                                : r.status === 'no_show'
-                                  ? 'bg-red-100 text-red-700'
-                                  : r.status === 'cancelled'
-                                    ? 'bg-slate-200 text-slate-600'
-                                    : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {r.status === 'completed' && <HiCheckCircle className="w-3.5 h-3.5" />}
-                        {(r.status === 'scheduled' || r.status === 'requested') && <HiClock className="w-3.5 h-3.5" />}
-                        {r.status === 'requested' ? 'Requested' : r.status}
-                      </span>
-                    </div>
-                    {r.scheduled_at && (
-                      <p className="mt-1 text-sm text-[rgb(var(--nth-text-secondary-light))]">
-                        Scheduled: {formatDateTime(r.scheduled_at)}
-                      </p>
-                    )}
-                    {r.status === 'cancelled' && (
-                      <p className="mt-2 text-sm text-amber-800">
-                        This slot was cancelled. Check{' '}
-                        <Link to="/dashboard/messages" className="font-medium underline">
-                          Messages
-                        </Link>{' '}
-                        for details.
-                      </p>
-                    )}
-                    {r.status === 'completed' ? (
-                      <div className="mt-2">
-                        <MockFeedbackDisplay registration={r} />
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {joinHref && (
-                      <a
-                        href={joinHref}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="nth-btn-primary inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium"
-                      >
-                        <HiLink className="w-4 h-4" /> Join Meet
-                      </a>
-                    )}
-                    {r.status === 'scheduled' && (
-                      <button
-                        type="button"
-                        disabled={pendingRescheduleIds.includes(r.id)}
-                        onClick={() => {
-                          if (!requireCompleteProfile()) return;
-                          setRescheduleModal(r);
-                          setRescheduleReason('');
-                          setRescheduleMessage({ type: '', text: '' });
-                        }}
-                        className={`px-3 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${
-                          !profileComplete
-                            ? 'rounded-lg border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                            : 'nth-btn-secondary'
-                        }`}
-                      >
-                        {!profileComplete
-                          ? 'Complete profile'
-                          : pendingRescheduleIds.includes(r.id)
-                            ? 'Reschedule requested'
-                            : 'Request reschedule'}
-                      </button>
-                    )}
-                    {r.status === 'cancelled' && canBook && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!requireCompleteProfile()) return;
-                          scrollToBookSection();
-                        }}
-                        className="nth-btn-primary px-3 py-1.5 rounded-lg text-sm font-medium"
-                      >
-                        Book another slot
-                      </button>
-                    )}
-                  </div>
-                </li>
-              );
-              })
-            )}
-          </ul>
-        </div>
-      </section>
+      </div>
 
       {/* Book slot confirmation */}
       {confirmBookingSlot && (
