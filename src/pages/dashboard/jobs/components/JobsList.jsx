@@ -30,32 +30,33 @@ export default function JobsList({ jobs, usage, appliedJobIds, applicationStatus
   }, [jobs, searchQuery, filterType]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 min-w-0">
       {/* Application usage (when subscription active and limit is finite) */}
       {usage?.active && usage.limit >= 0 && (
-        <p className="text-sm text-[rgb(var(--nth-text-secondary-light))]">
-          Applications this month: <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">{usage.used}</span> of {usage.limit}
+        <p className="text-xs sm:text-sm text-[rgb(var(--nth-text-secondary-light))]">
+          Applications this month:{' '}
+          <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">{usage.used}</span> of {usage.limit}
         </p>
       )}
 
       {/* --- Search & Filter Bar --- */}
-      <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl border border-[rgb(var(--nth-border-light))] shadow-sm">
-        <div className="relative flex-1">
-          <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[rgb(var(--nth-text-muted-light))]" />
+      <div className="flex flex-col gap-3 sm:gap-4 bg-white p-3 sm:p-4 rounded-xl border border-[rgb(var(--nth-border-light))] shadow-sm min-w-0">
+        <div className="relative flex-1 min-w-0">
+          <HiMagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[rgb(var(--nth-text-muted-light))] pointer-events-none" />
           <input
-            type="text"
-            placeholder="Search by role or company..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--nth-bg-soft))] border-transparent focus:bg-white focus:border-[hsl(var(--nth-primary))] focus:ring-2 focus:ring-[hsl(var(--nth-primary))]/20 transition-all outline-none text-[rgb(var(--nth-text-primary-light))]"
+            type="search"
+            placeholder="Search role or company"
+            className="w-full min-w-0 pl-10 pr-4 py-2.5 rounded-lg bg-[rgb(var(--nth-bg-soft))] border-transparent focus:bg-white focus:border-[hsl(var(--nth-primary))] focus:ring-2 focus:ring-[hsl(var(--nth-primary))]/20 transition-all outline-none text-sm sm:text-base text-[rgb(var(--nth-text-primary-light))]"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:mx-0 md:px-0 md:pb-0 md:flex-wrap md:overflow-visible">
           {['All', 'Full-time', 'Contract', 'Remote'].map((type) => (
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors border ${
+              className={`shrink-0 snap-start px-3.5 sm:px-4 py-2 min-h-[40px] rounded-lg text-sm font-medium whitespace-nowrap transition-colors border ${
                 filterType === type
                   ? 'bg-[hsl(var(--nth-primary))] text-white border-[hsl(var(--nth-primary))]'
                   : 'bg-white text-[rgb(var(--nth-text-secondary-light))] border-[rgb(var(--nth-border-light))] hover:bg-[rgb(var(--nth-bg-soft))]'
@@ -144,37 +145,41 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
     }
   };
 
+  const metaPillClass =
+    'inline-flex items-center gap-1.5 max-w-full rounded-lg border border-[rgb(var(--nth-border-light))] bg-[rgb(var(--nth-bg-soft))] px-2.5 py-1 text-xs text-[rgb(var(--nth-text-secondary-light))]';
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      whileHover={{ y: -2, transition: { duration: 0.2 } }}
-      className="group relative bg-white rounded-xl p-5 border border-[rgb(var(--nth-border-light))] hover:border-[hsl(var(--nth-primary))]/30 hover:shadow-lg hover:shadow-[hsl(var(--nth-primary))]/5 transition-all"
+      className="group relative min-w-0 bg-white rounded-xl p-4 sm:p-5 border border-[rgb(var(--nth-border-light))] transition-all [@media(hover:hover)]:hover:border-[hsl(var(--nth-primary))]/30 [@media(hover:hover)]:hover:shadow-lg [@media(hover:hover)]:hover:shadow-[hsl(var(--nth-primary))]/5"
     >
-      <div className="flex flex-col sm:flex-row gap-4 sm:items-start">
-        {/* Logo Placeholder */}
-        <div className="w-12 h-12 rounded-lg bg-[rgb(var(--nth-bg-soft))] flex items-center justify-center shrink-0 text-[rgb(var(--nth-text-muted-light))] group-hover:bg-[rgb(var(--nth-bg-info))] group-hover:text-[rgb(var(--nth-info))] transition-colors">
-          <HiBuildingOffice2 className="w-6 h-6" />
+      {/* Header: icon + title + save */}
+      <div className="flex gap-3 min-w-0">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[rgb(var(--nth-bg-soft))] flex items-center justify-center shrink-0 text-[rgb(var(--nth-text-muted-light))] group-hover:bg-[rgb(var(--nth-bg-info))] group-hover:text-[rgb(var(--nth-info))] transition-colors">
+          <HiBuildingOffice2 className="w-5 h-5 sm:w-6 sm:h-6" />
         </div>
 
-        {/* Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 className="text-lg font-bold text-[rgb(var(--nth-text-primary-light))] group-hover:text-[hsl(var(--nth-primary))] transition-colors">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0 pr-1">
+              <h3 className="text-base sm:text-lg font-bold leading-snug text-[rgb(var(--nth-text-primary-light))] break-words group-hover:text-[hsl(var(--nth-primary))] transition-colors">
                 {job.title}
               </h3>
-              <p className="text-sm font-medium text-[rgb(var(--nth-text-secondary-light))] mb-0.5">
-                {job.company}
-              </p>
+              {job.company ? (
+                <p className="mt-0.5 text-sm font-medium text-[rgb(var(--nth-text-secondary-light))] truncate">
+                  {job.company}
+                </p>
+              ) : null}
             </div>
-            
-            {/* Save Button */}
-            <button 
+
+            <button
+              type="button"
               onClick={() => setIsSaved(!isSaved)}
-              className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-[rgb(var(--nth-bg-soft))] text-[rgb(var(--nth-text-muted-light))] transition-colors shrink-0"
+              aria-label={isSaved ? 'Remove bookmark' : 'Save job'}
+              className="-mr-1 p-2 min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-[rgb(var(--nth-bg-soft))] text-[rgb(var(--nth-text-muted-light))] transition-colors shrink-0"
             >
               {isSaved ? (
                 <HiBookmark className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
@@ -184,114 +189,128 @@ function JobCard({ job, usage, isApplied, applicationStatus, onApplicationRecord
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-3 text-sm text-[rgb(var(--nth-text-secondary-light))]">
-            {job.location && job.location !== '—' && (
-              <div className="flex items-center gap-1.5">
-                <HiMapPin className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
-                {job.location}
-              </div>
-            )}
-            {job.experience && (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
-                  {job.experience}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <HiBriefcase className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
-              {job.type}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <HiClock className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
-              {job.postedAt}
-            </div>
-            {job.applicationDeadline && (
-              <div className="flex items-center gap-1.5">
-                <HiCalendarDays className="w-4 h-4 text-[rgb(var(--nth-text-muted-light))]" />
-                Apply by {job.applicationDeadline}
-              </div>
-            )}
-          </div>
+          {job.snippet ? (
+            <p className="mt-2 text-xs sm:text-sm leading-relaxed text-[rgb(var(--nth-text-muted-light))] line-clamp-2">
+              {job.snippet}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Meta pills */}
+      <div className="mt-3 flex flex-wrap gap-2 min-w-0">
+        {job.location && job.location !== '—' && (
+          <span className={metaPillClass}>
+            <HiMapPin className="w-3.5 h-3.5 shrink-0 text-[rgb(var(--nth-text-muted-light))]" />
+            <span className="truncate">{job.location}</span>
+          </span>
+        )}
+        {job.experience && (
+          <span className="inline-flex items-center rounded-lg border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
+            {job.experience}
+          </span>
+        )}
+        <span className={metaPillClass}>
+          <HiBriefcase className="w-3.5 h-3.5 shrink-0 text-[rgb(var(--nth-text-muted-light))]" />
+          <span className="truncate">{job.type}</span>
+        </span>
+        <span className={metaPillClass}>
+          <HiClock className="w-3.5 h-3.5 shrink-0 text-[rgb(var(--nth-text-muted-light))]" />
+          <span className="whitespace-nowrap">{job.postedAt}</span>
+        </span>
+        {job.applicationDeadline && (
+          <span className={metaPillClass}>
+            <HiCalendarDays className="w-3.5 h-3.5 shrink-0 text-[rgb(var(--nth-text-muted-light))]" />
+            <span className="truncate">Apply by {job.applicationDeadline}</span>
+          </span>
+        )}
+      </div>
+
+      {(job.walkInDate || job.address) && (
+        <div className="mt-2.5 space-y-1 text-xs sm:text-sm text-[rgb(var(--nth-text-secondary-light))] min-w-0">
           {job.walkInDate && (
-            <p className="mt-2 text-sm text-[rgb(var(--nth-text-secondary-light))]">
-              <span className="font-medium">Walk-in:</span> {job.walkInDate}
+            <p>
+              <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">Walk-in:</span>{' '}
+              {job.walkInDate}
             </p>
           )}
           {job.address && (
-            <p className="mt-1 text-sm text-[rgb(var(--nth-text-secondary-light))] truncate" title={job.address}>
-              <span className="font-medium">Address:</span> {job.address}
+            <p className="break-words" title={job.address}>
+              <span className="font-medium text-[rgb(var(--nth-text-primary-light))]">Address:</span>{' '}
+              {job.address}
             </p>
           )}
         </div>
+      )}
 
-        {/* Action */}
-        <div className="pt-4 sm:pt-0 sm:self-center flex shrink-0 flex-col items-end gap-1">
-          {applyError && (
-            <p className="text-sm text-red-600 max-w-full sm:max-w-[200px] text-left sm:text-right">
-              {applyError}
-              {showUpgradeAction ? (
-                <button
-                  type="button"
-                  onClick={() => openPlanModal()}
-                  className="block mt-1 text-[hsl(var(--nth-primary))] font-medium hover:underline text-left sm:text-right w-full"
-                >
-                  {needsPlan ? 'Get a plan' : 'Upgrade plan'}
-                </button>
-              ) : null}
-            </p>
-          )}
-          {job.isExpired ? (
-            <span className="inline-block px-5 py-2.5 rounded-lg bg-slate-200 text-slate-500 font-medium text-sm cursor-not-allowed">
-              Application closed
-            </span>
-          ) : isApplied ? (
-            <span className={`inline-block px-5 py-2.5 rounded-lg font-medium text-sm ${
+      {/* Actions */}
+      <div className="mt-4 pt-4 border-t border-[rgb(var(--nth-border-light))] sm:mt-3 sm:pt-0 sm:border-t-0 flex flex-col gap-2 w-full min-w-0 sm:items-end">
+        {applyError && (
+          <p className="w-full text-sm text-red-600 sm:max-w-[220px] sm:text-right">
+            {applyError}
+            {showUpgradeAction ? (
+              <button
+                type="button"
+                onClick={() => openPlanModal()}
+                className="block mt-1 text-[hsl(var(--nth-primary))] font-medium hover:underline sm:text-right"
+              >
+                {needsPlan ? 'Get a plan' : 'Upgrade plan'}
+              </button>
+            ) : null}
+          </p>
+        )}
+        {job.isExpired ? (
+          <span className="flex w-full sm:w-auto items-center justify-center px-5 py-2.5 min-h-[44px] rounded-lg bg-slate-200 text-slate-500 font-medium text-sm cursor-not-allowed">
+            Application closed
+          </span>
+        ) : isApplied ? (
+          <span
+            className={`flex w-full sm:w-auto items-center justify-center px-5 py-2.5 min-h-[44px] rounded-lg font-medium text-sm ${
               applicationStatus === 'shortlisted'
                 ? 'bg-indigo-100 text-indigo-700'
                 : 'bg-emerald-100 text-emerald-700'
-            }`}>
-              {applicationStatus === 'shortlisted' ? 'Shortlisted' : 'Applied'}
-            </span>
-          ) : needsPlan ? (
-            <button
-              type="button"
-              onClick={() => openPlanModal()}
-              className="nth-btn-primary inline-block w-full sm:w-auto text-center px-5 py-2.5 text-sm font-medium"
-            >
-              Get a plan
-            </button>
-          ) : !profileComplete ? (
-            <button
-              type="button"
-              onClick={goToOnboarding}
-              className="inline-block w-full sm:w-auto text-center rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
-            >
-              Complete profile
-            </button>
-          ) : atLimit && canUpgrade ? (
-            <button
-              type="button"
-              onClick={() => openPlanModal()}
-              className="inline-block w-full sm:w-auto text-center px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-medium text-sm transition-all"
-            >
-              Limit reached – Upgrade
-            </button>
-          ) : atLimit ? (
-            <span className="inline-block px-5 py-2.5 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm text-center">
-              Monthly limit reached
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={handleApply}
-              disabled={applying}
-              className="nth-btn-primary inline-block w-full sm:w-auto text-center px-5 py-2.5 text-sm font-medium disabled:opacity-70 disabled:transform-none"
-            >
-              {applying ? 'Applying…' : 'Apply Now'}
-            </button>
-          )}
-        </div>
+            }`}
+          >
+            {applicationStatus === 'shortlisted' ? 'Shortlisted' : 'Applied'}
+          </span>
+        ) : needsPlan ? (
+          <button
+            type="button"
+            onClick={() => openPlanModal()}
+            className="nth-btn-primary w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-sm font-medium"
+          >
+            Get a plan
+          </button>
+        ) : !profileComplete ? (
+          <button
+            type="button"
+            onClick={goToOnboarding}
+            className="w-full sm:w-auto min-h-[44px] rounded-lg border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-semibold text-amber-900 hover:bg-amber-100"
+          >
+            Complete profile
+          </button>
+        ) : atLimit && canUpgrade ? (
+          <button
+            type="button"
+            onClick={() => openPlanModal()}
+            className="w-full sm:w-auto min-h-[44px] rounded-lg bg-amber-500 hover:bg-amber-600 px-5 py-2.5 text-sm font-medium text-white transition-all"
+          >
+            Limit reached – Upgrade
+          </button>
+        ) : atLimit ? (
+          <span className="flex w-full sm:w-auto items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-slate-100 text-slate-600 font-medium text-sm text-center">
+            Monthly limit reached
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={handleApply}
+            disabled={applying}
+            className="nth-btn-primary w-full sm:w-auto min-h-[44px] px-5 py-2.5 text-sm font-medium disabled:opacity-70 disabled:transform-none"
+          >
+            {applying ? 'Applying…' : 'Apply Now'}
+          </button>
+        )}
       </div>
     </motion.div>
   );

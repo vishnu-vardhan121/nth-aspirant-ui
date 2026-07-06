@@ -4,7 +4,7 @@ import { PageLoader, ButtonLoader, Loader } from '../../components/ui/Loader';
 import { HiCalendarDays, HiLink, HiCheckCircle, HiUserGroup, HiClock, HiCalendar, HiClipboardDocumentList } from 'react-icons/hi2';
 import MockFeedbackModal, { createEmptyMockFeedbackForm } from '../../components/mock/MockFeedbackModal';
 import MockFeedbackDisplay from '../../components/mock/MockFeedbackDisplay';
-import { formatFeedbackSummary, submitMockFeedback } from '../../lib/mockFeedback';
+import { formatFeedbackSummary, revertMockFeedback, submitMockFeedback } from '../../lib/mockFeedback';
 import { isValidHttpUrl, normalizeHttpUrl } from '../../lib/aspirantProfile';
 import { slotDurationMinutes, endAtFromStartAndMinutes } from '../../lib/mockSlotTiming';
 
@@ -147,6 +147,7 @@ export default function AdminMocksPage() {
   const [completeModal, setCompleteModal] = useState(null);
   const [completeForm, setCompleteForm] = useState(() => createEmptyMockFeedbackForm());
   const [completeSaving, setCompleteSaving] = useState(false);
+  const [revertSaving, setRevertSaving] = useState(false);
   const [registrationDetailModal, setRegistrationDetailModal] = useState(null);
   const [detailAssignInterviewerId, setDetailAssignInterviewerId] = useState('');
   const [registrationsPage, setRegistrationsPage] = useState(0);
@@ -292,6 +293,28 @@ export default function AdminMocksPage() {
       setFlashMsg('success', 'Mock completed with feedback. Student was notified.');
     } else {
       setFlashMsg('error', result?.error ?? 'Failed.');
+    }
+  };
+
+  const handleRevertFeedback = async (registration) => {
+    const name = registration.aspirant_name ?? registration.aspirant_email ?? 'this student';
+    const ok = window.confirm(
+      `Remove all feedback for ${name} and set this mock back to scheduled?\n\nThe time slot and Meet link stay the same. Feedback notifications and placement-ready (if set from this mock) will be undone.`,
+    );
+    if (!ok) return;
+
+    setRevertSaving(true);
+    const result = await revertMockFeedback(supabase, registration.id);
+    setRevertSaving(false);
+
+    if (result?.ok) {
+      setRegistrationDetailModal(null);
+      fetchMocks();
+      fetchSlots();
+      fetchCompletedReport();
+      setFlashMsg('success', 'Feedback removed. Mock is scheduled again — interviewer can submit correct feedback after the session.');
+    } else {
+      setFlashMsg('error', result?.error ?? 'Failed to revert feedback.');
     }
   };
 
@@ -1172,6 +1195,16 @@ export default function AdminMocksPage() {
                     <button type="button" onClick={() => { handleMarkNoShow(registrationDetailModal); setRegistrationDetailModal(null); }} className="flex-1 rounded-xl border border-red-600 px-4 py-2.5 text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors">No-show</button>
                   </div>
                 </div>
+              )}
+              {registrationDetailModal.status === 'completed' && (
+                <button
+                  type="button"
+                  disabled={revertSaving}
+                  onClick={() => handleRevertFeedback(registrationDetailModal)}
+                  className="w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                >
+                  {revertSaving ? 'Reverting…' : 'Revert feedback (back to scheduled)'}
+                </button>
               )}
               <button type="button" onClick={() => setRegistrationDetailModal(null)} className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 bg-white hover:bg-slate-100 transition-colors">Close</button>
             </div>

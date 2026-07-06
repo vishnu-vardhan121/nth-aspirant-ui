@@ -30,6 +30,7 @@ export default function MockChatPanel({
   showHeader = true,
   onBack,
   className = '',
+  onMarkedRead,
 }) {
   const [messages, setMessages] = useState([]);
   const [replyBody, setReplyBody] = useState('');
@@ -51,7 +52,9 @@ export default function MockChatPanel({
     if (!mockRegistrationId) return undefined;
 
     loadMessages();
-    supabase.rpc('mark_interviewer_messages_read', { p_mock_registration_id: mockRegistrationId });
+    supabase
+      .rpc('mark_interviewer_messages_read', { p_mock_registration_id: mockRegistrationId })
+      .then(() => onMarkedRead?.());
 
     let cancelled = false;
     let unsubscribe = () => {};

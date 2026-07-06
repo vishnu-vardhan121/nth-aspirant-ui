@@ -4,8 +4,15 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
 import DashboardNavbar from '../pages/dashboard/components/DashboardNavbar';
 import MessageNotification from '../components/MessageNotification';
+import BrowserNotificationPrompt from '../components/BrowserNotificationPrompt';
 import { supabase } from '../lib/supabase';
 import { playMessageSound, primeMessageSound } from '../lib/messageSound';
+import {
+  getBrowserNotificationPermission,
+  requestBrowserNotificationPermission,
+  showIncomingAspirantMessageNotification,
+  subscribeToNotificationNavigate,
+} from '../lib/browserNotifications';
 import { subscribeToAspirantMessages } from '../lib/messageRealtime';
 import {
   HiXMark,
@@ -32,6 +39,7 @@ import UpcomingMockBanner from '../pages/dashboard/components/UpcomingMockBanner
 import { useUpcomingScheduledMocks } from '../pages/dashboard/hooks/useUpcomingScheduledMocks';
 import { emitMessagesInvalidate, MESSAGES_INVALIDATE_EVENT } from '../lib/messagesEvents';
 import { fetchAspirantProfile } from '../store/slices/aspirantSlice';
+import { useAspirantMessageUnread } from '../hooks/useAspirantMessageUnread';
 
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
@@ -46,7 +54,7 @@ const SIDEBAR_BOTTOM_LINKS = [
   { label: 'My Profile', to: '/dashboard/profile', icon: HiUserCircle },
 ];
 
-function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0 }) {
+function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0, messagesUnread = 0 }) {
   return (
     <div className="space-y-1">
       {links.map((link) => {
@@ -56,6 +64,7 @@ function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0 }
             ? location.pathname === '/dashboard'
             : location.pathname.startsWith(link.to);
         const showMockBadge = link.to === '/dashboard/mocks' && scheduledMockCount > 0;
+        const showMessagesBadge = link.to === '/dashboard/messages' && messagesUnread > 0;
         return (
           <Link
             key={link.to}
@@ -83,6 +92,14 @@ function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0 }
                   !
                 </span>
               ) : null}
+              {showMessagesBadge ? (
+                <span
+                  className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-400 px-1 text-[10px] font-bold text-indigo-950 ring-2 ring-[#0f172a]"
+                  title="Unread messages"
+                >
+                  {messagesUnread > 9 ? '9+' : messagesUnread}
+                </span>
+              ) : null}
             </span>
             <span className="truncate">{link.label}</span>
             {showMockBadge ? (
@@ -100,7 +117,7 @@ function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0 }
   );
 }
 
-function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true, scheduledMockCount = 0 }) {
+function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = true, scheduledMockCount = 0, messagesUnread = 0 }) {
   const location = useLocation();
   const userInitial = (user?.email || '?').trim().charAt(0).toUpperCase() || '?';
 
@@ -123,7 +140,7 @@ function SidebarContent({ user, onSignOutClick, onNavClick, showHeaderLink = tru
         <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
           Navigation
         </p>
-        <SidebarNavLinks links={SIDEBAR_MAIN_LINKS} location={location} onNavClick={onNavClick} scheduledMockCount={scheduledMockCount} />
+        <SidebarNavLinks links={SIDEBAR_MAIN_LINKS} location={location} onNavClick={onNavClick} scheduledMockCount={scheduledMockCount} messagesUnread={messagesUnread} />
       </nav>
       <div className="shrink-0 border-t border-white/10 p-3 pt-2">
         <p className="px-2.5 pb-2 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">
@@ -209,13 +226,16 @@ export default function DashboardLayout() {
     title: '',
     bodyPreview: '',
     link: MESSAGES_PATH,
+    promptEnableNotifications: false,
   });
+  const [allowingNotifications, setAllowingNotifications] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useAppDispatch();
   const user = useAppSelector((state) => state.auth.user);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
   const { count: scheduledMockCount } = useUpcomingScheduledMocks(user?.id);
+  const { unreadTotal: messagesUnread } = useAspirantMessageUnread();
   const aspirantLoading = useAppSelector((state) => state.aspirant.loading);
   const adminProfile = useAppSelector((state) => state.admin.profile);
   const adminLoading = useAppSelector((state) => state.admin.loading);
@@ -241,6 +261,15 @@ export default function DashboardLayout() {
     setMessageNotification((prev) => ({ ...prev, show: false }));
   }, []);
 
+  const handleAllowNotifications = useCallback(async () => {
+    setAllowingNotifications(true);
+    const result = await requestBrowserNotificationPermission();
+    setAllowingNotifications(false);
+    if (result.ok) {
+      setMessageNotification((prev) => ({ ...prev, promptEnableNotifications: false }));
+    }
+  }, []);
+
   useEffect(() => {
     const onInvalidate = () => {
       if (user?.id) dispatch(fetchAspirantProfile(user.id));
@@ -260,6 +289,12 @@ export default function DashboardLayout() {
   }, []);
 
   useEffect(() => {
+    return subscribeToNotificationNavigate((path) => {
+      navigate(path);
+    });
+  }, [navigate]);
+
+  useEffect(() => {
     let cancelled = false;
     let unsubscribe = () => {};
 
@@ -275,21 +310,29 @@ export default function DashboardLayout() {
           const onMessagesPage = location.pathname === MESSAGES_PATH;
           const isBroadcast = row.to_aspirant_id == null && row.from_admin_id != null;
           const isPlanActivated = isPlanActivationMessage(row);
+          const needsChromePrompt = getBrowserNotificationPermission() !== 'granted';
+
+          const title = isPlanActivated
+            ? 'Your plan is active!'
+            : isBroadcast
+              ? 'Naveen Talent Hub Team'
+              : 'New message';
+          const preview = bodyPreview(row.body);
 
           emitMessagesInvalidate();
 
-          if (!onMessagesPage) {
+          if (!onMessagesPage || needsChromePrompt) {
             setMessageNotification({
               show: true,
-              title: isPlanActivated
-                ? 'Your plan is active!'
-                : isBroadcast
-                  ? 'New message from Naveen Talent Hub Team'
-                  : 'New message',
-              bodyPreview: bodyPreview(row.body),
+              title,
+              bodyPreview: preview,
               link: MESSAGES_PATH,
+              promptEnableNotifications: needsChromePrompt,
             });
           }
+
+          showIncomingAspirantMessageNotification(row, MESSAGES_PATH);
+
           void playMessageSound();
         },
         { channelId: `dashboard-messages-${uid}` },
@@ -322,7 +365,7 @@ export default function DashboardLayout() {
             'linear-gradient(180deg, #0b1220 0%, #101827 48%, #0f172a 100%)',
         }}
       >
-        <SidebarContent user={user} onSignOutClick={openSignOutConfirm} onNavClick={() => {}} scheduledMockCount={scheduledMockCount} />
+        <SidebarContent user={user} onSignOutClick={openSignOutConfirm} onNavClick={() => {}} scheduledMockCount={scheduledMockCount} messagesUnread={messagesUnread} />
       </aside>
 
       {/* Mobile sidebar overlay */}
@@ -361,6 +404,7 @@ export default function DashboardLayout() {
               onNavClick={closeMobileSidebar}
               showHeaderLink={false}
               scheduledMockCount={scheduledMockCount}
+              messagesUnread={messagesUnread}
             />
           </aside>
         </>
@@ -370,13 +414,25 @@ export default function DashboardLayout() {
       <main className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
         <DashboardNavbar onMenuClick={() => setMobileSidebarOpen(true)} />
         <div className="nth-scroll-y flex-1 min-h-0 min-w-0 overflow-x-hidden p-3 sm:p-6 md:p-8">
-          <UpcomingMockBanner userId={user?.id} />
-          <PlacementReadyBanner profile={aspirantProfile} />
+          {location.pathname !== '/dashboard/mocks' ? (
+            <>
+              <UpcomingMockBanner userId={user?.id} />
+              <PlacementReadyBanner profile={aspirantProfile} />
+            </>
+          ) : null}
+          {location.pathname === '/dashboard' && user?.id && !isStaffAccount ? (
+            <BrowserNotificationPrompt className="mb-4" />
+          ) : null}
           <Outlet />
         </div>
       </main>
 
-      <MessageNotification notification={messageNotification} onDismiss={dismissNotification} />
+      <MessageNotification
+        notification={messageNotification}
+        onDismiss={dismissNotification}
+        onAllowNotifications={handleAllowNotifications}
+        allowingNotifications={allowingNotifications}
+      />
       <DashboardOverlays
         showContactModal={showContactModal}
         user={user}

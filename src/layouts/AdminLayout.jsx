@@ -8,6 +8,7 @@ import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
 import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes, HiChartBar } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
+import { useAdminInboxUnread } from '../hooks/useAdminInboxUnread';
 
 const navLinkClass = (isActive) =>
   `flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors admin-sidebar-link ${
@@ -22,6 +23,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const admin = useAppSelector((state) => state.admin.profile);
+  const { messagesUnread, helpDeskUnread } = useAdminInboxUnread();
 
   const isActive = (path, exact) =>
     exact ? location.pathname === path : location.pathname === path || location.pathname.startsWith(path + '/');
@@ -93,10 +95,17 @@ export default function AdminLayout() {
           </Link>
           <Link
             to="/admin/messages"
-            className={navLinkClass(isActive('/admin/messages'))}
+            className={`${navLinkClass(isActive('/admin/messages'))} justify-between`}
           >
-            <HiChatBubbleBottomCenterText className="w-5 h-5 shrink-0" />
-            Messages
+            <span className="flex items-center gap-2">
+              <HiChatBubbleBottomCenterText className="w-5 h-5 shrink-0" />
+              Messages
+            </span>
+            {messagesUnread > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-semibold text-white">
+                {messagesUnread > 99 ? '99+' : messagesUnread}
+              </span>
+            ) : null}
           </Link>
           <Link
             to="/admin/leads"
@@ -114,10 +123,17 @@ export default function AdminLayout() {
           </Link>
           <Link
             to="/admin/help-desk"
-            className={navLinkClass(isActive('/admin/help-desk'))}
+            className={`${navLinkClass(isActive('/admin/help-desk'))} justify-between`}
           >
-            <HiLifebuoy className="w-5 h-5 shrink-0" />
-            Help desk
+            <span className="flex items-center gap-2">
+              <HiLifebuoy className="w-5 h-5 shrink-0" />
+              Help desk
+            </span>
+            {helpDeskUnread > 0 ? (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-semibold text-white">
+                {helpDeskUnread > 99 ? '99+' : helpDeskUnread}
+              </span>
+            ) : null}
           </Link>
           <Link
             to="/admin/talent-pool"

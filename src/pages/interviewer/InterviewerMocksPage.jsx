@@ -1,13 +1,14 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageLoader } from '../../components/ui/Loader';
 import MockFeedbackModal, { createEmptyMockFeedbackForm } from '../../components/mock/MockFeedbackModal';
 import MockChatModal from '../../components/mock/MockChatModal';
 import EditMeetLinkModal from '../../components/interviewer/EditMeetLinkModal';
-import { formatFeedbackSummary, submitMockFeedback } from '../../lib/mockFeedback';
+import { formatFeedbackSummary, hasAnyMockFeedback, mockFeedbackFormFromRegistration, submitMockFeedback } from '../../lib/mockFeedback';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import ViewCandidateProfileButton from '../../components/interviewer/ViewCandidateProfileButton';
 import InterviewerScheduleMockModal from '../../components/interviewer/InterviewerScheduleMockModal';
+import { useInterviewerMessageUnread } from '../../hooks/useInterviewerMessageUnread';
 
 function formatDateTime(iso) {
   if (!iso) return '—';
@@ -70,6 +71,80 @@ function AssignmentBadge({ interviewerName, assignedToMe }) {
   );
 }
 
+const actionBtn =
+  'inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 whitespace-nowrap';
+const actionBtnPrimary =
+  'inline-flex items-center justify-center gap-1 rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 whitespace-nowrap';
+const actionBtnDark =
+  'inline-flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 whitespace-nowrap';
+
+function MockRowActions({ mock, unreadCount = 0, onSchedule, onChat, onEditLink, onFeedback }) {
+  const isRequested = mock.status === 'requested';
+  const isScheduled = mock.status === 'scheduled';
+  const isCompleted = mock.status === 'completed';
+  const canEditFeedback = isCompleted && hasAnyMockFeedback(mock);
+
+  const primary = isScheduled ? (
+    <button type="button" onClick={() => onFeedback(mock)} className={actionBtnPrimary}>
+      Add feedback
+    </button>
+  ) : isRequested ? (
+    <button
+      type="button"
+      onClick={() => onSchedule({ ...mock, assigned_to_me: true }, 'schedule')}
+      className={actionBtnDark}
+    >
+      Schedule
+    </button>
+  ) : canEditFeedback ? (
+    <button type="button" onClick={() => onFeedback(mock, { edit: true })} className={actionBtnPrimary}>
+      Edit feedback
+    </button>
+  ) : null;
+
+  return (
+    <div className="flex w-[17.5rem] max-w-full flex-col gap-1.5">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <ViewCandidateProfileButton mockRegistrationId={mock.id} label="Profile" showIcon={false} />
+        <button type="button" onClick={() => onChat(mock)} className={`${actionBtn} relative`}>
+          <HiChatBubbleLeftRight className="h-3.5 w-3.5 shrink-0 text-indigo-600" aria-hidden />
+          Chat
+          {unreadCount > 0 ? (
+            <span className="ml-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-indigo-600 px-1 text-[10px] font-bold leading-none text-white">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          ) : null}
+        </button>
+        {mock.meet_link ? (
+          <a
+            href={mock.meet_link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${actionBtn} text-indigo-700`}
+          >
+            Join
+          </a>
+        ) : null}
+        {isScheduled ? (
+          <>
+            <button
+              type="button"
+              onClick={() => onSchedule({ ...mock, assigned_to_me: true }, 'schedule')}
+              className={actionBtn}
+            >
+              Edit schedule
+            </button>
+            <button type="button" onClick={() => onEditLink(mock)} className={actionBtn}>
+              {mock.meet_link ? 'Edit link' : 'Add link'}
+            </button>
+          </>
+        ) : null}
+      </div>
+      {primary ? <div className="flex items-center">{primary}</div> : null}
+    </div>
+  );
+}
+
 export default function InterviewerMocksPage() {
   const [requestQueue, setRequestQueue] = useState([]);
   const [queueAvailable, setQueueAvailable] = useState(true);
@@ -84,6 +159,12 @@ export default function InterviewerMocksPage() {
   const [feedbackForm, setFeedbackForm] = useState(() => createEmptyMockFeedbackForm());
   const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState({ type: '', text: '' });
+  const { unreadByMockId, refresh: refreshUnread } = useInterviewerMessageUnread();
+
+  const mocksWithUnread = useMemo(
+    () => mocks.filter((m) => (unreadByMockId[m.id] ?? 0) > 0).length,
+    [mocks, unreadByMockId],
+  );
 
   const showFlash = (type, text) => {
     setFlash({ type, text });
@@ -113,19 +194,25 @@ export default function InterviewerMocksPage() {
     loadData();
   }, [loadData]);
 
-  const openFeedback = (m) => {
+  const openFeedback = (m, { edit = false } = {}) => {
     setFeedbackModal(m);
-    setFeedbackForm(createEmptyMockFeedbackForm());
+    setFeedbackForm(edit ? mockFeedbackFormFromRegistration(m) : createEmptyMockFeedbackForm());
   };
 
   const submitFeedback = async (form) => {
     if (!feedbackModal) return;
+    const isEdit = feedbackModal.status === 'completed';
     setSubmitting(true);
     const result = await submitMockFeedback(supabase, feedbackModal.id, form);
     setSubmitting(false);
     if (result?.ok) {
       setFeedbackModal(null);
-      showFlash('success', 'Feedback submitted. Mock marked as completed.');
+      showFlash(
+        'success',
+        isEdit || result.edited
+          ? 'Feedback updated. The aspirant has been notified.'
+          : 'Feedback submitted. Mock marked as completed.',
+      );
       loadData();
     } else {
       showFlash('error', result?.error ?? 'Failed to submit.');
@@ -184,53 +271,45 @@ export default function InterviewerMocksPage() {
                   <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-600">Requested</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-600">Notes</th>
                   <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-600">Assignment</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-600">Action</th>
+                  <th className="min-w-[220px] px-4 py-2.5 text-left text-xs font-semibold uppercase text-slate-600">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {requestQueue.map((r) => (
                   <tr key={r.id} className={r.assigned_to_me ? 'bg-indigo-50/40' : ''}>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className="font-medium text-slate-900">{r.aspirant_name ?? '—'}</span>
                       {r.aspirant_phone ? (
                         <span className="block text-xs font-medium tabular-nums text-slate-600">{r.aspirant_phone}</span>
                       ) : null}
                       {r.aspirant_email ? <span className="block text-xs text-slate-500">{r.aspirant_email}</span> : null}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-slate-600">{formatDate(r.created_at)}</td>
-                    <td className="px-4 py-3 max-w-[200px] text-xs text-slate-700">
+                    <td className="px-4 py-3 align-top whitespace-nowrap text-slate-600">{formatDate(r.created_at)}</td>
+                    <td className="px-4 py-3 align-top max-w-[200px] text-xs text-slate-700">
                       {r.availability_notes ? (
                         <span className="line-clamp-3" title={r.availability_notes}>{r.availability_notes}</span>
                       ) : (
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <AssignmentBadge interviewerName={r.interviewer_name} assignedToMe={r.assigned_to_me} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <div className="flex flex-wrap items-center gap-2">
                         {!r.interviewer_id ? (
-                          <button
-                            type="button"
-                            onClick={() => openSchedule(r, 'take')}
-                            className="rounded-lg bg-indigo-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                          >
+                          <button type="button" onClick={() => openSchedule(r, 'take')} className={actionBtnPrimary}>
                             Take &amp; schedule
                           </button>
                         ) : r.assigned_to_me ? (
-                          <button
-                            type="button"
-                            onClick={() => openSchedule(r, 'schedule')}
-                            className="rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700"
-                          >
+                          <button type="button" onClick={() => openSchedule(r, 'schedule')} className={actionBtnDark}>
                             Schedule
                           </button>
-                        ) : null}
-                        {r.assigned_to_me || !r.interviewer_id ? (
-                          <ViewCandidateProfileButton mockRegistrationId={r.id} label="Profile" />
                         ) : (
                           <span className="text-xs text-slate-400">Taken by {r.interviewer_name}</span>
+                        )}
+                        {(r.assigned_to_me || !r.interviewer_id) && (
+                          <ViewCandidateProfileButton mockRegistrationId={r.id} label="Profile" showIcon={false} />
                         )}
                       </div>
                     </td>
@@ -248,6 +327,11 @@ export default function InterviewerMocksPage() {
           <div>
             <h2 className="text-base font-semibold text-slate-900">My assigned mocks</h2>
             <p className="text-xs text-slate-500">Your taken requests, slot bookings, and scheduled mocks.</p>
+            {mocksWithUnread > 0 ? (
+              <p className="mt-1 text-xs font-medium text-indigo-700">
+                {mocksWithUnread} mock{mocksWithUnread === 1 ? '' : 's'} with unread chat — open Chat on that row
+              </p>
+            ) : null}
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -280,7 +364,7 @@ export default function InterviewerMocksPage() {
             No mocks assigned to you yet. Take an open request above or wait for a student to book your slot.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-slate-50">
                 <tr>
@@ -288,75 +372,48 @@ export default function InterviewerMocksPage() {
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">Scheduled</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">Feedback</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">Action</th>
+                  <th className="w-[17.5rem] px-4 py-3 text-left text-xs font-semibold uppercase text-slate-600">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {myMocks.map((m) => (
-                  <tr key={m.id} className="bg-white">
-                    <td className="px-4 py-3 text-sm">
+                {myMocks.map((m) => {
+                  const unreadCount = unreadByMockId[m.id] ?? 0;
+                  return (
+                  <tr
+                    key={m.id}
+                    className={unreadCount > 0 ? 'bg-amber-50/50' : 'bg-white'}
+                  >
+                    <td className="px-4 py-3 align-top text-sm">
                       <span className="font-medium text-slate-900">{m.aspirant_name}</span>
                       {m.aspirant_phone ? (
                         <span className="block text-xs font-medium tabular-nums text-slate-600">{m.aspirant_phone}</span>
                       ) : null}
                       {m.aspirant_email ? <span className="block text-xs text-slate-500">{m.aspirant_email}</span> : null}
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-700">
+                    <td className="px-4 py-3 align-top text-sm text-slate-700 whitespace-nowrap">
                       {m.scheduled_at ? formatDateTime(m.scheduled_at) : m.status === 'requested' ? 'Set schedule' : '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 align-top">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${mockStatusClass(m.status)}`}>
                         {mockStatusLabel(m.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-slate-600 max-w-xs">
+                    <td className="px-4 py-3 align-top text-sm text-slate-600 max-w-xs">
                       {m.status === 'completed' ? formatFeedbackSummary(m) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-sm">
-                      <ViewCandidateProfileButton mockRegistrationId={m.id} label="Profile" className="mr-2" />
-                      {m.status === 'requested' ? (
-                        <button
-                          type="button"
-                          onClick={() => openSchedule({ ...m, assigned_to_me: true }, 'schedule')}
-                          className="mr-2 rounded-lg bg-slate-800 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700"
-                        >
-                          Schedule
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => setChatModal(m)}
-                        className="mr-2 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                      >
-                        <HiChatBubbleLeftRight className="h-3.5 w-3.5 text-indigo-600" />
-                        Chat
-                      </button>
-                      {m.meet_link ? (
-                        <a href={m.meet_link} target="_blank" rel="noopener noreferrer" className="mr-2 text-indigo-600 hover:underline">
-                          Join
-                        </a>
-                      ) : null}
-                      {m.status === 'scheduled' && (
-                        <button
-                          type="button"
-                          onClick={() => setEditMeetLinkMock(m)}
-                          className="mr-2 text-xs font-medium text-indigo-600 hover:underline"
-                        >
-                          {m.meet_link ? 'Edit link' : 'Add link'}
-                        </button>
-                      )}
-                      {m.status === 'scheduled' && (
-                        <button
-                          type="button"
-                          onClick={() => openFeedback(m)}
-                          className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
-                        >
-                          Complete &amp; submit feedback
-                        </button>
-                      )}
+                    <td className="px-4 py-3 align-top text-sm">
+                      <MockRowActions
+                        mock={m}
+                        unreadCount={unreadCount}
+                        onSchedule={openSchedule}
+                        onChat={setChatModal}
+                        onEditLink={setEditMeetLinkMock}
+                        onFeedback={openFeedback}
+                      />
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -369,7 +426,14 @@ export default function InterviewerMocksPage() {
         mode={scheduleMode}
         onClose={() => setScheduleModal(null)}
         onSuccess={() => {
-          showFlash('success', scheduleMode === 'take' ? 'Mock taken and scheduled. Aspirant notified.' : 'Schedule saved. Aspirant notified.');
+          const hadSchedule = Boolean(scheduleModal?.scheduled_at);
+          const msg =
+            scheduleMode === 'take'
+              ? 'Mock taken and scheduled. Aspirant notified.'
+              : hadSchedule
+                ? 'Mock rescheduled. Aspirant notified.'
+                : 'Schedule saved. Aspirant notified.';
+          showFlash('success', msg);
           loadData();
         }}
       />
@@ -382,11 +446,17 @@ export default function InterviewerMocksPage() {
         onSubmit={submitFeedback}
         submitting={submitting}
         onClose={() => setFeedbackModal(null)}
-        title="Submit mock feedback"
-        submitLabel="Submit & mark completed"
+        title={feedbackModal?.status === 'completed' ? 'Edit feedback' : 'Add feedback'}
+        submitLabel={feedbackModal?.status === 'completed' ? 'Save changes' : 'Submit'}
+        editing={feedbackModal?.status === 'completed'}
       />
 
-      <MockChatModal open={!!chatModal} registration={chatModal} onClose={() => setChatModal(null)} />
+      <MockChatModal
+        open={!!chatModal}
+        registration={chatModal}
+        onClose={() => setChatModal(null)}
+        onMarkedRead={refreshUnread}
+      />
 
       <EditMeetLinkModal
         open={!!editMeetLinkMock}

@@ -11,7 +11,7 @@ function formatScheduled(iso) {
     : d.toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }
 
-export default function MockChatModal({ open, onClose, registration }) {
+export default function MockChatModal({ open, onClose, registration, onMarkedRead }) {
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;
@@ -92,6 +92,7 @@ export default function MockChatModal({ open, onClose, registration }) {
           status={registration.status}
           showHeader={false}
           className="min-h-0 flex-1"
+          onMarkedRead={onMarkedRead}
         />
       </div>
     </div>

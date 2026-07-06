@@ -17,9 +17,9 @@ export default function HelpDeskModal({ open, onClose, source = 'landing_page', 
   if (!open) return null;
 
   const subtitle =
-    source === 'dashboard'
-      ? 'We will reply using your account email or phone.'
-      : 'Share your issue. Our team will contact you.';
+    source === 'dashboard' || source === 'support_page'
+      ? 'Replies appear in your Support inbox when you are signed in.'
+      : 'Share your issue. Sign in with the same email to reply in Support.';
 
   return (
     <div

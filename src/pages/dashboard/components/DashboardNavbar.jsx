@@ -1,8 +1,6 @@
-import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { usePlanModal, useSubscriptionStatus } from '../subscription';
-import HelpDeskModal from '../../landing/home/components/HelpDeskModal';
 import { HiBell, HiChevronDown, HiBars3, HiLifebuoy } from 'react-icons/hi2';
 
 const PLAN_LABELS = { base: 'Base', silver: 'Silver', gold: 'Gold' };
@@ -16,19 +14,8 @@ function getInitial(email) {
 
 export default function DashboardNavbar({ onMenuClick }) {
   const user = useAppSelector((state) => state.auth.user);
-  const profile = useAppSelector((state) => state.aspirant.profile);
   const { openPlanModal } = usePlanModal();
   const { plan, track, hasActivePlan, showPlanAction } = useSubscriptionStatus();
-  const [helpModalOpen, setHelpModalOpen] = useState(false);
-
-  const helpPrefill = useMemo(
-    () => ({
-      name: String(profile?.full_name ?? user?.user_metadata?.full_name ?? '').trim(),
-      email: String(user?.email ?? '').trim(),
-      phone: String(profile?.phone ?? '').trim(),
-    }),
-    [profile?.full_name, profile?.phone, user?.email, user?.user_metadata?.full_name],
-  );
 
   const initial = user?.user_metadata?.full_name
     ? user.user_metadata.full_name.trim().charAt(0).toUpperCase()
@@ -81,36 +68,15 @@ export default function DashboardNavbar({ onMenuClick }) {
           </button>
         ) : null}
 
-        {hasActivePlan ? (
-          <Link
-            to="/dashboard/messages?help=1"
-            className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-            title="Help & support"
-            aria-label="Help and support"
-          >
-            <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
-            <span className="hidden sm:inline">Help</span>
-          </Link>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={() => setHelpModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
-              title="Help & support"
-              aria-label="Help and support"
-            >
-              <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
-              <span className="hidden sm:inline">Help</span>
-            </button>
-            <HelpDeskModal
-              open={helpModalOpen}
-              onClose={() => setHelpModalOpen(false)}
-              source="dashboard"
-              initialValues={helpPrefill}
-            />
-          </>
-        )}
+        <Link
+          to="/support"
+          className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 min-h-[44px] text-xs font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+          title="Help & support"
+          aria-label="Help and support"
+        >
+          <HiLifebuoy className="w-4 h-4 text-[hsl(var(--nth-primary))]" />
+          <span className="hidden sm:inline">Help</span>
+        </Link>
 
         <button
           type="button"

@@ -60,6 +60,7 @@ import InterviewerPerformancePage from './pages/interviewer/InterviewerPerforman
 import RefundPolicyPage from './pages/landing/legal/RefundPolicyPage';
 import ContactPage from './pages/landing/contact/ContactPage';
 import AboutPage from './pages/landing/about/AboutPage';
+import SupportPage from './pages/support/SupportPage';
 
 function App() {
   return (
@@ -81,6 +82,14 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms-and-conditions" element={<TermsConditionsPage />} />
+        <Route
+          path="/support"
+          element={
+            <ProtectedRoute>
+              <SupportPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
