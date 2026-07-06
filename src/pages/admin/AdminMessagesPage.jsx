@@ -32,6 +32,7 @@ export default function AdminMessagesPage() {
   const [loading, setLoading] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [individualSearch, setIndividualSearch] = useState('');
+  const [sidebarTab, setSidebarTab] = useState('jobs');
   const [activePremiumCount, setActivePremiumCount] = useState(null);
   const chatEndRef = useRef(null);
 
@@ -77,6 +78,7 @@ export default function AdminMessagesPage() {
       location.state?.openAspirantName ||
       'Aspirant';
     setSelected({ type: 'individual', id: openId, label, drive: null });
+    setSidebarTab('people');
     navigate(location.pathname, { replace: true, state: {} });
   }, [aspirants, location.state?.openAspirantId, location.state?.openAspirantName, location.pathname, navigate]);
 
@@ -204,6 +206,15 @@ export default function AdminMessagesPage() {
   const canCompose = isDrive || isIndividual || isBroadcast || isPremium;
   const currentDrive = selected.drive || (isDrive ? drives.find((d) => d.job_id === selected.id) : null);
 
+  const jobGroupsUnread = useMemo(
+    () => drives.reduce((sum, d) => sum + Math.max(0, Number(d.unread_count) || 0), 0),
+    [drives],
+  );
+  const peopleUnread = useMemo(
+    () => aspirants.reduce((sum, a) => sum + Math.max(0, Number(a.unread_count) || 0), 0),
+    [aspirants],
+  );
+
   const filteredAspirants = useMemo(() => {
     const q = individualSearch.trim().toLowerCase();
     if (!q) return aspirants;
@@ -230,7 +241,10 @@ export default function AdminMessagesPage() {
       <button
         key={a.id}
         type="button"
-        onClick={() => setSelected({ type: 'individual', id: a.id, label: a.full_name || a.email, drive: null })}
+        onClick={() => {
+          setSidebarTab('people');
+          setSelected({ type: 'individual', id: a.id, label: a.full_name || a.email, drive: null });
+        }}
         className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-colors ${
           isIndividual && selected.id === a.id
             ? 'bg-indigo-100 text-indigo-900 font-medium'
@@ -261,148 +275,222 @@ export default function AdminMessagesPage() {
     );
   };
 
+  const sidebarTabs = [
+    { id: 'jobs', label: 'Job groups', unread: jobGroupsUnread },
+    { id: 'people', label: 'People', unread: peopleUnread },
+    { id: 'broadcast', label: 'Broadcast', unread: 0 },
+  ];
+
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[400px]">
-      <h1 className="text-2xl font-bold text-slate-900 mb-2">Messages</h1>
-      <p className="text-slate-600 mb-1">
-        <strong className="font-medium text-slate-800">NTH Team chats</strong> — when an aspirant messages you from Dashboard → Messages →
-        Naveen Talent Hub Team, it appears under <em>Individual chat</em> below.
-      </p>
-      <p className="text-slate-500 text-sm mb-4">
-        Help desk form tickets (website / Support page) are in{' '}
-        <Link to="/admin/help-desk" className="font-medium text-indigo-600 hover:underline">
-          Help desk
-        </Link>
-        , not here.
-      </p>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Messages</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Job groups, personal NTH Team chats, and platform broadcasts. Help desk tickets are in{' '}
+            <Link to="/admin/help-desk" className="font-medium text-indigo-600 hover:underline">
+              Help desk
+            </Link>
+            .
+          </p>
+        </div>
+      </div>
 
       <div className="flex flex-1 min-h-0 rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-        {/* Left: conversation list – job groups (like WhatsApp groups) then individuals */}
-        <aside className="w-80 shrink-0 flex flex-col min-h-0 border-r border-slate-200 bg-slate-50/50">
-          <div className="nth-scroll-y flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">Job groups</p>
-            <p className="text-xs text-slate-400 px-2 pb-1">One group per job – only that job’s applicants receive messages.</p>
-            {loading ? (
-              <div className="flex items-center gap-2 text-slate-400 text-sm px-2 py-1"><LoaderDots size="sm" /> Loading…</div>
-            ) : drives.length === 0 ? (
-              <p className="text-slate-400 text-sm px-2 py-1">No jobs with applicants yet.</p>
-            ) : (
-              <div className="space-y-1 mb-4">
-                {drives.map((d) => (
+        <aside className="flex w-[min(100%,20rem)] shrink-0 flex-col min-h-0 border-r border-slate-200 bg-slate-50/80 sm:w-80">
+          {/* Pinned section tabs — no scroll */}
+          <div className="shrink-0 border-b border-slate-200 bg-white p-2">
+            <div className="grid grid-cols-3 gap-1">
+              {sidebarTabs.map((tab) => {
+                const active = sidebarTab === tab.id;
+                return (
                   <button
-                    key={d.job_id}
+                    key={tab.id}
                     type="button"
-                    onClick={() => setSelected({
-                      type: 'drive',
-                      id: d.job_id,
-                      label: `${d.job_title} – ${d.company_name}`,
-                      drive: d,
-                    })}
-                    className={`w-full min-w-0 text-left px-3 py-2.5 rounded-lg text-sm transition-colors flex items-start gap-2 ${
-                      isDrive && selected.id === d.job_id
-                        ? 'bg-indigo-100 text-indigo-900 ring-1 ring-indigo-200'
-                        : 'text-slate-700 hover:bg-slate-100'
+                    onClick={() => setSidebarTab(tab.id)}
+                    className={`relative rounded-lg px-2 py-2 text-center text-xs font-semibold transition-colors ${
+                      active
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
-                    <HiUserGroup className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span className="flex-1 min-w-0 overflow-hidden">
-                      <span className="font-medium flex items-center gap-2 min-w-0">
-                        <span className="truncate">{d.job_title}</span>
-                        {(d.unread_count || 0) > 0 && (
-                          <span className="bg-indigo-600 text-white text-xs font-semibold min-w-5 h-5 px-1.5 rounded-full flex items-center justify-center shrink-0">
-                            {d.unread_count > 99 ? '99+' : d.unread_count}
-                          </span>
-                        )}
+                    <span className="block leading-tight">{tab.label}</span>
+                    {tab.unread > 0 ? (
+                      <span
+                        className={`mt-1 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                          active ? 'bg-white/20 text-white' : 'bg-indigo-600 text-white'
+                        }`}
+                      >
+                        {tab.unread > 99 ? '99+' : tab.unread}
                       </span>
-                      <span className="text-xs text-slate-500 block truncate">{d.company_name}</span>
-                      <span className="text-xs text-slate-500 block truncate">
-                        {(d.shortlisted_count || 0)} shortlisted · {(d.applicant_count || 0)} applicants
-                      </span>
-                    </span>
+                    ) : null}
                   </button>
-                ))}
-              </div>
-            )}
+                );
+              })}
+            </div>
+          </div>
 
-            <div className="border-t border-slate-200 pt-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">NTH Team (individual)</p>
-              <p className="px-2 pb-2 text-[11px] leading-snug text-slate-400">
-                Only aspirants who messaged the team or received a personal reply.
-              </p>
+          {/* Pinned search — People tab only */}
+          {sidebarTab === 'people' ? (
+            <div className="shrink-0 border-b border-slate-200 bg-white px-2 py-2">
               <input
                 type="search"
                 value={individualSearch}
                 onChange={(e) => setIndividualSearch(e.target.value)}
                 placeholder="Search name or email…"
-                className="mb-2 w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
+                className="w-full rounded-lg border border-slate-200 px-2.5 py-2 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
-              {loading ? (
-                <div className="flex items-center gap-2 text-slate-400 text-sm px-2 py-1">
-                  <LoaderDots size="sm" /> Loading…
-                </div>
-              ) : filteredAspirants.length === 0 ? (
-                <p className="text-slate-400 text-sm px-2 py-1">
-                  {aspirants.length === 0
-                    ? 'No NTH Team chats yet.'
-                    : 'No matches for your search.'}
-                </p>
-              ) : (
-                <div className="space-y-2 pb-2">
-                  {unreadAspirants.length > 0 ? (
-                    <div>
-                      <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-600">
-                        Needs reply ({unreadAspirants.length})
-                      </p>
-                      <div className="space-y-1">{unreadAspirants.map(renderAspirantRow)}</div>
-                    </div>
-                  ) : null}
-                  {readAspirants.length > 0 ? (
-                    <div>
-                      {unreadAspirants.length > 0 ? (
-                        <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-                          Earlier chats
-                        </p>
-                      ) : null}
-                      <div className="space-y-1">{readAspirants.map(renderAspirantRow)}</div>
-                    </div>
-                  ) : null}
-                </div>
-              )}
             </div>
-          </div>
-          <div className="shrink-0 p-2 border-t border-slate-200 bg-white space-y-1">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-2 py-1">Platform-wide</p>
-            <button
-              type="button"
-              onClick={() => setSelected({
-                type: 'premium',
-                id: PREMIUM_BROADCAST_ID,
-                label: 'Active premium members',
-                drive: null,
-              })}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-start gap-2 ${
-                isPremium ? 'bg-emerald-100 text-emerald-900' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <HiSparkles className="w-4 h-4 shrink-0 mt-0.5" />
-              <span className="min-w-0">
-                <span className="block">Active premium members</span>
-                <span className="text-xs font-normal text-slate-500">
-                  Base / Silver / Gold with valid subscription
-                  {activePremiumCount != null ? ` · ~${activePremiumCount}` : ''}
-                </span>
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelected({ type: 'broadcast', id: BROADCAST_ID, label: 'All aspirants (entire platform)', drive: null })}
-              className={`w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                isBroadcast ? 'bg-amber-100 text-amber-900' : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <HiMegaphone className="w-4 h-4 shrink-0" />
-              All aspirants
-            </button>
+          ) : null}
+
+          {/* One section scrolls at a time */}
+          <div className="nth-scroll-y min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
+            {sidebarTab === 'jobs' ? (
+              <>
+                <p className="px-1 pb-2 text-[11px] leading-snug text-slate-500">
+                  One group per job — messages go only to that job&apos;s applicants.
+                </p>
+                {loading ? (
+                  <div className="flex items-center gap-2 px-2 py-1 text-sm text-slate-400">
+                    <LoaderDots size="sm" /> Loading…
+                  </div>
+                ) : drives.length === 0 ? (
+                  <p className="px-2 py-4 text-center text-sm text-slate-400">No jobs with applicants yet.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {drives.map((d) => {
+                      const unread = (d.unread_count || 0) > 0;
+                      return (
+                        <button
+                          key={d.job_id}
+                          type="button"
+                          onClick={() => {
+                            setSidebarTab('jobs');
+                            setSelected({
+                              type: 'drive',
+                              id: d.job_id,
+                              label: `${d.job_title} – ${d.company_name}`,
+                              drive: d,
+                            });
+                          }}
+                          className={`flex w-full min-w-0 items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+                            isDrive && selected.id === d.job_id
+                              ? 'bg-indigo-100 text-indigo-900 ring-1 ring-indigo-200'
+                              : unread
+                                ? 'bg-amber-50/80 text-slate-900 hover:bg-amber-50'
+                                : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <HiUserGroup className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                          <span className="min-w-0 flex-1 overflow-hidden">
+                            <span className="flex min-w-0 items-center gap-2 font-medium">
+                              <span className="truncate">{d.job_title}</span>
+                              {unread ? (
+                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-semibold text-white">
+                                  {d.unread_count > 99 ? '99+' : d.unread_count}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="block truncate text-xs text-slate-500">{d.company_name}</span>
+                            <span className="block truncate text-xs text-slate-500">
+                              {(d.shortlisted_count || 0)} shortlisted · {(d.applicant_count || 0)} applicants
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            ) : null}
+
+            {sidebarTab === 'people' ? (
+              <>
+                <p className="px-1 pb-2 text-[11px] leading-snug text-slate-500">
+                  Personal NTH Team chats — aspirants who messaged you or got a direct reply.
+                </p>
+                {loading ? (
+                  <div className="flex items-center gap-2 px-2 py-1 text-sm text-slate-400">
+                    <LoaderDots size="sm" /> Loading…
+                  </div>
+                ) : filteredAspirants.length === 0 ? (
+                  <p className="px-2 py-4 text-center text-sm text-slate-400">
+                    {aspirants.length === 0 ? 'No personal chats yet.' : 'No matches for your search.'}
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {unreadAspirants.length > 0 ? (
+                      <div>
+                        <p className="px-1 py-1 text-[10px] font-semibold uppercase tracking-wider text-indigo-600">
+                          Needs reply · {unreadAspirants.length}
+                        </p>
+                        <div className="space-y-1">{unreadAspirants.map(renderAspirantRow)}</div>
+                      </div>
+                    ) : null}
+                    {readAspirants.length > 0 ? (
+                      <div>
+                        {unreadAspirants.length > 0 ? (
+                          <p className="px-1 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                            Earlier · {readAspirants.length}
+                          </p>
+                        ) : null}
+                        <div className="space-y-1">{readAspirants.map(renderAspirantRow)}</div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            ) : null}
+
+            {sidebarTab === 'broadcast' ? (
+              <div className="space-y-2">
+                <p className="px-1 pb-1 text-[11px] leading-snug text-slate-500">
+                  One-way messages to many aspirants at once. Not a chat thread.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSidebarTab('broadcast');
+                    setSelected({
+                      type: 'premium',
+                      id: PREMIUM_BROADCAST_ID,
+                      label: 'Active premium members',
+                      drive: null,
+                    });
+                  }}
+                  className={`flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                    isPremium ? 'bg-emerald-100 text-emerald-900 ring-1 ring-emerald-200' : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <HiSparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block">Active premium members</span>
+                    <span className="text-xs font-normal text-slate-500">
+                      Base / Silver / Gold · valid subscription
+                      {activePremiumCount != null ? ` · ~${activePremiumCount}` : ''}
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSidebarTab('broadcast');
+                    setSelected({
+                      type: 'broadcast',
+                      id: BROADCAST_ID,
+                      label: 'All aspirants (entire platform)',
+                      drive: null,
+                    });
+                  }}
+                  className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                    isBroadcast ? 'bg-amber-100 text-amber-900 ring-1 ring-amber-200' : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <HiMegaphone className="h-4 w-4 shrink-0" />
+                  <span>All aspirants</span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </aside>
 
@@ -410,7 +498,7 @@ export default function AdminMessagesPage() {
         <main className="flex-1 flex flex-col min-w-0">
           {!canCompose ? (
             <div className="flex-1 flex items-center justify-center text-slate-500 text-sm p-6">
-              Select a job group, an individual, or platform broadcast.
+              Select a chat from <strong className="font-medium">Job groups</strong>, <strong className="font-medium">People</strong>, or <strong className="font-medium">Broadcast</strong> on the left.
             </div>
           ) : (
             <>
