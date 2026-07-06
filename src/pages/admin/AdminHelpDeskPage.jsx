@@ -61,13 +61,31 @@ export default function AdminHelpDeskPage() {
     if (!silent) setLoading(false);
   }, [statusFilter, inbox, loadSummary]);
 
-  const refreshAfterThreadOpen = useCallback(() => {
-    void loadRequests({ silent: true });
-  }, [loadRequests]);
+  /** Thread open marks messages read — update list locally; do not refetch full inbox (avoids RPC storms). */
+  const handleThreadOpened = useCallback(
+    (request) => {
+      const id = request?.id;
+      if (!id) return;
+      setRequests((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                unread_count: 0,
+                last_preview: request.last_preview ?? r.last_preview,
+                last_message_at: request.last_message_at ?? r.last_message_at,
+              }
+            : r,
+        ),
+      );
+      void loadSummary();
+    },
+    [loadSummary],
+  );
 
   useEffect(() => {
     void loadRequests();
-  }, [loadRequests]);
+  }, [statusFilter, inbox]); // eslint-disable-line react-hooks/exhaustive-deps -- search runs on button only
 
   const hasRows = useMemo(() => requests.length > 0, [requests.length]);
   const summary = useMemo(() => {
@@ -348,7 +366,7 @@ export default function AdminHelpDeskPage() {
                   key={selectedRequest.id}
                   requestId={selectedRequest.id}
                   viewerRole="admin"
-                  onThreadLoaded={refreshAfterThreadOpen}
+                  onThreadLoaded={handleThreadOpened}
                 />
               </div>
             </>

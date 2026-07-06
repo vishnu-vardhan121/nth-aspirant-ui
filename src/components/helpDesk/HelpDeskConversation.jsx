@@ -18,10 +18,15 @@ export default function HelpDeskConversation({
   const [error, setError] = useState('');
   const scrollRef = useRef(null);
   const onThreadLoadedRef = useRef(onThreadLoaded);
+  const threadNotifiedRef = useRef(null);
 
   useEffect(() => {
     onThreadLoadedRef.current = onThreadLoaded;
   }, [onThreadLoaded]);
+
+  useEffect(() => {
+    threadNotifiedRef.current = null;
+  }, [requestId]);
 
   const loadThread = useCallback(async () => {
     if (!requestId) {
@@ -44,7 +49,10 @@ export default function HelpDeskConversation({
     setMessages(Array.isArray(data.messages) ? data.messages : []);
     setCanReply(data.can_reply !== false);
     setReplyDisabledReason(data.reply_disabled_reason || '');
-    onThreadLoadedRef.current?.(data.request ?? null, data);
+    if (threadNotifiedRef.current !== requestId) {
+      threadNotifiedRef.current = requestId;
+      onThreadLoadedRef.current?.(data.request ?? null, data);
+    }
   }, [requestId]);
 
   useEffect(() => {
