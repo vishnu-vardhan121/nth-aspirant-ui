@@ -4,6 +4,8 @@ import { supabase } from '../../lib/supabase';
 const initialState = {
   profile: null,
   loading: true,
+  /** True after at least one successful fetch — avoids contact modal on network errors. */
+  profileLoaded: false,
 };
 
 export const fetchAspirantProfile = createAsyncThunk(
@@ -27,10 +29,12 @@ const aspirantSlice = createSlice({
     setAspirantProfile: (state, action) => {
       state.profile = action.payload;
       state.loading = false;
+      state.profileLoaded = true;
     },
     clearAspirantProfile: (state) => {
       state.profile = null;
       state.loading = true;
+      state.profileLoaded = false;
     },
     setAspirantLoading: (state, action) => {
       state.loading = action.payload;
@@ -41,9 +45,10 @@ const aspirantSlice = createSlice({
       .addCase(fetchAspirantProfile.fulfilled, (state, action) => {
         state.profile = action.payload;
         state.loading = false;
+        state.profileLoaded = true;
       })
       .addCase(fetchAspirantProfile.rejected, (state) => {
-        state.profile = null;
+        // Keep cached profile on refetch failure (e.g. offline) — do not treat as missing contact.
         state.loading = false;
       })
       .addCase(fetchAspirantProfile.pending, (state) => {
