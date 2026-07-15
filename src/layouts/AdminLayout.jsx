@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes, HiChartBar } from 'react-icons/hi2';
+import { HiHome, HiBriefcase, HiUsers, HiUserGroup, HiAcademicCap, HiCog6Tooth, HiChatBubbleBottomCenterText, HiClipboardDocumentList, HiCalendarDays, HiPhoto, HiQueueList, HiLifebuoy, HiBanknotes, HiChartBar, HiCpuChip } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 import { useAdminInboxUnread } from '../hooks/useAdminInboxUnread';
@@ -162,6 +162,13 @@ export default function AdminLayout() {
           >
             <HiCalendarDays className="w-5 h-5 shrink-0" />
             Hero interviews
+          </Link>
+          <Link
+            to="/admin/ai-practice"
+            className={navLinkClass(isActive('/admin/ai-practice'))}
+          >
+            <HiCpuChip className="w-5 h-5 shrink-0" />
+            AI Practice
           </Link>
           <Link
             to="/admin/settings"

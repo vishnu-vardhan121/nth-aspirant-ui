@@ -24,6 +24,7 @@ import {
   HiChatBubbleLeftRight,
   HiCreditCard,
   HiArrowRightOnRectangle,
+  HiCpuChip,
 } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import { usePlanModal } from '../pages/dashboard/subscription';
@@ -44,6 +45,7 @@ import { useAspirantMessageUnread } from '../hooks/useAspirantMessageUnread';
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
   { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
+  { label: 'AI Practice', to: '/dashboard/ai-practice', icon: HiCpuChip },
   { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
   { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
   { label: 'Applications', to: '/dashboard/applications', icon: HiClipboardDocumentList },

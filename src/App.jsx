@@ -34,6 +34,9 @@ import MocksPage from './pages/dashboard/mocks/MocksPage';
 import MessagesPage from './pages/dashboard/messages/MessagesPage';
 import ProfilePage from './pages/dashboard/profile/ProfilePage';
 import PaymentsPage from './pages/dashboard/payments/PaymentsPage';
+import AiPracticeHubPage from './pages/dashboard/ai-practice/hub/AiPracticeHubPage';
+import AiPracticeTrackPage from './pages/dashboard/ai-practice/track/AiPracticeTrackPage';
+import AiPracticeSessionPage from './pages/dashboard/ai-practice/session/AiPracticeSessionPage';
 import AdminOverviewPage from './pages/admin/AdminOverviewPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminAdminsPage from './pages/admin/AdminAdminsPage';
@@ -50,6 +53,7 @@ import AdminTalentPoolPage from './pages/admin/AdminTalentPoolPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
 import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
 import AdminInstituteSpotlightPage from './pages/admin/AdminInstituteSpotlightPage';
+import AdminAiPracticePage from './pages/admin/ai-practice/AdminAiPracticePage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
@@ -136,6 +140,7 @@ function App() {
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
           <Route path="institute-spotlight" element={<AdminInstituteSpotlightPage />} />
           <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />
+          <Route path="ai-practice" element={<AdminAiPracticePage />} />
         </Route>
         <Route
           path="/interviewer"
@@ -169,6 +174,9 @@ function App() {
           <Route path="jobs" element={<JobsPage />} />
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="mocks" element={<MocksPage />} />
+          <Route path="ai-practice" element={<AiPracticeHubPage />} />
+          <Route path="ai-practice/:trackId" element={<AiPracticeTrackPage />} />
+          <Route path="ai-practice/:trackId/session/:sessionId" element={<AiPracticeSessionPage />} />
           <Route path="messages" element={<MessagesPage />} />
         </Route>
       </Routes>
