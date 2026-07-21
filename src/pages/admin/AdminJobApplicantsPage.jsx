@@ -12,7 +12,9 @@ import {
   HiDocumentArrowDown,
   HiTrash,
   HiPencilSquare,
+  HiArrowDownTray,
 } from 'react-icons/hi2';
+import { exportJobApplicantsPlacementExcel } from './users/exportPlacementExcel';
 
 function formatDate(createdAt) {
   if (!createdAt) return '—';
@@ -165,6 +167,8 @@ export default function AdminJobApplicantsPage() {
   const [editingNoticeId, setEditingNoticeId] = useState(null);
   const [editingNoticeBody, setEditingNoticeBody] = useState('');
   const [spotlightModalOpen, setSpotlightModalOpen] = useState(false);
+  const [placementExporting, setPlacementExporting] = useState(false);
+  const [placementExportMessage, setPlacementExportMessage] = useState('');
 
   useEffect(() => {
     if (!jobId) return;
@@ -397,6 +401,29 @@ export default function AdminJobApplicantsPage() {
   };
 
   if (!jobId) return null;
+  const handlePlacementExport = async () => {
+    setPlacementExportMessage('');
+    setPlacementExporting(true);
+    try {
+      const result = await exportJobApplicantsPlacementExcel(
+        supabase,
+        applications,
+        job?.title || 'job',
+      );
+      if (result?.ok) {
+        setPlacementExportMessage(
+          `Downloaded placement sheet (${result.count}). Resume links work for 30 days.`,
+        );
+      } else {
+        setPlacementExportMessage('No platform applicants to export.');
+      }
+    } catch (err) {
+      setPlacementExportMessage(err?.message || 'Placement export failed. Run migration 120 if needed.');
+    } finally {
+      setPlacementExporting(false);
+    }
+  };
+
   if (loading && !job) return <PageLoader size="lg" label="Loading applicants…" className="py-12" variant="dots" />;
 
   return (
@@ -435,7 +462,23 @@ export default function AdminJobApplicantsPage() {
       </h2>
       <p className="text-slate-600 text-sm mb-3">
         Filter by plan, placement-ready, and mock scores (like Users). Open full profile for complete mock history.
+        Placement sheet exports up to 100 filtered platform applicants (resume links valid 30 days).
       </p>
+
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={handlePlacementExport}
+          disabled={placementExporting || tableLoading || applications.length === 0}
+          className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm hover:bg-emerald-100 disabled:opacity-50"
+        >
+          <HiArrowDownTray className="h-4 w-4" />
+          {placementExporting ? 'Exporting…' : 'Placement sheet'}
+        </button>
+        {placementExportMessage ? (
+          <p className="text-sm text-slate-600">{placementExportMessage}</p>
+        ) : null}
+      </div>
 
       <JobApplicantsFilterBar
         filters={filters}
