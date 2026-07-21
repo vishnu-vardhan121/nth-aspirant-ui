@@ -24,6 +24,7 @@ export default function AdminUsersPage() {
     resetFilters,
     refresh,
     exportExcel,
+    exportPlacementExcel,
     exporting,
   } = useAdminUsersPage();
 
@@ -42,6 +43,22 @@ export default function AdminUsersPage() {
     }
   };
 
+  const handlePlacementExport = async () => {
+    setExportMessage('');
+    try {
+      const result = await exportPlacementExcel();
+      if (result?.ok) {
+        setExportMessage(
+          `Downloaded placement sheet (${result.count}). Resume links work for 30 days.`,
+        );
+      } else {
+        setExportMessage('No profiles match your filters.');
+      }
+    } catch (err) {
+      setExportMessage(err?.message || 'Placement export failed.');
+    }
+  };
+
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
@@ -49,7 +66,7 @@ export default function AdminUsersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Users</h1>
           <p className="mt-1 max-w-2xl text-sm text-slate-600">
             Search and filter aspirants by education, mock scores, topic ratings, and internal role-fit tags.
-            Export up to 100 matches as Excel.
+            Export up to 100 matches as Excel (admin or placement sheet).
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -61,6 +78,15 @@ export default function AdminUsersPage() {
           >
             <HiArrowDownTray className="h-4 w-4" />
             {exporting ? 'Exporting…' : 'Download Excel'}
+          </button>
+          <button
+            type="button"
+            onClick={handlePlacementExport}
+            disabled={exporting || loading}
+            className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 shadow-sm hover:bg-emerald-100 disabled:opacity-50"
+          >
+            <HiArrowDownTray className="h-4 w-4" />
+            {exporting ? 'Exporting…' : 'Placement sheet'}
           </button>
           <button
             type="button"
