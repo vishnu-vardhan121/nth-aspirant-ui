@@ -2,6 +2,7 @@ import { useReducer, useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { filtersReducer, buildUsersListRpcParams, INITIAL_USER_FILTERS } from './adminUserFilters';
 import { exportFilteredUsersExcel } from './exportUsersExcel';
+import { exportFilteredUsersPlacementExcel } from './exportPlacementExcel';
 import { enrichUsersWithAllMockRoleFit } from './aggregateMockRoleFit';
 
 export function useAdminUsersPage() {
@@ -64,6 +65,16 @@ export function useAdminUsersPage() {
     }
   }, [filters]);
 
+  const exportPlacementExcel = useCallback(async () => {
+    setExporting(true);
+    try {
+      const result = await exportFilteredUsersPlacementExcel(supabase, filters);
+      return result;
+    } finally {
+      setExporting(false);
+    }
+  }, [filters]);
+
   useEffect(() => {
     refreshSummary();
   }, [refreshSummary]);
@@ -83,6 +94,7 @@ export function useAdminUsersPage() {
     resetFilters,
     refresh,
     exportExcel,
+    exportPlacementExcel,
     exporting,
   };
 }
