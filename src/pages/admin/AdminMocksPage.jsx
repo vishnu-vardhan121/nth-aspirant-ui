@@ -495,9 +495,11 @@ export default function AdminMocksPage() {
     const { data } = await supabase.rpc('admin_approve_mock_reschedule', { p_request_id: req.id });
     if (data?.ok) {
       setRescheduleRequests((prev) => prev.filter((x) => x.id !== req.id));
-      setFlashMsg('success', 'Request approved. Set new schedule below.');
-      const reg = registrations.find((r) => r.id === req.mock_registration_id);
-      if (reg) openScheduleModal(reg);
+      setFlashMsg('success', 'Request approved. Set the new schedule below (old slot is already free).');
+      await fetchMocks();
+      const reg = registrations.find((r) => r.id === req.mock_registration_id)
+        ?? { id: req.mock_registration_id, aspirant_name: req.aspirant_name, aspirant_email: req.aspirant_email, status: 'requested' };
+      openScheduleModal(reg);
       fetchRescheduleRequests();
     } else {
       setFlashMsg('error', data?.error ?? 'Failed to approve.');
@@ -510,14 +512,16 @@ export default function AdminMocksPage() {
     setRejectRescheduleSaving(true);
     const { data } = await supabase.rpc('admin_reject_mock_reschedule', {
       p_request_id: rejectRescheduleModal.id,
-      p_message_to_aspirant: rejectRescheduleMessage.trim() || 'Your reschedule request could not be approved.',
+      p_message_to_aspirant: rejectRescheduleMessage.trim() || 'Your reschedule request could not be accommodated. Please book a new slot or request a mock again from the Mocks page.',
     });
     setRejectRescheduleSaving(false);
     if (data?.ok) {
       setRejectRescheduleModal(null);
       setRejectRescheduleMessage('');
-      setFlashMsg('success', 'Request rejected. Aspirant will see your message in Messages.');
+      setFlashMsg('success', 'Request rejected. Aspirant must book or request a mock again (old slot was already released).');
       fetchRescheduleRequests();
+      fetchMocks();
+      fetchSlots();
     } else {
       setFlashMsg('error', data?.error ?? 'Failed to reject.');
     }
@@ -870,15 +874,15 @@ export default function AdminMocksPage() {
           <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-2">Reject reschedule request</h3>
             <p className="text-sm text-slate-600 mb-4">
-              {rejectRescheduleModal.aspirant_name ?? rejectRescheduleModal.aspirant_email} – {formatDateTime(rejectRescheduleModal.scheduled_at)}. Your message will be sent to the aspirant via Messages.
+              {rejectRescheduleModal.aspirant_name ?? rejectRescheduleModal.aspirant_email}. Rejecting cancels this mock — they must book or request again (old slot was already released).
             </p>
             <form onSubmit={handleRejectRescheduleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Message to aspirant</label>
-                <textarea value={rejectRescheduleMessage} onChange={(e) => setRejectRescheduleMessage(e.target.value)} placeholder="e.g. We couldn’t accommodate a new slot. Please join at the scheduled time." rows={3} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
+                <textarea value={rejectRescheduleMessage} onChange={(e) => setRejectRescheduleMessage(e.target.value)} placeholder="e.g. We couldn’t find a new slot this week. Please book again from the Mocks page." rows={3} className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
               </div>
               <div className="flex gap-2 pt-2">
-                <button type="submit" disabled={rejectRescheduleSaving} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{rejectRescheduleSaving ? 'Sending…' : 'Reject & send message'}</button>
+                <button type="submit" disabled={rejectRescheduleSaving} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50">{rejectRescheduleSaving ? 'Sending…' : 'Reject & cancel mock'}</button>
                 <button type="button" onClick={() => { setRejectRescheduleModal(null); setRejectRescheduleMessage(''); }} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700">Cancel</button>
               </div>
             </form>
@@ -890,34 +894,56 @@ export default function AdminMocksPage() {
       {rescheduleRequests.length > 0 && (
         <section className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-6">
           <h2 className="text-lg font-semibold text-slate-900 mb-1">Reschedule requests</h2>
-          <p className="text-sm text-slate-600 mb-4">Approve and set a new time, or reject with a message (they see it in Messages).</p>
+          <p className="text-sm text-slate-600 mb-4">
+            Old slot is already free. Interviewer (or you) sets a new time, or reject — aspirant must start fresh.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-100 border-b border-slate-200">
                 <tr>
                   <th className="px-3 py-2 font-semibold text-slate-700">Aspirant</th>
-                  <th className="px-3 py-2 font-semibold text-slate-700">Scheduled</th>
+                  <th className="px-3 py-2 font-semibold text-slate-700">Previous / Preferred</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Reason</th>
                   <th className="px-3 py-2 font-semibold text-slate-700">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {rescheduleRequests.map((req) => (
+                {rescheduleRequests.map((req) => {
+                  const preferred =
+                    req.preferred_date || req.preferred_time
+                      ? [
+                          req.preferred_date
+                            ? new Date(`${req.preferred_date}T00:00:00`).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })
+                            : null,
+                          req.preferred_time,
+                        ]
+                          .filter(Boolean)
+                          .join(' · ')
+                      : null;
+                  return (
                   <tr key={req.id} className="bg-white hover:bg-slate-50">
                     <td className="px-3 py-2 text-slate-900">
                       {req.aspirant_name ?? '—'}
                       {req.aspirant_email && <span className="block text-xs text-slate-500">{req.aspirant_email}</span>}
                     </td>
-                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">{formatDateTime(req.scheduled_at)}</td>
+                    <td className="px-3 py-2 text-slate-600 whitespace-nowrap">
+                      <span className="block text-xs text-slate-500">Was: {formatDateTime(req.previous_scheduled_at ?? req.scheduled_at)}</span>
+                      {preferred ? <span className="block font-medium text-indigo-700">Pref: {preferred}</span> : null}
+                    </td>
                     <td className="px-3 py-2 text-slate-600 max-w-[240px]">{req.reason ?? '—'}</td>
                     <td className="px-3 py-2">
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => handleApproveRescheduleRequest(req)} className="text-sm font-medium text-indigo-600 hover:underline">Approve</button>
+                        <button type="button" onClick={() => handleApproveRescheduleRequest(req)} className="text-sm font-medium text-indigo-600 hover:underline">Approve &amp; schedule</button>
                         <button type="button" onClick={() => { setRejectRescheduleModal(req); setRejectRescheduleMessage(''); }} className="text-sm font-medium text-red-600 hover:underline">Reject</button>
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
