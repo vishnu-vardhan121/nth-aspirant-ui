@@ -10,6 +10,25 @@ function toLocalInput(iso) {
   return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
 }
 
+function preferredToLocalInput(preferredDate, preferredTime) {
+  if (!preferredDate) return '';
+  const time = (preferredTime || '10:00').slice(0, 5);
+  const d = new Date(`${preferredDate}T${time}:00`);
+  return Number.isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+}
+
+function formatPreferredLabel(preferredDate, preferredTime) {
+  if (!preferredDate && !preferredTime) return null;
+  const datePart = preferredDate
+    ? new Date(`${preferredDate}T00:00:00`).toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : '';
+  return [datePart, preferredTime].filter(Boolean).join(' · ');
+}
+
 export default function InterviewerScheduleMockModal({
   open,
   mock,
@@ -24,16 +43,30 @@ export default function InterviewerScheduleMockModal({
 
   useEffect(() => {
     if (!open) return;
-    setScheduledAt(toLocalInput(mock?.scheduled_at) || '');
+    const fromPreferred = preferredToLocalInput(mock?.preferred_date, mock?.preferred_time);
+    setScheduledAt(toLocalInput(mock?.scheduled_at) || fromPreferred || '');
     setMeetLink(mock?.meet_link ?? '');
     setError('');
   }, [open, mock]);
 
   if (!open || !mock) return null;
 
+  const isRescheduleRequest = Boolean(mock?.reschedule_pending);
   const isReschedule = mode === 'schedule' && Boolean(mock?.scheduled_at);
-  const title = mode === 'take' ? 'Take & schedule mock' : isReschedule ? 'Reschedule mock' : 'Schedule mock';
-  const submitLabel = mode === 'take' ? 'Take & schedule' : isReschedule ? 'Save new time' : 'Save schedule';
+  const title = mode === 'take'
+    ? 'Take & schedule mock'
+    : isRescheduleRequest
+      ? 'Set new time (reschedule request)'
+      : isReschedule
+        ? 'Reschedule mock'
+        : 'Schedule mock';
+  const submitLabel = mode === 'take'
+    ? 'Take & schedule'
+    : isRescheduleRequest || isReschedule
+      ? 'Save new time'
+      : 'Save schedule';
+
+  const preferredLabel = formatPreferredLabel(mock?.preferred_date, mock?.preferred_time);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -91,6 +124,15 @@ export default function InterviewerScheduleMockModal({
           <p className="mb-4 text-xs text-slate-500">
             This assigns the mock to you and notifies the aspirant with the time and Meet link.
           </p>
+        ) : isRescheduleRequest ? (
+          <div className="mb-4 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-xs text-orange-900">
+            <p className="font-semibold">Aspirant requested a reschedule — old slot is already free.</p>
+            {mock.previous_scheduled_at ? (
+              <p className="mt-0.5">Previous: {new Date(mock.previous_scheduled_at).toLocaleString('en-IN')}</p>
+            ) : null}
+            {preferredLabel ? <p className="mt-0.5 font-medium">Preferred: {preferredLabel}</p> : null}
+            {mock.reschedule_reason ? <p className="mt-0.5">Reason: {mock.reschedule_reason}</p> : null}
+          </div>
         ) : isReschedule ? (
           <p className="mb-4 text-xs text-slate-500">
             Change the date, time, or Meet link. The aspirant will get a new message with the updated details.
