@@ -82,6 +82,8 @@ export default function MocksPage() {
   const [pendingRescheduleIds, setPendingRescheduleIds] = useState([]);
   const [rescheduleModal, setRescheduleModal] = useState(null);
   const [rescheduleReason, setRescheduleReason] = useState('');
+  const [reschedulePreferredDate, setReschedulePreferredDate] = useState('');
+  const [reschedulePreferredTime, setReschedulePreferredTime] = useState('');
   const [rescheduleSaving, setRescheduleSaving] = useState(false);
   const [rescheduleMessage, setRescheduleMessage] = useState({ type: '', text: '' });
   const [infoOpen, setInfoOpen] = useState(false);
@@ -251,20 +253,31 @@ export default function MocksPage() {
     e.preventDefault();
     if (!requireCompleteProfile()) return;
     if (!rescheduleModal || !rescheduleReason.trim()) return;
+    if (!reschedulePreferredDate || !reschedulePreferredTime) {
+      setRescheduleMessage({ type: 'error', text: 'Please select preferred date and time.' });
+      return;
+    }
     setRescheduleMessage({ type: '', text: '' });
     setRescheduleSaving(true);
     const { data } = await supabase.rpc('request_mock_reschedule', {
       p_registration_id: rescheduleModal.id,
       p_reason: rescheduleReason.trim(),
+      p_preferred_date: reschedulePreferredDate,
+      p_preferred_time: reschedulePreferredTime,
     });
     setRescheduleSaving(false);
     if (data?.ok) {
       setRescheduleModal(null);
       setRescheduleReason('');
+      setReschedulePreferredDate('');
+      setReschedulePreferredTime('');
       setRescheduleMessage({ type: '', text: '' });
       fetchMyRegistrations();
       fetchPendingRescheduleIds();
-      setSlotMessage({ type: 'success', text: 'Reschedule request submitted. Admin will review and notify you via Messages.' });
+      setSlotMessage({
+        type: 'success',
+        text: 'Reschedule requested. Your previous slot is released. Interviewer will set a new time and notify you.',
+      });
     } else {
       setRescheduleMessage({ type: 'error', text: data?.error ?? 'Could not submit request.' });
     }
@@ -324,7 +337,7 @@ export default function MocksPage() {
                     <li><strong>Allowance</strong> — {usage?.limit >= 0 ? `${usage.limit} mocks per subscription month` : 'Unlimited mocks'} (scheduled + completed count).</li>
                     <li><strong>Book a slot</strong> — Pick date/time; get Meet link.</li>
                     <li><strong>Request a slot</strong> — Admin assigns; you get notified via Messages.</li>
-                    <li><strong>Reschedule</strong> — Request reschedule; admin approves or rejects.</li>
+                    <li><strong>Reschedule</strong> — Share preferred date/time; interviewer sets a new schedule. Old slot is released.</li>
                   </ul>
                 </div>
               </>
@@ -514,7 +527,9 @@ export default function MocksPage() {
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                          r.status === 'completed'
+                          pendingRescheduleIds.includes(r.id)
+                            ? 'bg-orange-100 text-orange-800'
+                            : r.status === 'completed'
                             ? 'bg-emerald-100 text-emerald-700'
                             : r.status === 'requested'
                               ? 'bg-amber-100 text-amber-700'
@@ -529,7 +544,11 @@ export default function MocksPage() {
                       >
                         {r.status === 'completed' && <HiCheckCircle className="h-3.5 w-3.5" />}
                         {(r.status === 'scheduled' || r.status === 'requested') && <HiClock className="h-3.5 w-3.5" />}
-                        {r.status === 'requested' ? 'Requested' : r.status}
+                        {pendingRescheduleIds.includes(r.id)
+                          ? 'Reschedule requested'
+                          : r.status === 'requested'
+                            ? 'Requested'
+                            : r.status}
                       </span>
                     </div>
 
@@ -589,6 +608,8 @@ export default function MocksPage() {
                             if (!requireCompleteProfile()) return;
                             setRescheduleModal(r);
                             setRescheduleReason('');
+                            setReschedulePreferredDate('');
+                            setReschedulePreferredTime('');
                             setRescheduleMessage({ type: '', text: '' });
                           }}
                           className={`w-full px-4 py-2.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50 lg:w-full ${
@@ -602,18 +623,6 @@ export default function MocksPage() {
                             : pendingRescheduleIds.includes(r.id)
                               ? 'Reschedule requested'
                               : 'Request reschedule'}
-                        </button>
-                      ) : null}
-                      {r.status === 'cancelled' && canBook ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (!requireCompleteProfile()) return;
-                            scrollToBookSection();
-                          }}
-                          className="nth-btn-primary w-full rounded-xl px-4 py-2.5 text-sm font-semibold lg:w-full"
-                        >
-                          Book another slot
                         </button>
                       ) : null}
                     </div>
@@ -784,9 +793,31 @@ export default function MocksPage() {
           <div className="rounded-xl border border-[rgb(var(--nth-border-light))] bg-white shadow-lg max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-lg font-semibold text-[rgb(var(--nth-text-primary-light))] mb-2">Request reschedule</h3>
             <p className="text-sm text-[rgb(var(--nth-text-secondary-light))] mb-4">
-              You can’t change the time yourself. Admin will review your request and, if approved, reschedule your mock and notify you.
+              Share your preferred date and time. Your current slot will be released so the interviewer does not wait. They will set a new time and notify you.
             </p>
             <form onSubmit={handleRequestReschedule} className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Preferred date</label>
+                  <input
+                    type="date"
+                    value={reschedulePreferredDate}
+                    onChange={(e) => setReschedulePreferredDate(e.target.value)}
+                    required
+                    className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Preferred time</label>
+                  <input
+                    type="time"
+                    value={reschedulePreferredTime}
+                    onChange={(e) => setReschedulePreferredTime(e.target.value)}
+                    required
+                    className="w-full rounded-lg border border-[rgb(var(--nth-border-light))] px-3 py-2 text-sm bg-white text-[rgb(var(--nth-text-primary-light))]"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-[rgb(var(--nth-text-muted-light))] mb-1">Reason (required)</label>
                 <textarea
@@ -802,10 +833,25 @@ export default function MocksPage() {
                 <p className={`text-sm ${rescheduleMessage.type === 'error' ? 'text-red-600' : 'text-emerald-600'}`}>{rescheduleMessage.text}</p>
               )}
               <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => { setRescheduleModal(null); setRescheduleReason(''); setRescheduleMessage({ type: '', text: '' }); }} disabled={rescheduleSaving} className="nth-btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRescheduleModal(null);
+                    setRescheduleReason('');
+                    setReschedulePreferredDate('');
+                    setReschedulePreferredTime('');
+                    setRescheduleMessage({ type: '', text: '' });
+                  }}
+                  disabled={rescheduleSaving}
+                  className="nth-btn-secondary px-3 py-2 text-sm font-medium disabled:opacity-50"
+                >
                   Cancel
                 </button>
-                <button type="submit" disabled={rescheduleSaving || !rescheduleReason.trim()} className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50">
+                <button
+                  type="submit"
+                  disabled={rescheduleSaving || !rescheduleReason.trim() || !reschedulePreferredDate || !reschedulePreferredTime}
+                  className="nth-btn-primary px-3 py-2 text-sm font-medium disabled:opacity-50"
+                >
                   {rescheduleSaving ? 'Submitting…' : 'Submit request'}
                 </button>
               </div>

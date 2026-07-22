@@ -35,7 +35,8 @@ function sortMocksLatestFirst(list, statusFilter) {
   return rows.sort((a, b) => mockSortTime(b) - mockSortTime(a));
 }
 
-function mockStatusLabel(status) {
+function mockStatusLabel(status, reschedulePending) {
+  if (reschedulePending) return 'Reschedule requested';
   const map = {
     requested: 'Assigned — pending schedule',
     scheduled: 'Scheduled',
@@ -46,7 +47,8 @@ function mockStatusLabel(status) {
   return map[status] ?? status ?? '—';
 }
 
-function mockStatusClass(status) {
+function mockStatusClass(status, reschedulePending) {
+  if (reschedulePending) return 'bg-orange-100 text-orange-800';
   const map = {
     requested: 'bg-amber-100 text-amber-800',
     scheduled: 'bg-blue-100 text-blue-800',
@@ -55,6 +57,14 @@ function mockStatusClass(status) {
     no_show: 'bg-red-100 text-red-700',
   };
   return map[status] ?? 'bg-slate-100 text-slate-600';
+}
+
+function formatPreferred(date, time) {
+  if (!date && !time) return null;
+  const datePart = date
+    ? new Date(`${date}T00:00:00`).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+    : '';
+  return [datePart, time].filter(Boolean).join(' · ');
 }
 
 function AssignmentBadge({ interviewerName, assignedToMe }) {
@@ -78,23 +88,24 @@ const actionBtnPrimary =
 const actionBtnDark =
   'inline-flex items-center justify-center gap-1 rounded-lg bg-slate-800 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-700 whitespace-nowrap';
 
-function MockRowActions({ mock, unreadCount = 0, onSchedule, onChat, onEditLink, onFeedback }) {
+function MockRowActions({ mock, unreadCount = 0, onSchedule, onChat, onEditLink, onFeedback, onRejectReschedule }) {
   const isRequested = mock.status === 'requested';
   const isScheduled = mock.status === 'scheduled';
   const isCompleted = mock.status === 'completed';
+  const reschedulePending = Boolean(mock.reschedule_pending);
   const canEditFeedback = isCompleted && hasAnyMockFeedback(mock);
 
-  const primary = isScheduled ? (
+  const primary = isScheduled && !reschedulePending ? (
     <button type="button" onClick={() => onFeedback(mock)} className={actionBtnPrimary}>
       Add feedback
     </button>
-  ) : isRequested ? (
+  ) : isRequested || reschedulePending ? (
     <button
       type="button"
       onClick={() => onSchedule({ ...mock, assigned_to_me: true }, 'schedule')}
       className={actionBtnDark}
     >
-      Schedule
+      {reschedulePending ? 'Set new time' : 'Schedule'}
     </button>
   ) : canEditFeedback ? (
     <button type="button" onClick={() => onFeedback(mock, { edit: true })} className={actionBtnPrimary}>
@@ -125,7 +136,7 @@ function MockRowActions({ mock, unreadCount = 0, onSchedule, onChat, onEditLink,
             Join
           </a>
         ) : null}
-        {isScheduled ? (
+        {isScheduled && !reschedulePending ? (
           <>
             <button
               type="button"
@@ -138,6 +149,15 @@ function MockRowActions({ mock, unreadCount = 0, onSchedule, onChat, onEditLink,
               {mock.meet_link ? 'Edit link' : 'Add link'}
             </button>
           </>
+        ) : null}
+        {reschedulePending ? (
+          <button
+            type="button"
+            onClick={() => onRejectReschedule(mock)}
+            className={`${actionBtn} text-red-700`}
+          >
+            Decline
+          </button>
         ) : null}
       </div>
       {primary ? <div className="flex items-center">{primary}</div> : null}
@@ -156,6 +176,9 @@ export default function InterviewerMocksPage() {
   const [feedbackModal, setFeedbackModal] = useState(null);
   const [chatModal, setChatModal] = useState(null);
   const [editMeetLinkMock, setEditMeetLinkMock] = useState(null);
+  const [rejectRescheduleMock, setRejectRescheduleMock] = useState(null);
+  const [rejectRescheduleMessage, setRejectRescheduleMessage] = useState('');
+  const [rejectRescheduleSaving, setRejectRescheduleSaving] = useState(false);
   const [feedbackForm, setFeedbackForm] = useState(() => createEmptyMockFeedbackForm());
   const [submitting, setSubmitting] = useState(false);
   const [flash, setFlash] = useState({ type: '', text: '' });
@@ -164,6 +187,11 @@ export default function InterviewerMocksPage() {
   const mocksWithUnread = useMemo(
     () => mocks.filter((m) => (unreadByMockId[m.id] ?? 0) > 0).length,
     [mocks, unreadByMockId],
+  );
+
+  const pendingRescheduleCount = useMemo(
+    () => mocks.filter((m) => m.reschedule_pending).length,
+    [mocks],
   );
 
   const showFlash = (type, text) => {
@@ -222,6 +250,27 @@ export default function InterviewerMocksPage() {
   const openSchedule = (mock, mode) => {
     setScheduleMode(mode);
     setScheduleModal(mock);
+  };
+
+  const handleRejectReschedule = async (e) => {
+    e.preventDefault();
+    if (!rejectRescheduleMock?.reschedule_request_id) return;
+    setRejectRescheduleSaving(true);
+    const { data } = await supabase.rpc('reject_mock_reschedule', {
+      p_request_id: rejectRescheduleMock.reschedule_request_id,
+      p_message_to_aspirant:
+        rejectRescheduleMessage.trim() ||
+        'Your reschedule request could not be accommodated. Please book a new slot or request a mock again.',
+    });
+    setRejectRescheduleSaving(false);
+    if (data?.ok) {
+      setRejectRescheduleMock(null);
+      setRejectRescheduleMessage('');
+      showFlash('success', 'Reschedule declined. Aspirant must book/request again.');
+      loadData();
+    } else {
+      showFlash('error', data?.error ?? 'Failed to decline.');
+    }
   };
 
   const myMocks = mocks;
@@ -327,6 +376,11 @@ export default function InterviewerMocksPage() {
           <div>
             <h2 className="text-base font-semibold text-slate-900">My assigned mocks</h2>
             <p className="text-xs text-slate-500">Your taken requests, slot bookings, and scheduled mocks.</p>
+            {pendingRescheduleCount > 0 ? (
+              <p className="mt-1 text-xs font-semibold text-orange-700">
+                {pendingRescheduleCount} reschedule request{pendingRescheduleCount === 1 ? '' : 's'} — old slot is free; set a new time (do not wait at the previous meeting).
+              </p>
+            ) : null}
             {mocksWithUnread > 0 ? (
               <p className="mt-1 text-xs font-medium text-indigo-700">
                 {mocksWithUnread} mock{mocksWithUnread === 1 ? '' : 's'} with unread chat — open Chat on that row
@@ -378,10 +432,17 @@ export default function InterviewerMocksPage() {
               <tbody className="divide-y divide-slate-200">
                 {myMocks.map((m) => {
                   const unreadCount = unreadByMockId[m.id] ?? 0;
+                  const preferred = formatPreferred(m.preferred_date, m.preferred_time);
                   return (
                   <tr
                     key={m.id}
-                    className={unreadCount > 0 ? 'bg-amber-50/50' : 'bg-white'}
+                    className={
+                      m.reschedule_pending
+                        ? 'bg-orange-50/70'
+                        : unreadCount > 0
+                          ? 'bg-amber-50/50'
+                          : 'bg-white'
+                    }
                   >
                     <td className="px-4 py-3 align-top text-sm">
                       <span className="font-medium text-slate-900">{m.aspirant_name}</span>
@@ -389,13 +450,32 @@ export default function InterviewerMocksPage() {
                         <span className="block text-xs font-medium tabular-nums text-slate-600">{m.aspirant_phone}</span>
                       ) : null}
                       {m.aspirant_email ? <span className="block text-xs text-slate-500">{m.aspirant_email}</span> : null}
+                      {m.reschedule_pending ? (
+                        <div className="mt-1.5 space-y-0.5 text-xs text-orange-900">
+                          {m.previous_scheduled_at ? (
+                            <p>Was: {formatDateTime(m.previous_scheduled_at)} (slot freed)</p>
+                          ) : null}
+                          {preferred ? <p className="font-medium">Preferred: {preferred}</p> : null}
+                          {m.reschedule_reason ? (
+                            <p className="line-clamp-2 text-orange-800/90" title={m.reschedule_reason}>
+                              Reason: {m.reschedule_reason}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </td>
                     <td className="px-4 py-3 align-top text-sm text-slate-700 whitespace-nowrap">
-                      {m.scheduled_at ? formatDateTime(m.scheduled_at) : m.status === 'requested' ? 'Set schedule' : '—'}
+                      {m.scheduled_at
+                        ? formatDateTime(m.scheduled_at)
+                        : m.reschedule_pending
+                          ? 'Needs new time'
+                          : m.status === 'requested'
+                            ? 'Set schedule'
+                            : '—'}
                     </td>
                     <td className="px-4 py-3 align-top">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${mockStatusClass(m.status)}`}>
-                        {mockStatusLabel(m.status)}
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${mockStatusClass(m.status, m.reschedule_pending)}`}>
+                        {mockStatusLabel(m.status, m.reschedule_pending)}
                       </span>
                     </td>
                     <td className="px-4 py-3 align-top text-sm text-slate-600 max-w-xs">
@@ -409,6 +489,10 @@ export default function InterviewerMocksPage() {
                         onChat={setChatModal}
                         onEditLink={setEditMeetLinkMock}
                         onFeedback={openFeedback}
+                        onRejectReschedule={(mock) => {
+                          setRejectRescheduleMock(mock);
+                          setRejectRescheduleMessage('');
+                        }}
                       />
                     </td>
                   </tr>
@@ -426,17 +510,63 @@ export default function InterviewerMocksPage() {
         mode={scheduleMode}
         onClose={() => setScheduleModal(null)}
         onSuccess={() => {
+          const wasRescheduleRequest = Boolean(scheduleModal?.reschedule_pending);
           const hadSchedule = Boolean(scheduleModal?.scheduled_at);
           const msg =
             scheduleMode === 'take'
               ? 'Mock taken and scheduled. Aspirant notified.'
-              : hadSchedule
-                ? 'Mock rescheduled. Aspirant notified.'
+              : wasRescheduleRequest || hadSchedule
+                ? 'New time set. Aspirant notified.'
                 : 'Schedule saved. Aspirant notified.';
           showFlash('success', msg);
           loadData();
         }}
       />
+
+      {rejectRescheduleMock ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/50"
+            aria-hidden
+            onClick={() => !rejectRescheduleSaving && setRejectRescheduleMock(null)}
+          />
+          <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-slate-900">Decline reschedule request</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              {rejectRescheduleMock.aspirant_name} will not keep the old slot — they must book or request a mock again.
+            </p>
+            <form onSubmit={handleRejectReschedule} className="mt-4 space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Message to aspirant</label>
+                <textarea
+                  value={rejectRescheduleMessage}
+                  onChange={(e) => setRejectRescheduleMessage(e.target.value)}
+                  rows={3}
+                  placeholder="Optional note…"
+                  className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={rejectRescheduleSaving}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                >
+                  {rejectRescheduleSaving ? 'Declining…' : 'Decline & cancel mock'}
+                </button>
+                <button
+                  type="button"
+                  disabled={rejectRescheduleSaving}
+                  onClick={() => setRejectRescheduleMock(null)}
+                  className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       <MockFeedbackModal
         open={!!feedbackModal}
