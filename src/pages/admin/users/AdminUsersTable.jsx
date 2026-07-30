@@ -7,6 +7,7 @@ import {
   branchLabel,
 } from '../../../lib/aspirantFilterOptions';
 import { getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
+import { getPlacementRecommendationShortLabel } from '../../../lib/mockFeedback';
 import { PAGE_SIZE } from './constants';
 import { AspirantIdentity, aspirantContactLabel } from './AspirantIdentity';
 
@@ -15,7 +16,7 @@ const tdClass = 'px-4 py-3.5 align-middle text-sm text-slate-700';
 
 function PlacementDisplay({ user }) {
   const placed = (user.profile_status ?? 'active') === 'inactive';
-  const ready = (user.placement_pipeline_status ?? 'none') === 'ready';
+  const readiness = user.latest_placement_recommendation;
 
   if (placed) {
     return (
@@ -31,25 +32,22 @@ function PlacementDisplay({ user }) {
     );
   }
 
-  if (ready) {
+  if (readiness) {
     return (
       <div className="text-xs">
-        <span className="font-medium text-emerald-800">Placement-ready</span>
-        {user.placement_ready_at ? (
-          <p className="mt-0.5 text-slate-500">{new Date(user.placement_ready_at).toLocaleDateString('en-IN')}</p>
-        ) : null}
+        <span className="font-medium text-slate-800">{getPlacementRecommendationShortLabel(readiness)}</span>
       </div>
     );
   }
 
-  return <span className="text-xs text-slate-500">In training pool</span>;
+  return <span className="text-xs text-slate-400">—</span>;
 }
 
 function MockCell({ user }) {
   return (
     <div className="min-w-[7rem]">
       <p className="text-xs text-slate-500">
-        <span className="font-medium text-slate-700">{user.mocks_conducted_in_period ?? 0}</span>/{user.mock_limit ?? 0}{' '}
+        <span className="font-medium text-slate-700">{user.completed_total ?? 0}</span>/{user.mock_limit ?? 0}{' '}
         mocks
       </p>
       {user.latest_mock_overall != null ? (
@@ -94,7 +92,7 @@ export default function AdminUsersTable({ users, loading, page, onPageChange, on
               <th className={`${thClass} min-w-[180px]`}>Education</th>
               <th className={thClass}>Mocks</th>
               <th className={`${thClass} min-w-[140px]`}>Recommended for</th>
-              <th className={thClass}>Placement</th>
+              <th className={thClass}>Readiness</th>
               <th className={`${thClass} w-12`} />
             </tr>
           </thead>

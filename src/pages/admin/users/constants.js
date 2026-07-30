@@ -25,7 +25,7 @@ export const INITIAL_USER_FILTERS = {
   mockTopicScoreMin: '',
   mockTopicScoreMax: '',
   mockTopicMode: 'any',
-  roleFitKey: '',
-  placementPipeline: '',
+  roleFitKeys: [],
+  placementRecommendation: '',
   profileStatus: '',
 };

@@ -174,8 +174,8 @@ export default function MockFeedbackForm({
 
       <FormSection
         step={4}
-        title="Moving to placements?"
-        hint="If you select Yes, the aspirant will see they are placement-ready. Notes are admin-only."
+        title="Interview readiness"
+        hint="Admin-only. Aspirants do not see this. Average (good/poor) require a why note."
         icon={HiUserGroup}
         isModal={isModal}
         badge={
@@ -350,13 +350,14 @@ function TopicPicker({ form, onChange, onError }) {
 
 function PlacementRecommendationPicker({ form, onChange }) {
   const selected = form.placement_recommendation ?? '';
+  const needsWhy = selected === 'average_good' || selected === 'average_poor';
 
   return (
     <div className="mt-3 space-y-3">
       <div
-        className="flex flex-col gap-2 sm:flex-row sm:items-stretch"
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2"
         role="group"
-        aria-label="Moving to placements"
+        aria-label="Interview readiness"
       >
         {PLACEMENT_RECOMMENDATION_OPTIONS.map((opt) => {
           const on = selected === opt.value;
@@ -367,7 +368,7 @@ function PlacementRecommendationPicker({ form, onChange }) {
               aria-pressed={on}
               onClick={() => onChange({ ...form, placement_recommendation: opt.value })}
               className={[
-                'flex min-h-[52px] flex-1 flex-col items-center justify-center rounded-xl border px-4 py-3 text-center shadow-sm transition-all',
+                'flex min-h-[52px] flex-col items-center justify-center rounded-xl border px-4 py-3 text-center shadow-sm transition-all',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2',
                 on
                   ? 'border-indigo-600 bg-indigo-600 text-white shadow-md'
@@ -384,16 +385,23 @@ function PlacementRecommendationPicker({ form, onChange }) {
       </div>
       <label className="block min-w-0">
         <span className="text-sm font-semibold text-slate-800">
-          Placement note <span className="font-normal text-violet-600">(admin only)</span>
+          Why / placement note <span className="font-normal text-violet-600">(admin only)</span>
+          {needsWhy ? <span className="ml-1 font-normal text-amber-700">required</span> : null}
         </span>
         <p className="mt-0.5 text-xs text-slate-500">
-          Context for admins — company types, blockers, or what is still needed before placement.
+          {needsWhy
+            ? 'Explain why this is Average (good) or Average (poor).'
+            : 'Optional context for admins — blockers, company types, or what’s still needed.'}
         </p>
         <textarea
           value={form.placement_recommendation_note}
           onChange={(e) => onChange({ ...form, placement_recommendation_note: e.target.value })}
           rows={2}
-          placeholder="e.g. Ready for mid-tier product companies after one more system design mock…"
+          placeholder={
+            needsWhy
+              ? 'e.g. Strong concepts but weak coding speed — one more mock needed…'
+              : 'e.g. Ready for mid-tier product companies…'
+          }
           className="mt-2 w-full max-w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
         />
       </label>

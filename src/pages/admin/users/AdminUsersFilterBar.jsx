@@ -8,9 +8,9 @@ import {
   NOTICE_PERIOD_OPTIONS,
   getBranchOptions,
 } from '../../../lib/aspirantFilterOptions';
-import { MOCK_TOPIC_FILTER_OPTIONS, MOCK_ROLE_FIT_CATEGORIES } from '../../../lib/mockFeedbackTopics';
+import { MOCK_TOPIC_FILTER_OPTIONS, MOCK_ROLE_FIT_CATEGORIES, getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
 import { INITIAL_USER_FILTERS } from './constants';
-import { PLACEMENT_READINESS_FILTER_OPTIONS } from '../placementFilterOptions';
+import { PLACEMENT_RECOMMENDATION_FILTER_OPTIONS } from '../placementFilterOptions';
 
 const selectClass =
   'rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100';
@@ -21,9 +21,15 @@ function countActiveFilters(filters) {
     const value = filters[key];
     const defaultValue = INITIAL_USER_FILTERS[key];
     if (key === 'mockTopicMode') return count + (value && value !== 'any' ? 1 : 0);
+    if (Array.isArray(value)) return count + (value.length > 0 ? 1 : 0);
     if (value == null || value === '' || value === defaultValue) return count;
     return count + 1;
   }, 0);
+}
+
+function toggleRoleFitKey(selected, key) {
+  const list = Array.isArray(selected) ? selected : [];
+  return list.includes(key) ? list.filter((k) => k !== key) : [...list, key];
 }
 
 function FilterGroup({ label, children }) {
@@ -98,9 +104,13 @@ export default function AdminUsersFilterBar({ filters, onPatch, onQualificationC
                 <option value="inactive">Placed / inactive</option>
               </select>
             </FilterField>
-            <FilterField label="Placement readiness">
-              <select value={filters.placementPipeline} onChange={set('placementPipeline')} className={selectClass}>
-                {PLACEMENT_READINESS_FILTER_OPTIONS.map((o) => (
+            <FilterField label="Interview readiness">
+              <select
+                value={filters.placementRecommendation}
+                onChange={set('placementRecommendation')}
+                className={selectClass}
+              >
+                {PLACEMENT_RECOMMENDATION_FILTER_OPTIONS.map((o) => (
                   <option key={o.value || 'any'} value={o.value}>
                     {o.label}
                   </option>
@@ -265,23 +275,61 @@ export default function AdminUsersFilterBar({ filters, onPatch, onQualificationC
             </select>
           </FilterGroup>
 
-          <FilterGroup label="Role fit (internal)">
-            <select
-              value={filters.roleFitKey}
-              onChange={set('roleFitKey')}
-              className={`${selectClass} min-w-[180px]`}
-            >
-              <option value="">Any role fit</option>
-              {MOCK_ROLE_FIT_CATEGORIES.map((cat) => (
-                <optgroup key={cat.id} label={cat.label}>
-                  {cat.options.map((o) => (
-                    <option key={o.key} value={o.key}>
-                      {o.label}
-                    </option>
+          <FilterGroup label="Role fit (internal) — any match">
+            <div className="w-full space-y-2">
+              {Array.isArray(filters.roleFitKeys) && filters.roleFitKeys.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {filters.roleFitKeys.map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => onPatch({ roleFitKeys: toggleRoleFitKey(filters.roleFitKeys, key) })}
+                      className="inline-flex items-center gap-1 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-medium text-violet-800 hover:bg-violet-100"
+                      title="Remove"
+                    >
+                      {getMockRoleFitLabel(key)}
+                      <HiXMark className="h-3 w-3" />
+                    </button>
                   ))}
-                </optgroup>
-              ))}
-            </select>
+                  <button
+                    type="button"
+                    onClick={() => onPatch({ roleFitKeys: [] })}
+                    className="text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                  >
+                    Clear
+                  </button>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-500">Select one or more — matches if aspirant has any of them</p>
+              )}
+              <div className="max-h-44 w-full space-y-2 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50/60 p-2">
+                {MOCK_ROLE_FIT_CATEGORIES.map((cat) => (
+                  <div key={cat.id}>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{cat.label}</p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {cat.options.map((o) => {
+                        const on = Array.isArray(filters.roleFitKeys) && filters.roleFitKeys.includes(o.key);
+                        return (
+                          <button
+                            key={o.key}
+                            type="button"
+                            onClick={() => onPatch({ roleFitKeys: toggleRoleFitKey(filters.roleFitKeys, o.key) })}
+                            className={[
+                              'inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-medium leading-tight',
+                              on
+                                ? 'border-violet-600 bg-violet-600 text-white'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:bg-violet-50',
+                            ].join(' ')}
+                          >
+                            {o.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </FilterGroup>
         </div>
       ) : null}

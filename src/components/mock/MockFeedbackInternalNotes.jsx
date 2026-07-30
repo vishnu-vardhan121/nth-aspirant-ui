@@ -29,7 +29,7 @@ export default function MockFeedbackInternalNotes({ registration }) {
 
       {placement ? (
         <div className="rounded-lg border border-violet-100 bg-white/90 px-3 py-2.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-800">Placement pipeline</p>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-800">Interview readiness</p>
           <p className="mt-1 text-sm font-semibold text-slate-900">{getPlacementRecommendationLabel(placement)}</p>
           {placementNote ? (
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{placementNote}</p>
