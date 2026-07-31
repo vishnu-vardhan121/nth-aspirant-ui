@@ -8,6 +8,7 @@ import {
   noticePeriodLabel,
 } from '../../../lib/aspirantFilterOptions';
 import { getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
+import { getPlacementRecommendationLabel } from '../../../lib/mockFeedback';
 import { buildUsersListRpcParams } from './adminUserFilters';
 import { enrichUsersWithAllMockRoleFit } from './aggregateMockRoleFit';
 import { formatAspirantPhone } from './AspirantIdentity';
@@ -29,8 +30,9 @@ function userToRow(u) {
     : '';
 
   const profileLabel = (u.profile_status ?? 'active') === 'inactive' ? 'Placed' : 'Active';
-  const pipelineLabel =
-    (u.placement_pipeline_status ?? 'none') === 'ready' ? 'Placement-ready' : 'In pool';
+  const readinessLabel = u.latest_placement_recommendation
+    ? getPlacementRecommendationLabel(u.latest_placement_recommendation)
+    : '';
   const placement = (u.profile_status ?? 'active') === 'inactive' && u.placed_in
     ? `${u.placed_in}${u.placed_at ? ` (${u.placed_at})` : ''}`
     : '';
@@ -54,9 +56,9 @@ function userToRow(u) {
     'Latest mock scores': mockScores,
     'Recommended for (all mocks)': roleFit,
     'Profile status': profileLabel,
-    'Placement pipeline': pipelineLabel,
+    'Interview readiness': readinessLabel,
     Placement: placement,
-    'Mocks (period)': `${u.mocks_conducted_in_period ?? 0}/${u.mock_limit ?? 0}`,
+    Mocks: `${u.completed_total ?? 0}/${u.mock_limit ?? 0}`,
     Plan: u.plan ?? '',
     Track: u.track ?? '',
     Subscription: u.is_active ? 'Active' : 'Expired',

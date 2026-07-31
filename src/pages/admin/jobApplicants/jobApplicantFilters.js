@@ -2,7 +2,7 @@ import { PLANS } from '../users/constants';
 
 export const INITIAL_JOB_APPLICANT_FILTERS = {
   plans: [],
-  placementPipeline: '',
+  placementRecommendation: '',
   applicationStatus: '',
   mockOverallMin: '',
   mockCommMin: '',
@@ -22,7 +22,7 @@ export function buildJobApplicationsRpcParams(jobId, filters) {
   const params = {
     p_job_id: jobId,
     p_plans: plans,
-    p_placement_pipeline_status: filters.placementPipeline || null,
+    p_placement_recommendation: filters.placementRecommendation || null,
     p_application_status: filters.applicationStatus || null,
     p_mock_overall_min: filters.mockOverallMin ? parseFloat(filters.mockOverallMin) : null,
     p_mock_communication_min: filters.mockCommMin ? parseFloat(filters.mockCommMin) : null,
@@ -41,7 +41,7 @@ export function buildJobApplicationsRpcParams(jobId, filters) {
 export function countActiveJobApplicantFilters(filters) {
   let count = 0;
   if (filters.plans?.length) count += 1;
-  if (filters.placementPipeline) count += 1;
+  if (filters.placementRecommendation) count += 1;
   if (filters.applicationStatus) count += 1;
   if (filters.mockOverallMin) count += 1;
   if (filters.mockCommMin) count += 1;

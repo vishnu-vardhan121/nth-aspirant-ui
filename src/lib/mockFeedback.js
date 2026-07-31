@@ -26,15 +26,29 @@ export const MOCK_FEEDBACK_AREA_DEFS = [];
 
 export const MOCK_SCORE_OPTIONS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
-/** Interviewer: recommend moving candidate to placement pipeline. */
+/** Interviewer readiness (admin-only). Stored on mock_registrations.placement_recommendation. */
 export const PLACEMENT_RECOMMENDATION_OPTIONS = [
-  { value: 'yes', label: 'Yes — ready for placement pipeline', shortLabel: 'Yes', hint: 'Aspirant sees placement-ready' },
-  { value: 'no', label: 'No — not ready yet', shortLabel: 'No', hint: 'Stay in mock pool' },
-  { value: 'not_yet', label: 'Not yet — needs more mocks / prep', shortLabel: 'Not yet', hint: 'More mocks needed' },
+  { value: 'ready_interviews', label: 'Ready for interviews', shortLabel: 'Ready', hint: 'Admin — ready for company interviews' },
+  { value: 'average_good', label: 'Average (good)', shortLabel: 'Avg good', hint: 'Borderline — note why' },
+  { value: 'average_poor', label: 'Average (poor)', shortLabel: 'Avg poor', hint: 'Borderline — note why' },
+  { value: 'not_yet', label: 'Not yet', shortLabel: 'Not yet', hint: 'More mocks / prep needed' },
 ];
+
+export const PLACEMENT_RECOMMENDATION_VALUES = PLACEMENT_RECOMMENDATION_OPTIONS.map((o) => o.value);
+
+/** Map legacy stored values to current keys. */
+export function normalizePlacementRecommendation(value) {
+  if (!value) return null;
+  const v = String(value).trim().toLowerCase();
+  if (v === 'yes') return 'ready_interviews';
+  if (v === 'no') return 'not_yet';
+  if (PLACEMENT_RECOMMENDATION_VALUES.includes(v)) return v;
+  return v;
+}
 
 const MIN_OVERALL = 30;
 const MIN_TOPIC_TEXT = 20;
+const MIN_PLACEMENT_NOTE = 20;
 
 /** Stored when interviewer leaves per-topic suggestions blank (backend requires ≥20 chars). */
 export const TOPIC_SUGGESTIONS_PLACEHOLDER = 'No additional suggestions for this topic.';
@@ -166,7 +180,7 @@ export function buildTechFeedbackPayload(form) {
     version: 2,
     overall_suggestions: form.overall_suggestions?.trim() || null,
     role_fit: form.role_fit_keys ?? [],
-    placement_recommendation: form.placement_recommendation || null,
+    placement_recommendation: normalizePlacementRecommendation(form.placement_recommendation) || null,
     placement_recommendation_note: form.placement_recommendation_note?.trim() || null,
     communication_admin_note: form.communication_admin_note?.trim() || null,
     areas,
@@ -184,8 +198,15 @@ export function validateMockFeedbackForm(form) {
     return `Overall summary is required (at least ${MIN_OVERALL} characters).`;
   }
 
-  if (!form.placement_recommendation || !['yes', 'no', 'not_yet'].includes(form.placement_recommendation)) {
-    return 'Select whether this candidate is ready for the placement pipeline.';
+  const placement = normalizePlacementRecommendation(form.placement_recommendation);
+  if (!placement || !PLACEMENT_RECOMMENDATION_VALUES.includes(placement)) {
+    return 'Select interview readiness (admin only).';
+  }
+  if (
+    (placement === 'average_good' || placement === 'average_poor') &&
+    (!form.placement_recommendation_note?.trim() || form.placement_recommendation_note.trim().length < MIN_PLACEMENT_NOTE)
+  ) {
+    return `For Average ratings, add a why note (at least ${MIN_PLACEMENT_NOTE} characters).`;
   }
 
   const keys = form.selectedKeys ?? [];
@@ -255,7 +276,7 @@ export function getRoleFitKeys(reg) {
 }
 
 export function getPlacementRecommendation(reg) {
-  return reg?.placement_recommendation ?? null;
+  return normalizePlacementRecommendation(reg?.placement_recommendation);
 }
 
 export function getPlacementRecommendationNote(reg) {
@@ -269,7 +290,13 @@ export function getCommunicationAdminNote(reg) {
 }
 
 export function getPlacementRecommendationLabel(value) {
-  return PLACEMENT_RECOMMENDATION_OPTIONS.find((o) => o.value === value)?.label ?? value ?? '—';
+  const normalized = normalizePlacementRecommendation(value);
+  return PLACEMENT_RECOMMENDATION_OPTIONS.find((o) => o.value === normalized)?.label ?? normalized ?? '—';
+}
+
+export function getPlacementRecommendationShortLabel(value) {
+  const normalized = normalizePlacementRecommendation(value);
+  return PLACEMENT_RECOMMENDATION_OPTIONS.find((o) => o.value === normalized)?.shortLabel ?? normalized ?? '—';
 }
 
 export function hasInternalMockFeedback(reg) {

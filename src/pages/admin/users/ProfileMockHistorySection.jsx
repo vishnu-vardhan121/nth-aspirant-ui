@@ -137,7 +137,7 @@ function MockCard({ mock, index }) {
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-800">Internal notes</p>
                 {placement ? (
                   <div>
-                    <p className="text-xs font-semibold text-slate-700">Placement pipeline</p>
+                    <p className="text-xs font-semibold text-slate-700">Interview readiness</p>
                     <p className="mt-0.5 text-sm font-medium text-slate-900">{getPlacementRecommendationLabel(placement)}</p>
                     {placementNote ? (
                       <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">{placementNote}</p>
@@ -189,8 +189,8 @@ export default function ProfileMockHistorySection({ profile, mockSummary, mocks 
           sub={profile.is_active ? 'Subscription active' : 'Subscription expired'}
         />
         <SummaryCard
-          label="This period"
-          value={`${mockSummary.mocks_conducted_in_period ?? 0} / ${mockSummary.mock_limit ?? profile.mock_limit ?? 0}`}
+          label="Completed"
+          value={`${mockSummary.completed_total ?? 0} / ${mockSummary.mock_limit ?? profile.mock_limit ?? 0}`}
           sub="Mocks used"
         />
         <SummaryCard label="Completed" value={mockSummary.completed_total ?? 0} sub="All time" />
