@@ -1,10 +1,19 @@
-/** Shared admin filter copy — placement readiness is set after mock interviews. */
+/** Shared admin filter copy — interviewer readiness on completed mocks. */
 
-export const PLACEMENT_READINESS_FILTER_OPTIONS = [
-  { value: '', label: 'Any placement readiness' },
-  { value: 'ready', label: 'Ready for company interviews' },
-  { value: 'none', label: 'Still in training pool' },
+import {
+  PLACEMENT_RECOMMENDATION_OPTIONS,
+} from '../../lib/mockFeedback';
+
+export const PLACEMENT_RECOMMENDATION_FILTER_OPTIONS = [
+  { value: '', label: 'Any interview readiness' },
+  ...PLACEMENT_RECOMMENDATION_OPTIONS.map((o) => ({
+    value: o.value,
+    label: o.label,
+  })),
 ];
+
+/** @deprecated use PLACEMENT_RECOMMENDATION_FILTER_OPTIONS */
+export const PLACEMENT_READINESS_FILTER_OPTIONS = PLACEMENT_RECOMMENDATION_FILTER_OPTIONS;
 
 export const JOB_APPLICATION_STATUS_OPTIONS = [
   { value: '', label: 'Any application status' },

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { HiChatBubbleLeftRight } from 'react-icons/hi2';
 import { Loader } from '../../../components/ui/Loader';
 import { getMockRoleFitLabel } from '../../../lib/mockFeedbackTopics';
+import { getPlacementRecommendationShortLabel } from '../../../lib/mockFeedback';
 import { AspirantIdentity } from '../users/AspirantIdentity';
 
 const thClass = 'px-4 py-3 text-left text-xs font-medium text-slate-500 whitespace-nowrap';
@@ -18,19 +19,19 @@ function PlanBadge({ plan }) {
 
 function PipelineBadge({ row }) {
   const placed = (row.profile_status ?? 'active') === 'inactive';
-  const ready = (row.placement_pipeline_status ?? 'none') === 'ready';
+  const readiness = row.latest_placement_recommendation;
 
   if (placed) {
     return <span className="text-xs font-medium text-amber-800">Placed</span>;
   }
-  if (ready) {
+  if (readiness) {
     return (
-      <span className="inline-flex rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">
-        Ready for interviews
+      <span className="inline-flex rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-800">
+        {getPlacementRecommendationShortLabel(readiness)}
       </span>
     );
   }
-  return <span className="text-xs text-slate-500">In training pool</span>;
+  return <span className="text-xs text-slate-400">—</span>;
 }
 
 function MockScores({ row }) {
@@ -85,7 +86,7 @@ export default function JobApplicantsTable({
           <tr>
             <th className={thClass}>Student</th>
             <th className={thClass}>Plan</th>
-            <th className={thClass}>Placement readiness</th>
+            <th className={thClass}>Interview readiness</th>
             <th className={thClass}>Latest mocks</th>
             <th className={thClass}>Recommended for</th>
             <th className={thClass}>Applied</th>

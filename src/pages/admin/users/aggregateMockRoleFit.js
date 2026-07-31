@@ -15,9 +15,9 @@ export function mergeRoleFitKeys(...keyLists) {
 }
 
 /**
- * Load role-fit tags from every completed mock for the given aspirants.
+ * Load role-fit tags and completed counts from every completed mock for the given aspirants.
  * Uses admin RLS on mock_registrations — no list-RPC change needed.
- * @returns {Promise<Record<string, string[]>>}
+ * @returns {Promise<Record<string, { keys: string[], completedTotal: number }>>}
  */
 export async function fetchAggregatedRoleFitByAspirantIds(supabase, aspirantIds) {
   if (!aspirantIds?.length) return {};
@@ -30,16 +30,20 @@ export async function fetchAggregatedRoleFitByAspirantIds(supabase, aspirantIds)
 
   if (error) return {};
 
-  /** @type {Record<string, string[]>} */
+  /** @type {Record<string, { keys: string[], completedTotal: number }>} */
   const byAspirant = {};
   for (const row of data ?? []) {
     const id = row.aspirant_id;
-    byAspirant[id] = mergeRoleFitKeys(byAspirant[id], row.role_fit_keys);
+    const prev = byAspirant[id] ?? { keys: [], completedTotal: 0 };
+    byAspirant[id] = {
+      keys: mergeRoleFitKeys(prev.keys, row.role_fit_keys),
+      completedTotal: prev.completedTotal + 1,
+    };
   }
   return byAspirant;
 }
 
-/** Attach `all_mock_role_fit_keys` from all completed mocks (falls back to latest mock keys). */
+/** Attach `all_mock_role_fit_keys` and `completed_total` from all completed mocks. */
 export async function enrichUsersWithAllMockRoleFit(supabase, users) {
   if (!users?.length) return users ?? [];
 
@@ -51,7 +55,8 @@ export async function enrichUsersWithAllMockRoleFit(supabase, users) {
     const fallback = Array.isArray(u.latest_mock_role_fit_keys) ? u.latest_mock_role_fit_keys : [];
     return {
       ...u,
-      all_mock_role_fit_keys: aggregated?.length ? aggregated : fallback,
+      completed_total: aggregated?.completedTotal ?? 0,
+      all_mock_role_fit_keys: aggregated?.keys?.length ? aggregated.keys : fallback,
     };
   });
 }

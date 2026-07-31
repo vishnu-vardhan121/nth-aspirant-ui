@@ -50,9 +50,12 @@ export function buildUsersListRpcParams(filters) {
     p_limit: PAGE_SIZE,
     p_offset: (f.page ?? 0) * PAGE_SIZE,
   };
-  // Only after migration 105 — omit when unset so older DB signatures still match.
-  if (f.roleFitKey) params.p_role_fit_key = f.roleFitKey;
+  // Role-fit multi-select (OR). Omit when empty so older DB signatures still match.
+  const roleFitKeys = Array.isArray(f.roleFitKeys)
+    ? f.roleFitKeys.map((k) => String(k).trim().toLowerCase()).filter(Boolean)
+    : [];
+  if (roleFitKeys.length) params.p_role_fit_keys = roleFitKeys;
   if (f.profileStatus) params.p_profile_status = f.profileStatus;
-  if (f.placementPipeline) params.p_placement_pipeline_status = f.placementPipeline;
+  if (f.placementRecommendation) params.p_placement_recommendation = f.placementRecommendation;
   return params;
 }

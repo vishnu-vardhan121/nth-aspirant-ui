@@ -9,7 +9,7 @@ import {
 } from './jobApplicantFilters';
 import {
   JOB_APPLICATION_STATUS_OPTIONS,
-  PLACEMENT_READINESS_FILTER_OPTIONS,
+  PLACEMENT_RECOMMENDATION_FILTER_OPTIONS,
 } from '../placementFilterOptions';
 
 const selectClass =
@@ -99,9 +99,13 @@ export default function JobApplicantsFilterBar({ filters, onChange, onReset, exp
                 ))}
               </select>
             </FilterField>
-            <FilterField label="Placement readiness">
-              <select value={filters.placementPipeline} onChange={set('placementPipeline')} className={selectClass}>
-                {PLACEMENT_READINESS_FILTER_OPTIONS.map((o) => (
+            <FilterField label="Interview readiness">
+              <select
+                value={filters.placementRecommendation}
+                onChange={set('placementRecommendation')}
+                className={selectClass}
+              >
+                {PLACEMENT_RECOMMENDATION_FILTER_OPTIONS.map((o) => (
                   <option key={o.value || 'any'} value={o.value}>
                     {o.label}
                   </option>
