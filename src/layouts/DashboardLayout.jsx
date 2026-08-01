@@ -24,6 +24,7 @@ import {
   HiChatBubbleLeftRight,
   HiCreditCard,
   HiArrowRightOnRectangle,
+  HiBookOpen,
 } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import { usePlanModal } from '../pages/dashboard/subscription';
@@ -43,6 +44,7 @@ import { useAspirantMessageUnread } from '../hooks/useAspirantMessageUnread';
 
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
+  { label: 'Free Coding Classes', to: '/dashboard/courses', icon: HiBookOpen },
   { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
   { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
   { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
@@ -65,6 +67,7 @@ function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0, 
             : location.pathname.startsWith(link.to);
         const showMockBadge = link.to === '/dashboard/mocks' && scheduledMockCount > 0;
         const showMessagesBadge = link.to === '/dashboard/messages' && messagesUnread > 0;
+
         return (
           <Link
             key={link.to}

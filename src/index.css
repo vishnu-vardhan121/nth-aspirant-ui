@@ -108,6 +108,64 @@
   animation: cta-pulse 2s ease-in-out infinite;
 }
 
+/* Free Coding Classes — gold offer chip (landing + aspirant nav) */
+@keyframes nth-offer-shine {
+  0% {
+    transform: translateX(-120%) rotate(12deg);
+  }
+  100% {
+    transform: translateX(220%) rotate(12deg);
+  }
+}
+@keyframes nth-offer-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.35), 0 4px 14px rgba(180, 83, 9, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.15), 0 6px 20px rgba(234, 179, 8, 0.45);
+  }
+}
+.nth-free-coding-offer {
+  color: #78350f;
+  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 42%, #f59e0b 78%, #eab308 100%);
+  border: 1px solid rgba(161, 98, 7, 0.35);
+  animation: nth-offer-glow 2.4s ease-in-out infinite;
+}
+.nth-free-coding-offer:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+.nth-free-coding-offer-shine {
+  position: absolute;
+  inset: -20% auto -20% 0;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.55),
+    transparent
+  );
+  animation: nth-offer-shine 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+.nth-free-coding-offer-badge {
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.35rem;
+  border-radius: 9999px;
+  background: #7c2d12;
+  color: #fef3c7;
+}
+@media (prefers-reduced-motion: reduce) {
+  .nth-free-coding-offer,
+  .nth-free-coding-offer-shine {
+    animation: none;
+  }
+}
+
 .cta-moving-border {
   position: relative;
   border-radius: 9999px;
@@ -475,6 +533,17 @@ body::-webkit-scrollbar {
 #hero a.bg-white:hover,
 #hero a.bg-white:focus-visible {
   color: rgb(15 23 42) !important;
+}
+
+/* Gold offer CTA in hero: #hero a inherits near-white — force dark amber on gold. */
+#hero a.nth-free-coding-offer,
+#hero a.nth-free-coding-offer:visited,
+#hero a.nth-free-coding-offer:hover,
+#hero a.nth-free-coding-offer:focus-visible {
+  color: #451a03 !important;
+}
+#hero a.nth-free-coding-offer .nth-free-coding-offer-badge {
+  color: #fef3c7 !important;
 }
 
 /* Ghost / glass hero CTAs: keep label clearly light (inherit is ok but explicit wins over a:hover white). */
