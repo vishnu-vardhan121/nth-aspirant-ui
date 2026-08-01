@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
+import { HiSparkles } from 'react-icons/hi2';
+import { useAppSelector } from '../../../../store/hooks';
 import WeeklyInterviewsMarquee from '../../../../components/WeeklyInterviewsMarquee';
 
 export default function HeroSection() {
+  const isAuthenticated = useAppSelector((state) => !!state.auth.user);
+  const freeClassesTo = isAuthenticated ? '/dashboard/courses' : '/login';
+
   return (
     <section id="hero" className="relative min-h-dvh w-full flex flex-col overflow-hidden pt-24 md:pt-28 lg:pt-32">
       {/* Background: full viewport width, cover (edge-to-edge) */}
@@ -44,6 +49,20 @@ export default function HeroSection() {
               className="group flex min-h-14 w-full cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-white/85 bg-black/25 px-8 py-4 text-base font-bold tracking-tight text-white shadow-lg shadow-black/20 ring-1 ring-white/25 backdrop-blur-md transition-[background-color,box-shadow,border-color] duration-200 hover:border-white hover:bg-black/35 hover:shadow-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white active:brightness-95 sm:min-h-15 sm:min-w-0 sm:flex-1 sm:max-w-[min(100%,20rem)] sm:px-10 sm:text-lg"
             >
               Save your profile with us
+            </Link>
+          </div>
+
+          <div className="mt-4 flex w-full max-w-lg justify-center sm:mt-5 sm:max-w-xl px-0">
+            <Link
+              to={freeClassesTo}
+              className="relative inline-flex min-h-12 w-full max-w-md cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-amber-700/40 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 px-4 py-3.5 text-[13px] font-extrabold leading-snug tracking-tight text-amber-950 shadow-[0_8px_28px_rgba(180,83,9,0.45)] sm:min-h-13 sm:px-8 sm:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
+              aria-label="Get free coding classes and gold"
+              style={{ color: '#451a03' }}
+            >
+              <HiSparkles className="relative z-10 h-4 w-4 shrink-0 text-amber-950 sm:h-5 sm:w-5" aria-hidden />
+              <span className="relative z-10 text-center text-amber-950">
+                Get Free Coding Classes &amp; Gold
+              </span>
             </Link>
           </div>
         </div>

@@ -4,6 +4,7 @@ import {
   jobDomainsFromProfile,
   normalizeJobDomainEntry,
 } from './aspirantFilterOptions';
+import { isSubscriptionActive } from './planLimits';
 
 export const EMPLOYMENT_OPTIONS = [
   { value: 'working', label: 'Employed' },
@@ -468,6 +469,18 @@ export function getFirstIncompleteOnboardingStep(profile) {
 export function getOnboardingPathForProfile(profile) {
   const step = getFirstIncompleteOnboardingStep(profile);
   return `/onboarding?welcome=1&step=${step}`;
+}
+
+/**
+ * Where “complete profile” should send the aspirant.
+ * Paid onboarding wizard requires an active plan; otherwise use dashboard profile edit.
+ */
+export function getCompleteProfilePath(profile) {
+  const hasActivePlan =
+    Boolean(profile?.plan) &&
+    isSubscriptionActive(profile.plan, profile.plan_started_at);
+  if (hasActivePlan) return getOnboardingPathForProfile(profile);
+  return '/dashboard/profile';
 }
 
 /** True when onboarding form requirements are satisfied (resume, skills, LinkedIn, etc.). */

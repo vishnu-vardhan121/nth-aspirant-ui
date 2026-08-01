@@ -4,12 +4,16 @@ import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
 import HelpDeskModal from '../pages/landing/home/components/HelpDeskModal';
+import FreeCodingClassesOfferLink from './FreeCodingClassesOfferLink';
 
 const STATIC_LINKS = [
   { label: 'How It Works', to: '#how-it-works' },
   { label: 'Request for mock', shortLabel: 'Request mock', to: '/pricing', isCta: true },
 ];
 
+function freeCodingClassesTo(isAuthenticated) {
+  return isAuthenticated ? '/dashboard/courses' : '/login';
+}
 function NavLink({ label, to, showLightNav }) {
   const isExternal = to.startsWith('#');
   // When navbar is light (white bg), use dark text for visibility. Otherwise white text.
@@ -127,6 +131,9 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
 
         {/* Desktop Links */}
         <ul className="hidden md:flex items-center gap-2">
+          <li>
+            <FreeCodingClassesOfferLink to={freeCodingClassesTo(isAuthenticated)} />
+          </li>
           {navLinks.map((link) => (
             <li key={link.label}>
               {link.isSignOut ? (
@@ -230,6 +237,13 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
             }`}
           >
             <ul className="flex flex-col gap-2">
+              <li>
+                <FreeCodingClassesOfferLink
+                  to={freeCodingClassesTo(isAuthenticated)}
+                  fullWidth
+                  onClick={() => setIsMobileMenuOpen(false)}
+                />
+              </li>
               {navLinks.filter((l) => (l.to && (l.to.startsWith('/pricing') || l.to === '/login' || l.to === '/dashboard')) || l.isSignOut).map((link) => (
                 <li key={link.label}>
                   {link.isSignOut ? (

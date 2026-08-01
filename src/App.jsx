@@ -50,8 +50,11 @@ import AdminTalentPoolPage from './pages/admin/AdminTalentPoolPage';
 import AdminTodaysInterviewsPage from './pages/admin/AdminTodaysInterviewsPage';
 import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
 import AdminInstituteSpotlightPage from './pages/admin/AdminInstituteSpotlightPage';
+import AdminCoursesPage from './pages/admin/courses/AdminCoursesPage';
+import AdminCourseDetailPage from './pages/admin/courses/AdminCourseDetailPage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
+import CoursesPage from './pages/dashboard/courses/CoursesPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
@@ -136,6 +139,8 @@ function App() {
           <Route path="institute-ads" element={<AdminInstituteAdsPage />} />
           <Route path="institute-spotlight" element={<AdminInstituteSpotlightPage />} />
           <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />
+          <Route path="courses" element={<AdminCoursesPage />} />
+          <Route path="courses/:id" element={<AdminCourseDetailPage />} />
         </Route>
         <Route
           path="/interviewer"
@@ -170,6 +175,7 @@ function App() {
           <Route path="applications" element={<ApplicationsPage />} />
           <Route path="mocks" element={<MocksPage />} />
           <Route path="messages" element={<MessagesPage />} />
+          <Route path="courses" element={<CoursesPage />} />
         </Route>
       </Routes>
       </PlanModalProvider>
