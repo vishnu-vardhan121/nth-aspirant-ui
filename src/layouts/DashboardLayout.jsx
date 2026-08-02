@@ -44,7 +44,7 @@ import { useAspirantMessageUnread } from '../hooks/useAspirantMessageUnread';
 
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
-  { label: 'Free Coding Classes', to: '/dashboard/courses', icon: HiBookOpen },
+  { label: 'Free Coding Classes', to: '/dashboard/courses', icon: HiBookOpen, highlight: 'gold' },
   { label: 'Mock Interviews', to: '/dashboard/mocks', icon: HiAcademicCap },
   { label: 'Messages', to: '/dashboard/messages', icon: HiChatBubbleLeftRight },
   { label: 'Jobs', to: '/dashboard/jobs', icon: HiBriefcase },
@@ -65,8 +65,27 @@ function SidebarNavLinks({ links, location, onNavClick, scheduledMockCount = 0, 
           link.to === '/dashboard'
             ? location.pathname === '/dashboard'
             : location.pathname.startsWith(link.to);
+        const isGold = link.highlight === 'gold';
         const showMockBadge = link.to === '/dashboard/mocks' && scheduledMockCount > 0;
         const showMessagesBadge = link.to === '/dashboard/messages' && messagesUnread > 0;
+
+        if (isGold) {
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              onClick={onNavClick}
+              className={`nth-sidebar-courses-link group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold border transition-all duration-200 ${
+                isActive ? 'nth-sidebar-courses-link--active' : ''
+              }`}
+            >
+              <span className="relative flex h-8 w-8 items-center justify-center rounded-lg shrink-0 bg-amber-950/25 border border-amber-800/30 text-amber-950">
+                <Icon className="w-4 h-4" />
+              </span>
+              <span className="truncate">{link.label}</span>
+            </Link>
+          );
+        }
 
         return (
           <Link
