@@ -56,12 +56,12 @@ export default function HeroSection() {
             <Link
               to={freeClassesTo}
               className="relative inline-flex min-h-12 w-full max-w-md cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-full border border-amber-700/40 bg-gradient-to-r from-amber-200 via-amber-400 to-yellow-500 px-4 py-3.5 text-[13px] font-extrabold leading-snug tracking-tight text-amber-950 shadow-[0_8px_28px_rgba(180,83,9,0.45)] sm:min-h-13 sm:px-8 sm:text-base focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-200"
-              aria-label="Get free coding classes and gold"
+              aria-label="Get free coding classes and golden batch"
               style={{ color: '#451a03' }}
             >
               <HiSparkles className="relative z-10 h-4 w-4 shrink-0 text-amber-950 sm:h-5 sm:w-5" aria-hidden />
               <span className="relative z-10 text-center text-amber-950">
-                Get Free Coding Classes &amp; Gold
+                Get Free Coding Classes &amp; Golden Batch
               </span>
             </Link>
           </div>

@@ -136,6 +136,23 @@
   filter: brightness(1.05);
   transform: translateY(-1px);
 }
+
+/* Aspirant sidebar — Free Coding Classes always gold */
+.nth-sidebar-courses-link {
+  color: #78350f !important;
+  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 45%, #f59e0b 100%);
+  border-color: rgba(161, 98, 7, 0.45) !important;
+  box-shadow: 0 4px 14px rgba(180, 83, 9, 0.35);
+}
+.nth-sidebar-courses-link:hover {
+  filter: brightness(1.06);
+  color: #451a03 !important;
+}
+.nth-sidebar-courses-link--active {
+  box-shadow:
+    0 0 0 2px rgba(251, 191, 36, 0.55),
+    0 6px 18px rgba(180, 83, 9, 0.45);
+}
 .nth-free-coding-offer-shine {
   position: absolute;
   inset: -20% auto -20% 0;

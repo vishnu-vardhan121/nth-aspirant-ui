@@ -38,8 +38,8 @@ const OFFER_POINTS = [
   },
   {
     icon: HiTrophy,
-    title: 'Full course + Gold',
-    text: 'Top performers can unlock the full course and Gold (mocks & more).',
+    title: 'Full course + Golden Batch',
+    text: 'Top performers can unlock the full course and Golden Batch (mocks & more).',
   },
 ];
 
@@ -107,7 +107,7 @@ function OfferHero({
         <h1 className="mt-5 max-w-3xl text-[1.75rem] font-extrabold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           Free Coding Classes
           <span className="mt-1 block text-amber-300">
-            &amp; path to Gold
+            &amp; Golden Batch
           </span>
         </h1>
 
@@ -115,12 +115,12 @@ function OfferHero({
           {courseTitle ? (
             <>
               Enroll in <span className="font-semibold text-white">{courseTitle}</span> — learn live with
-              NTH, revise with recordings, and compete for the full course + Gold benefits.
+              NTH, revise with recordings, and compete for the full course + Golden Batch benefits.
             </>
           ) : (
             <>
               Learn live with Naveen Talent Hub, revise with recordings, and compete for the full
-              course + Gold benefits.
+              course + Golden Batch benefits.
             </>
           )}
         </p>
@@ -136,7 +136,7 @@ function OfferHero({
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/10">
             <HiTrophy className="h-4 w-4 text-amber-300" />
-            Full course + Gold
+            Full course + Golden Batch
           </span>
         </div>
 
@@ -321,7 +321,7 @@ function JoinPanel({
             {[
               'Live coding classes with recordings in one place',
               'AI/ML focused path with NTH trainer support',
-              'Chance to unlock full course + Gold',
+              'Chance to unlock full course + Golden Batch',
             ].map((line) => (
               <li key={line} className="flex items-start gap-2.5 text-sm text-slate-700">
                 <HiCheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
@@ -536,7 +536,7 @@ export default function CoursesPage() {
                       { step: '01', title: 'Request or join', text: 'Invited users join instantly. Others send a short reason.' },
                       { step: '02', title: 'Get approved', text: 'Admin reviews your profile + reason and unlocks access.' },
                       { step: '03', title: 'Attend & record', text: 'Show up live. Missed a class? Watch the recording here.' },
-                      { step: '04', title: 'Aim for Gold', text: 'Stand out — selected aspirants unlock full course + Gold.' },
+                      { step: '04', title: 'Aim for Golden Batch', text: 'Stand out — selected aspirants unlock full course + Golden Batch.' },
                     ].map((row) => (
                       <li key={row.step}>
                         {canFocusJoinForm || !profileComplete ? (
