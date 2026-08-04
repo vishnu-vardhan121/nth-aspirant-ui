@@ -10,7 +10,10 @@
     "build:prod": "vite build --mode production",
     "build:no-env": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:create-admin": "supabase functions deploy create-admin",
+    "deploy:create-aspirant": "supabase functions deploy create-aspirant",
+    "deploy:functions": "supabase functions deploy create-admin && supabase functions deploy create-aspirant"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
