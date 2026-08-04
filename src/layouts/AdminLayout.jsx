@@ -154,7 +154,7 @@ export default function AdminLayout() {
             className={navLinkClass(isActive('/admin/institute-ads'))}
           >
             <HiPhoto className="w-5 h-5 shrink-0" />
-            Institute ads
+            Institute ads / promos
           </Link>
           <Link
             to="/admin/institute-spotlight"
