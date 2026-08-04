@@ -41,6 +41,8 @@ import { useUpcomingScheduledMocks } from '../pages/dashboard/hooks/useUpcomingS
 import { emitMessagesInvalidate, MESSAGES_INVALIDATE_EVENT } from '../lib/messagesEvents';
 import { fetchAspirantProfile } from '../store/slices/aspirantSlice';
 import { useAspirantMessageUnread } from '../hooks/useAspirantMessageUnread';
+import PromoAdModal from '../components/PromoAdModal';
+import { useDashboardPromoAd } from '../hooks/useDashboardPromoAd';
 
 const SIDEBAR_MAIN_LINKS = [
   { label: 'Overview', to: '/dashboard', icon: HiHome },
@@ -277,6 +279,14 @@ export default function DashboardLayout() {
     Boolean(user?.id) &&
     needsAspirantContactDetails(aspirantProfile);
 
+  const promoBlocked = Boolean(showContactModal || celebration || rejection);
+  const dashboardPromo = useDashboardPromoAd({
+    enabled: Boolean(user?.id) && aspirantProfileLoaded && !isStaffAccount,
+    plan: aspirantProfile?.plan,
+    planStartedAt: aspirantProfile?.plan_started_at,
+    blocked: promoBlocked,
+  });
+
   const closeCelebration = useCallback(() => {
     dismissCelebration();
   }, [dismissCelebration]);
@@ -468,6 +478,8 @@ export default function DashboardLayout() {
         rejection={rejection}
         onCloseRejection={dismissRejection}
       />
+
+      <PromoAdModal open={dashboardPromo.open} onClose={dashboardPromo.close} ad={dashboardPromo.ad} />
 
       <SignOutConfirmModal
         open={signOutConfirmOpen}
