@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { supabase } from '../../../lib/supabase';
 import Navbar from '../../../components/Navbar';
 import Footer from '../../../components/Footer';
 import HeroSection from './components/HeroSection';
@@ -12,17 +11,23 @@ import MoneyBackGuaranteeSection from './components/MoneyBackGuaranteeSection';
 import ApplicationSection from './components/ApplicationSection';
 import EarlyAccessLandingSection from './components/EarlyAccessLandingSection';
 import CTAStrip from './components/CTAStrip';
-import InstituteAdModal, { LANDING_INSTITUTE_AD_DISMISS_KEY } from './components/InstituteAdModal';
+import PromoAdModal from '../../../components/PromoAdModal';
 import Seo from '../../../components/Seo';
+import {
+  fetchActivePromoAds,
+  markPromoDismissedThisSession,
+  pickPromoAd,
+  toPromoModalAd,
+  wasPromoDismissedThisSession,
+} from '../../../lib/promoAds';
 
 const LANDING_CLASS = 'nth-landing-page';
 const SITE_URL = 'https://naveentalenthub.in';
-/** Delay after page load before showing the ad. */
 const AD_DELAY_MS = 5000;
 const AD_SCROLL_THRESHOLD_PX = 500;
 
 export default function LandingPage() {
-  const [activeAd, setActiveAd] = useState(null);
+  const [promoAd, setPromoAd] = useState(null);
   const [adFetchComplete, setAdFetchComplete] = useState(false);
   const [instituteAdOpen, setInstituteAdOpen] = useState(false);
   const [helpDeskOpen, setHelpDeskOpen] = useState(false);
@@ -45,12 +50,11 @@ export default function LandingPage() {
 
     (async () => {
       try {
-        const { data } = await supabase
-          .from('institute_ads')
-          .select('id, institute_name, image_url, link_url')
-          .eq('is_active', true)
-          .maybeSingle();
-        if (!cancelled) setActiveAd(data ?? null);
+        const res = await fetchActivePromoAds();
+        const picked = pickPromoAd(res.ads || [], { isLanding: true });
+        if (!cancelled) {
+          setPromoAd(picked && !wasPromoDismissedThisSession(picked.id, 'landing') ? picked : null);
+        }
       } finally {
         if (!cancelled) setAdFetchComplete(true);
       }
@@ -80,27 +84,15 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (adHasOpenedRef.current || helpDeskOpen || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
-    if (!activeAd) {
-      try {
-        if (typeof window !== 'undefined' && window.localStorage.getItem(LANDING_INSTITUTE_AD_DISMISS_KEY) === '1') return;
-      } catch {
-        /* ignore */
-      }
-    }
+    if (!promoAd) return;
     adHasOpenedRef.current = true;
     setInstituteAdOpen(true);
-  }, [activeAd, adFetchComplete, adDelayPassed, adScrollPassed, helpDeskOpen]);
+  }, [promoAd, adFetchComplete, adDelayPassed, adScrollPassed, helpDeskOpen]);
 
-  const handleAdModalClose = useCallback((opts) => {
+  const handleAdModalClose = useCallback(() => {
     setInstituteAdOpen(false);
-    if (opts?.dontShowAgain) {
-      try {
-        window.localStorage.setItem(LANDING_INSTITUTE_AD_DISMISS_KEY, '1');
-      } catch {
-        /* ignore */
-      }
-    }
-  }, []);
+    if (promoAd?.id) markPromoDismissedThisSession(promoAd.id, 'landing');
+  }, [promoAd?.id]);
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden nth-landing-root">
@@ -156,18 +148,10 @@ export default function LandingPage() {
         <Footer />
       </div>
 
-      <InstituteAdModal
-        open={instituteAdOpen && adFetchComplete}
+      <PromoAdModal
+        open={instituteAdOpen && Boolean(promoAd)}
         onClose={handleAdModalClose}
-        ad={
-          activeAd
-            ? {
-                imageUrl: activeAd.image_url,
-                linkUrl: activeAd.link_url || '',
-                sponsorLabel: activeAd.institute_name,
-              }
-            : { isFallback: true }
-        }
+        ad={toPromoModalAd(promoAd)}
       />
     </div>
   );
