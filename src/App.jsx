@@ -52,18 +52,21 @@ import AdminInstituteAdsPage from './pages/admin/AdminInstituteAdsPage';
 import AdminInstituteSpotlightPage from './pages/admin/AdminInstituteSpotlightPage';
 import AdminCoursesPage from './pages/admin/courses/AdminCoursesPage';
 import AdminCourseDetailPage from './pages/admin/courses/AdminCourseDetailPage';
+import AdminCourseClassesPage from './pages/admin/courses/AdminCourseClassesPage';
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import CoursesPage from './pages/dashboard/courses/CoursesPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
+import InterviewerCoursesPage from './pages/interviewer/InterviewerCoursesPage';
 import InterviewerMessagesPage from './pages/interviewer/InterviewerMessagesPage';
 import InterviewerPerformancePage from './pages/interviewer/InterviewerPerformancePage';
 import RefundPolicyPage from './pages/landing/legal/RefundPolicyPage';
 import ContactPage from './pages/landing/contact/ContactPage';
 import AboutPage from './pages/landing/about/AboutPage';
-import SupportPage from './pages/support/SupportPage';
+import SupportPage from './pages/dashboard/support/SupportPage';
+import SupportRedirect from './pages/support/SupportRedirect';
 
 function App() {
   return (
@@ -85,14 +88,8 @@ function App() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms-and-conditions" element={<TermsConditionsPage />} />
-        <Route
-          path="/support"
-          element={
-            <ProtectedRoute>
-              <SupportPage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/support" element={<SupportRedirect />} />
+        <Route path="/support/*" element={<SupportRedirect />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/verify-email" element={<VerifyEmailPage />} />
@@ -140,6 +137,7 @@ function App() {
           <Route path="institute-spotlight" element={<AdminInstituteSpotlightPage />} />
           <Route path="todays-interviews" element={<AdminTodaysInterviewsPage />} />
           <Route path="courses" element={<AdminCoursesPage />} />
+          <Route path="courses/:id/classes" element={<AdminCourseClassesPage />} />
           <Route path="courses/:id" element={<AdminCourseDetailPage />} />
         </Route>
         <Route
@@ -153,6 +151,7 @@ function App() {
           }
         >
           <Route index element={<InterviewerOverviewPage />} />
+          <Route path="courses" element={<InterviewerCoursesPage />} />
           <Route path="slots" element={<InterviewerSlotsPage />} />
           <Route path="mocks" element={<InterviewerMocksPage />} />
           <Route path="performance" element={<InterviewerPerformancePage />} />
@@ -176,6 +175,7 @@ function App() {
           <Route path="mocks" element={<MocksPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="courses" element={<CoursesPage />} />
+          <Route path="support" element={<SupportPage />} />
         </Route>
       </Routes>
       </PlanModalProvider>

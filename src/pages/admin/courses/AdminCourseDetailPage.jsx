@@ -19,7 +19,9 @@ import {
   adminUpdateCourse,
   extractEmailsFromSpreadsheet,
   formatCourseDate,
+  istLocalInputToIso,
   parseEmailList,
+  toDatetimeLocalIst,
 } from '../../../lib/courses';
 
 function StatPill({ label, value, tone = 'slate' }) {
@@ -60,6 +62,10 @@ export default function AdminCourseDetailPage() {
   const [toggleBusy, setToggleBusy] = useState(false);
   const [tab, setTab] = useState('invites'); // invites | requests | members
 
+  const [editingDetails, setEditingDetails] = useState(false);
+  const [detailsForm, setDetailsForm] = useState({ title: '', freeStartsAt: '', freeEndsAt: '' });
+  const [detailsMsg, setDetailsMsg] = useState({ type: '', text: '' });
+  const [detailsBusy, setDetailsBusy] = useState(false);
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
@@ -218,6 +224,60 @@ export default function AdminCourseDetailPage() {
     load();
   };
 
+  const startEditingDetails = () => {
+    if (!course) return;
+    setDetailsForm({
+      title: course.title || '',
+      freeStartsAt: toDatetimeLocalIst(course.free_starts_at),
+      freeEndsAt: toDatetimeLocalIst(course.free_ends_at),
+    });
+    setDetailsMsg({ type: '', text: '' });
+    setEditingDetails(true);
+  };
+
+  const cancelEditingDetails = () => {
+    setEditingDetails(false);
+    setDetailsMsg({ type: '', text: '' });
+  };
+
+  const handleSaveDetails = async (e) => {
+    e.preventDefault();
+    if (!course) return;
+    const title = detailsForm.title.trim();
+    if (!title) {
+      setDetailsMsg({ type: 'error', text: 'Title is required.' });
+      return;
+    }
+    const freeStartsAt = detailsForm.freeStartsAt
+      ? istLocalInputToIso(detailsForm.freeStartsAt)
+      : null;
+    const freeEndsAt = detailsForm.freeEndsAt ? istLocalInputToIso(detailsForm.freeEndsAt) : null;
+    if (detailsForm.freeStartsAt && !freeStartsAt) {
+      setDetailsMsg({ type: 'error', text: 'Invalid free starts date/time.' });
+      return;
+    }
+    if (detailsForm.freeEndsAt && !freeEndsAt) {
+      setDetailsMsg({ type: 'error', text: 'Invalid free ends date/time.' });
+      return;
+    }
+
+    setDetailsBusy(true);
+    setDetailsMsg({ type: '', text: '' });
+    const res = await adminUpdateCourse(course.id, {
+      title,
+      ...(freeStartsAt ? { freeStartsAt } : {}),
+      ...(freeEndsAt ? { freeEndsAt } : {}),
+    });
+    setDetailsBusy(false);
+    if (!res.ok) {
+      setDetailsMsg({ type: 'error', text: res.error || 'Could not save course details.' });
+      return;
+    }
+    setDetailsMsg({ type: 'success', text: 'Course details updated.' });
+    setEditingDetails(false);
+    load();
+  };
+
   if (loading) {
     return <PageLoader size="md" label="Loading…" className="py-10" />;
   }
@@ -264,16 +324,114 @@ export default function AdminCourseDetailPage() {
               {course.free_ends_at ? ` · Ends ${formatCourseDate(course.free_ends_at)}` : ''}
             </p>
           </div>
-          <button
-            type="button"
-            disabled={toggleBusy}
-            onClick={handleToggleActive}
-            className="px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-          >
-            {course.is_active ? 'Deactivate' : 'Activate'}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={editingDetails ? cancelEditingDetails : startEditingDetails}
+              className="px-3 py-2 rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              {editingDetails ? 'Cancel edit' : 'Edit title & timings'}
+            </button>
+            <Link
+              to={`/admin/courses/${course.id}/classes`}
+              className="px-3 py-2 rounded-md bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Live classes
+            </Link>
+          </div>
         </div>
       </div>
+
+      {editingDetails ? (
+        <form
+          onSubmit={handleSaveDetails}
+          className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4 shadow-sm"
+        >
+          <div>
+            <h2 className="text-sm font-semibold text-slate-900">Edit course details</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Title and free batch timings (IST). Only admins can change these.
+            </p>
+          </div>
+          {detailsMsg.text ? (
+            <p
+              className={`text-sm ${detailsMsg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}
+            >
+              {detailsMsg.text}
+            </p>
+          ) : null}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="block text-sm sm:col-span-2">
+              <span className="font-medium text-slate-700">Title (aspirant-facing)</span>
+              <input
+                required
+                value={detailsForm.title}
+                onChange={(e) => setDetailsForm((f) => ({ ...f, title: e.target.value }))}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium text-slate-700">Free starts (IST)</span>
+              <input
+                type="datetime-local"
+                value={detailsForm.freeStartsAt}
+                onChange={(e) => setDetailsForm((f) => ({ ...f, freeStartsAt: e.target.value }))}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="font-medium text-slate-700">Free ends (IST)</span>
+              <input
+                type="datetime-local"
+                value={detailsForm.freeEndsAt}
+                onChange={(e) => setDetailsForm((f) => ({ ...f, freeEndsAt: e.target.value }))}
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="submit"
+              disabled={detailsBusy}
+              className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {detailsBusy ? 'Saving…' : 'Save changes'}
+            </button>
+            <button
+              type="button"
+              onClick={cancelEditingDetails}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Cancel
+            </button>
+          </div>
+
+          <div className="border-t border-slate-200 pt-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Course status</p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-700">
+                Currently{' '}
+                <span className="font-semibold">{course.is_active ? 'Active' : 'Inactive'}</span>
+                {course.is_active
+                  ? ' — aspirants can see / join this batch.'
+                  : ' — hidden from new joins.'}
+              </p>
+              <button
+                type="button"
+                disabled={toggleBusy}
+                onClick={handleToggleActive}
+                className={`rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60 ${
+                  course.is_active
+                    ? 'border border-red-200 bg-red-50 text-red-800 hover:bg-red-100'
+                    : 'border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                }`}
+              >
+                {toggleBusy ? 'Updating…' : course.is_active ? 'Deactivate course' : 'Activate course'}
+              </button>
+            </div>
+          </div>
+        </form>
+      ) : null}
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatPill label="Invites" value={invites.length} tone="indigo" />
@@ -295,7 +453,9 @@ export default function AdminCourseDetailPage() {
             }`}
           >
             {t.label}
-            <span className="ml-1.5 tabular-nums text-xs opacity-70">({t.count})</span>
+            {t.count != null ? (
+              <span className="ml-1.5 tabular-nums text-xs opacity-70">({t.count})</span>
+            ) : null}
           </button>
         ))}
       </div>

@@ -30,7 +30,6 @@ export default function LandingPage() {
   const [promoAd, setPromoAd] = useState(null);
   const [adFetchComplete, setAdFetchComplete] = useState(false);
   const [instituteAdOpen, setInstituteAdOpen] = useState(false);
-  const [helpDeskOpen, setHelpDeskOpen] = useState(false);
   const [adDelayPassed, setAdDelayPassed] = useState(false);
   const [adScrollPassed, setAdScrollPassed] = useState(false);
   const adTimerRef = useRef(null);
@@ -83,11 +82,11 @@ export default function LandingPage() {
   }, []);
 
   useEffect(() => {
-    if (adHasOpenedRef.current || helpDeskOpen || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
+    if (adHasOpenedRef.current || !adFetchComplete || !adDelayPassed || !adScrollPassed) return;
     if (!promoAd) return;
     adHasOpenedRef.current = true;
     setInstituteAdOpen(true);
-  }, [promoAd, adFetchComplete, adDelayPassed, adScrollPassed, helpDeskOpen]);
+  }, [promoAd, adFetchComplete, adDelayPassed, adScrollPassed]);
 
   const handleAdModalClose = useCallback(() => {
     setInstituteAdOpen(false);
@@ -129,11 +128,7 @@ export default function LandingPage() {
           sameAs: [],
         }}
       />
-      <Navbar
-        helpModalOpen={helpDeskOpen}
-        onHelpModalOpenChange={setHelpDeskOpen}
-        disableHelpTrigger={instituteAdOpen}
-      />
+      <Navbar disableHelpTrigger={instituteAdOpen} />
       <HeroSection />
       <div className="nth-landing-grid">
         <JobOpeningsSection variant="landing" previewLimit={6} viewAllTo="/jobs" />

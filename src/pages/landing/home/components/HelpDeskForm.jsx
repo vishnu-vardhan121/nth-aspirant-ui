@@ -232,7 +232,9 @@ export default function HelpDeskForm({
   };
 
   if (submitted) {
-    const supportPath = submittedTicketId ? `/support?ticket=${submittedTicketId}` : '/support';
+    const supportPath = submittedTicketId
+      ? `/dashboard/support?ticket=${submittedTicketId}`
+      : '/dashboard/support';
     return (
       <div className={`${styles.successWrap} ${className}`} role="status">
         <p className={`text-sm font-bold uppercase tracking-[0.1em] ${styles.successTitle}`}>Message received</p>

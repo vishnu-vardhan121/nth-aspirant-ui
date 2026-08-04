@@ -51,26 +51,26 @@ export default function PromoAdModal({ open, onClose, ad }) {
 
   return (
     <div
-      className="fixed inset-0 z-200 flex items-center justify-center bg-slate-900/50 p-3 sm:p-6"
+      className="fixed inset-0 z-200 flex items-end justify-center bg-slate-900/50 p-0 sm:items-center sm:p-6"
       onClick={() => onClose?.()}
       role="dialog"
       aria-modal="true"
       aria-label={title || ad.name || 'Naveen Talent Hub notice'}
     >
       <div
-        className={`pointer-events-auto relative ${
-          imageOnly ? 'w-full max-w-[min(92vw,40rem)]' : 'w-full max-w-md'
+        className={`pointer-events-auto relative max-h-[min(92dvh,40rem)] w-full overflow-y-auto pb-[env(safe-area-inset-bottom)] sm:pb-0 ${
+          imageOnly ? 'max-w-[min(100vw,40rem)] sm:max-w-[min(92vw,40rem)]' : 'max-w-md'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
         {imageOnly ? (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
+          <div className="overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:rounded-2xl">
             <div className="flex items-center justify-between gap-3 border-b border-indigo-100 bg-indigo-50/80 px-4 py-2.5">
               <img src="/dark-logo.png" alt="Naveen Talent Hub" className="h-7 w-auto object-contain" />
               <button
                 type="button"
                 onClick={() => onClose?.()}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-slate-800"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition hover:bg-white hover:text-slate-800"
                 aria-label="Close"
               >
                 <HiXMark className="h-5 w-5" />
@@ -81,7 +81,7 @@ export default function PromoAdModal({ open, onClose, ad }) {
                 <img
                   src={imageUrl}
                   alt={title || ad.name || ''}
-                  className="max-h-[min(70vh,36rem)] w-full object-contain"
+                  className="max-h-[min(60vh,36rem)] w-full object-contain"
                 />
               </Link>
             ) : hasLink ? (
@@ -89,14 +89,14 @@ export default function PromoAdModal({ open, onClose, ad }) {
                 <img
                   src={imageUrl}
                   alt={title || ad.name || ''}
-                  className="max-h-[min(70vh,36rem)] w-full object-contain"
+                  className="max-h-[min(60vh,36rem)] w-full object-contain"
                 />
               </a>
             ) : (
               <img
                 src={imageUrl}
                 alt={title || ad.name || ''}
-                className="max-h-[min(70vh,36rem)] w-full object-contain"
+                className="max-h-[min(60vh,36rem)] w-full object-contain"
               />
             )}
             {hasLink ? (
@@ -106,21 +106,20 @@ export default function PromoAdModal({ open, onClose, ad }) {
             ) : null}
           </div>
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20">
-            {/* Slim brand bar — not a huge color block */}
+          <div className="overflow-hidden rounded-t-2xl border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:rounded-2xl">
             <div className="flex items-center justify-between gap-3 bg-linear-to-r from-indigo-600 to-violet-600 px-4 py-2.5">
               <img src="/white-logo.png" alt="Naveen Talent Hub" className="h-7 w-auto object-contain" />
               <button
                 type="button"
                 onClick={() => onClose?.()}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/85 transition hover:bg-white/15 hover:text-white"
+                className="flex h-11 w-11 items-center justify-center rounded-lg text-white/85 transition hover:bg-white/15 hover:text-white"
                 aria-label="Close"
               >
                 <HiXMark className="h-5 w-5" />
               </button>
             </div>
 
-            <div className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
+            <div className="space-y-4 px-4 py-5 sm:px-6 sm:py-6">
               {title ? (
                 <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
                   {title}
@@ -131,12 +130,12 @@ export default function PromoAdModal({ open, onClose, ad }) {
                 <img
                   src={imageUrl}
                   alt=""
-                  className="max-h-48 w-full rounded-xl border border-slate-100 object-contain"
+                  className="max-h-44 w-full rounded-xl border border-slate-100 object-contain sm:max-h-48"
                 />
               ) : null}
 
               {bodyText ? (
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+                <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-slate-600 sm:text-[15px]">
                   {bodyText}
                 </p>
               ) : null}
@@ -145,16 +144,16 @@ export default function PromoAdModal({ open, onClose, ad }) {
                 <p className="text-sm text-slate-500">You have a new update from Naveen Talent Hub.</p>
               ) : null}
 
-              <div className="flex flex-col-reverse gap-2.5 pt-2 sm:flex-row sm:items-stretch">
+              <div className="flex flex-col-reverse gap-2.5 pt-1 sm:flex-row sm:items-stretch sm:pt-2">
                 <button
                   type="button"
                   onClick={() => onClose?.()}
-                  className="nth-btn-secondary inline-flex min-h-11 flex-1 items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold"
+                  className="nth-btn-secondary inline-flex min-h-12 flex-1 items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold"
                 >
                   Maybe later
                 </button>
                 {hasLink ? (
-                  <div className="flex min-h-11 flex-1 [&>a]:min-h-11 [&>a]:w-full [&>a]:sm:min-w-0">
+                  <div className="flex min-h-12 flex-1 [&>a]:min-h-12 [&>a]:w-full [&>a]:sm:min-w-0">
                     <ClickHereButton linkUrl={linkUrl} onClose={onClose} />
                   </div>
                 ) : null}
