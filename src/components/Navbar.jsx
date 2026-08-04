@@ -1,10 +1,11 @@
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { signOut } from '../store/slices/authSlice';
-import HelpDeskModal from '../pages/landing/home/components/HelpDeskModal';
 import FreeCodingClassesOfferLink from './FreeCodingClassesOfferLink';
+
+const SUPPORT_PATH = '/dashboard/support';
 
 const STATIC_LINKS = [
   { label: 'How It Works', to: '#how-it-works' },
@@ -53,8 +54,9 @@ function NavLink({ label, to, showLightNav }) {
   );
 }
 
-export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpModalOpenChange, disableHelpTrigger = false }) {
+export default function Navbar({ disableHelpTrigger = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const isAuthenticated = useAppSelector((state) => !!state.auth.user);
   const isLanding = location.pathname === '/';
@@ -63,12 +65,14 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
   );
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [localHelpModalOpen, setLocalHelpModalOpen] = useState(false);
-  const helpModalOpen = typeof controlledHelpModalOpen === 'boolean' ? controlledHelpModalOpen : localHelpModalOpen;
 
-  const setHelpModalOpen = (nextOpen) => {
-    if (onHelpModalOpenChange) onHelpModalOpenChange(nextOpen);
-    if (typeof controlledHelpModalOpen !== 'boolean') setLocalHelpModalOpen(nextOpen);
+  const goToSupport = () => {
+    if (disableHelpTrigger) return;
+    if (isAuthenticated) {
+      navigate(SUPPORT_PATH);
+      return;
+    }
+    navigate(`/login?from=${encodeURIComponent(SUPPORT_PATH)}`);
   };
 
   const authLinks = isAuthenticated
@@ -171,7 +175,7 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
             <button
               type="button"
               disabled={disableHelpTrigger}
-              onClick={() => setHelpModalOpen(true)}
+              onClick={goToSupport}
               className={`relative text-sm font-medium tracking-wide px-3 py-2 rounded-lg transition-colors ${
                 showLightStyle
                   ? 'text-slate-800 hover:text-[hsl(var(--nth-primary))]'
@@ -303,7 +307,7 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
                   } ${disableHelpTrigger ? 'cursor-not-allowed opacity-50' : ''}`}
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setHelpModalOpen(true);
+                    goToSupport();
                   }}
                 >
                   Help
@@ -313,7 +317,6 @@ export default function Navbar({ helpModalOpen: controlledHelpModalOpen, onHelpM
           </motion.div>
         )}
       </nav>
-      <HelpDeskModal open={helpModalOpen} onClose={() => setHelpModalOpen(false)} />
     </motion.header>
   );
 }

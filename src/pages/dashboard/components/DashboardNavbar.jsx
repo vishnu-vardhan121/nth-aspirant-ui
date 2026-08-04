@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAppSelector } from '../../../store/hooks';
 import { usePlanModal, useSubscriptionStatus } from '../subscription';
-import { HiBell, HiChevronDown, HiBars3, HiLifebuoy } from 'react-icons/hi2';
+import { HiBell, HiChevronDown, HiBars3 } from 'react-icons/hi2';
 import FreeCodingClassesOfferLink from '../../../components/FreeCodingClassesOfferLink';
 import {
   getCompleteProfilePath,
@@ -109,12 +109,10 @@ export default function DashboardNavbar({ onMenuClick }) {
         ) : null}
 
         <Link
-          to="/support"
-          className="inline-flex items-center justify-center rounded-lg min-h-[44px] min-w-[44px] text-slate-700 hover:bg-slate-100 transition-colors shrink-0"
-          title="Help & support"
-          aria-label="Help and support"
+          to="/dashboard/support"
+          className="inline-flex min-h-[44px] items-center justify-center rounded-lg px-2.5 text-sm font-semibold text-[hsl(var(--nth-primary))] hover:bg-indigo-50 transition-colors shrink-0"
         >
-          <HiLifebuoy className="w-5 h-5 text-[hsl(var(--nth-primary))]" />
+          Help
         </Link>
 
         <button

@@ -62,7 +62,9 @@ export default function AdminCoursesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">AI/ML courses</h1>
-          <p className="text-sm text-slate-600 mt-1">Create courses, invite emails, and approve free join requests.</p>
+          <p className="text-sm text-slate-600 mt-1">
+            Create courses, manage invites, and open Live classes for daily join links.
+          </p>
         </div>
         <button
           type="button"
@@ -74,7 +76,7 @@ export default function AdminCoursesPage() {
       </div>
 
       {creating ? (
-        <form onSubmit={handleCreate} className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
+        <form onSubmit={handleCreate} className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5 space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <label className="block text-sm">
               <span className="font-medium text-slate-700">Code (internal)</span>
@@ -83,7 +85,7 @@ export default function AdminCoursesPage() {
                 value={form.code}
                 onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
                 placeholder="aug-26"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
             </label>
             <label className="block text-sm">
@@ -93,7 +95,7 @@ export default function AdminCoursesPage() {
                 value={form.title}
                 onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                 placeholder="AI/ML Course — Aug 2026"
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
             </label>
             <label className="block text-sm">
@@ -102,7 +104,7 @@ export default function AdminCoursesPage() {
                 type="datetime-local"
                 value={form.freeStartsAt}
                 onChange={(e) => setForm((f) => ({ ...f, freeStartsAt: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
             </label>
             <label className="block text-sm">
@@ -111,7 +113,7 @@ export default function AdminCoursesPage() {
                 type="datetime-local"
                 value={form.freeEndsAt}
                 onChange={(e) => setForm((f) => ({ ...f, freeEndsAt: e.target.value }))}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -129,7 +131,7 @@ export default function AdminCoursesPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
+            className="px-4 py-2 rounded-md bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
           >
             {submitting ? 'Saving…' : 'Save course'}
           </button>
@@ -143,50 +145,61 @@ export default function AdminCoursesPage() {
       ) : courses.length === 0 ? (
         <p className="text-sm text-slate-600">No courses yet. Create one to get started.</p>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="min-w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
-              <tr>
-                <th className="px-4 py-3 font-medium">Title</th>
-                <th className="px-4 py-3 font-medium">Code</th>
-                <th className="px-4 py-3 font-medium">Free window</th>
-                <th className="px-4 py-3 font-medium">Invites</th>
-                <th className="px-4 py-3 font-medium">Requests</th>
-                <th className="px-4 py-3 font-medium">Joined</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium" />
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((c) => (
-                <tr key={c.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium text-slate-900">{c.title}</td>
-                  <td className="px-4 py-3 text-slate-600">{c.code}</td>
-                  <td className="px-4 py-3 text-slate-600 whitespace-nowrap">
-                    {formatCourseDate(c.free_starts_at)} → {formatCourseDate(c.free_ends_at)}
-                  </td>
-                  <td className="px-4 py-3">{c.invite_count ?? 0}</td>
-                  <td className="px-4 py-3">{c.requested_count ?? 0}</td>
-                  <td className="px-4 py-3">{c.free_member_count ?? 0}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex px-2 py-0.5 rounded-md text-xs font-medium ${
-                        c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {c.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link to={`/admin/courses/${c.id}`} className="text-indigo-600 font-medium hover:underline">
-                      Manage
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ul className="grid gap-4 sm:grid-cols-2">
+          {courses.map((c) => (
+            <li key={c.id} className="flex flex-col rounded-lg border border-slate-200 bg-white">
+              <div className="flex-1 space-y-3 border-b border-slate-100 p-4 sm:p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <h2 className="text-lg font-semibold text-slate-900">{c.title}</h2>
+                    <p className="mt-0.5 font-mono text-sm text-slate-500">{c.code}</p>
+                  </div>
+                  <span
+                    className={`shrink-0 inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+                      c.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+                    }`}
+                  >
+                    {c.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+
+                <p className="text-sm text-slate-600">
+                  {formatCourseDate(c.free_starts_at)} → {formatCourseDate(c.free_ends_at)}
+                </p>
+
+                <dl className="grid grid-cols-3 gap-2 text-center text-sm">
+                  <div className="rounded border border-slate-100 bg-slate-50 px-2 py-2">
+                    <dt className="text-xs text-slate-500">Invites</dt>
+                    <dd className="mt-0.5 font-semibold text-slate-900">{c.invite_count ?? 0}</dd>
+                  </div>
+                  <div className="rounded border border-slate-100 bg-slate-50 px-2 py-2">
+                    <dt className="text-xs text-slate-500">Requests</dt>
+                    <dd className="mt-0.5 font-semibold text-slate-900">{c.requested_count ?? 0}</dd>
+                  </div>
+                  <div className="rounded border border-slate-100 bg-slate-50 px-2 py-2">
+                    <dt className="text-xs text-slate-500">Joined</dt>
+                    <dd className="mt-0.5 font-semibold text-slate-900">{c.free_member_count ?? 0}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <div className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:p-4">
+                <Link
+                  to={`/admin/courses/${c.id}/classes`}
+                  className="inline-flex flex-1 items-center justify-center rounded-md bg-indigo-600 px-3 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+                >
+                  Live classes
+                </Link>
+                <Link
+                  to={`/admin/courses/${c.id}`}
+                  className="inline-flex flex-1 items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+                >
+                  Manage course
+                </Link>
+              </div>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

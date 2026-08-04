@@ -86,13 +86,17 @@ export default function LoginPage() {
       const { data: roleData } = await supabase.rpc('get_my_role');
       const role = roleData?.role ?? null;
       const defaultPath = getPostLoginPathForRole(role);
-      const allowedReturnPaths = ['/dashboard', '/admin', '/interviewer', '/support'];
       const useReturn =
         (role === 'aspirant' &&
-          (returnAfterSignIn === '/dashboard' || returnAfterSignIn.startsWith('/support'))) ||
-        (role === 'admin' && returnAfterSignIn === '/admin') ||
-        (role === 'interviewer' && returnAfterSignIn === '/interviewer') ||
-        (returnAfterSignIn.startsWith('/support') && ['aspirant', 'admin', 'interviewer'].includes(role));
+          (returnAfterSignIn === '/dashboard' ||
+            returnAfterSignIn.startsWith('/dashboard/') ||
+            returnAfterSignIn.startsWith('/support'))) ||
+        (role === 'admin' &&
+          (returnAfterSignIn === '/admin' || returnAfterSignIn.startsWith('/admin/'))) ||
+        (role === 'interviewer' &&
+          (returnAfterSignIn === '/interviewer' || returnAfterSignIn.startsWith('/interviewer/'))) ||
+        ((returnAfterSignIn.startsWith('/support') || returnAfterSignIn.startsWith('/dashboard/support')) &&
+          ['aspirant', 'admin', 'interviewer'].includes(role));
       navigate(useReturn ? returnAfterSignIn : defaultPath, { replace: true });
     } catch (err) {
       setMessage({ type: 'error', text: err.message || 'Something went wrong.' });

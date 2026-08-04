@@ -153,12 +153,14 @@ function AddAdminModal({ onClose, onSuccess }) {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Password *</label>
               <input
-                type="password"
+                type="text"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 placeholder="Min 6 characters"
                 minLength={6}
+                autoComplete="new-password"
+                spellCheck={false}
                 required
               />
             </div>

@@ -178,3 +178,97 @@ export function formatCourseDate(iso) {
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+/** Display class time in IST. */
+export function formatClassDateTimeIst(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  const datePart = d.toLocaleDateString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+  const timePart = d.toLocaleTimeString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+  return `${datePart}, ${timePart} IST`;
+}
+
+/** Value for <input type="datetime-local"> from timestamptz, shown as IST. */
+export function toDatetimeLocalIst(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Kolkata',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type) => parts.find((p) => p.type === type)?.value || '';
+  return `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}`;
+}
+
+/** Parse datetime-local as IST → ISO UTC string. */
+export function istLocalInputToIso(localValue) {
+  if (!localValue || typeof localValue !== 'string') return null;
+  const trimmed = localValue.trim();
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(trimmed)) return null;
+  const d = new Date(`${trimmed}:00+05:30`);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+export async function listMyUpcomingCourseClasses() {
+  const { data, error } = await supabase.rpc('list_my_upcoming_course_classes');
+  return parseRpc(data, error);
+}
+
+export async function staffListCoursesForClasses() {
+  const { data, error } = await supabase.rpc('staff_list_courses_for_classes');
+  return parseRpc(data, error);
+}
+
+export async function staffListCourseClasses(courseId) {
+  const { data, error } = await supabase.rpc('staff_list_course_classes', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffCreateCourseClass(payload) {
+  const { data, error } = await supabase.rpc('staff_create_course_class', {
+    p_course_id: payload.courseId,
+    p_title: payload.title,
+    p_starts_at: payload.startsAt,
+    p_meet_url_1: payload.meetUrl1,
+    p_meet_url_2: payload.meetUrl2 || null,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffUpdateCourseClass(id, payload) {
+  const { data, error } = await supabase.rpc('staff_update_course_class', {
+    p_id: id,
+    p_title: payload.title ?? null,
+    p_starts_at: payload.startsAt ?? null,
+    p_meet_url_1: payload.meetUrl1 ?? null,
+    p_meet_url_2: payload.meetUrl2 ?? null,
+    p_clear_meet_url_2: Boolean(payload.clearMeetUrl2),
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffDeleteCourseClass(id) {
+  const { data, error } = await supabase.rpc('staff_delete_course_class', { p_id: id });
+  return parseRpc(data, error);
+}
