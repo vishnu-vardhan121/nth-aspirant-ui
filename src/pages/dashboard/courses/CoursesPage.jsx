@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import {
   HiAcademicCap,
   HiCalendarDays,
-  HiCheckBadge,
   HiCheckCircle,
   HiClock,
   HiPlayCircle,
@@ -19,6 +18,12 @@ import {
   requestCourseJoin,
 } from '../../../lib/courses';
 import { useProfileOnboardingGate } from '../hooks/useProfileOnboardingGate';
+import { useAppSelector } from '../../../store/hooks';
+import CourseInviteCelebration, {
+  hasShownCourseCelebration,
+  markCourseCelebrationShown,
+} from './CourseInviteCelebration';
+import UpcomingCourseClasses from '../../../components/courses/UpcomingCourseClasses';
 
 const OFFER_POINTS = [
   {
@@ -74,7 +79,7 @@ function OfferHero({
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-800/20 shadow-xl shadow-slate-900/20"
+      className="relative overflow-hidden rounded-2xl border border-slate-800/20 shadow-xl shadow-slate-900/20 sm:rounded-3xl"
     >
       <div
         className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950"
@@ -89,63 +94,60 @@ function OfferHero({
         aria-hidden
       />
 
-      <div className="relative px-5 py-8 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm">
+      <div className="relative px-4 py-6 sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-400/40 bg-amber-400 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-amber-950 shadow-sm">
             <HiSparkles className="h-3.5 w-3.5" />
             <span>Limited seats</span>
             <span className="nth-free-coding-offer-badge">HOT</span>
           </span>
           {startDate ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-amber-100 backdrop-blur-sm">
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-semibold text-amber-100 backdrop-blur-sm">
               <HiCalendarDays className="h-3.5 w-3.5" />
               Starts {startDate}
             </span>
           ) : null}
         </div>
 
-        <h1 className="mt-5 max-w-3xl text-[1.75rem] font-extrabold tracking-tight text-white sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+        <h1 className="mt-4 text-[1.65rem] font-extrabold leading-[1.15] tracking-tight text-white sm:mt-5 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           Free Coding Classes
-          <span className="mt-1 block text-amber-300">
-            &amp; Golden Batch
-          </span>
+          <span className="mt-1 block text-amber-300">&amp; Golden Batch</span>
         </h1>
 
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-200 sm:text-lg">
+        <p className="mt-3 max-w-2xl text-[13px] leading-relaxed text-slate-200 sm:mt-4 sm:text-lg">
           {courseTitle ? (
             <>
               Enroll in <span className="font-semibold text-white">{courseTitle}</span> — learn live with
-              NTH, revise with recordings, and compete for the full course + Golden Batch benefits.
+              NTH, revise with recordings, and compete for Golden Batch.
             </>
           ) : (
             <>
-              Learn live with Naveen Talent Hub, revise with recordings, and compete for the full
-              course + Golden Batch benefits.
+              Learn live with Naveen Talent Hub, revise with recordings, and compete for Golden Batch.
             </>
           )}
         </p>
 
-        <div className="mt-6 flex flex-wrap gap-3 text-xs font-medium text-amber-100/90 sm:text-sm">
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/10">
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mt-6 sm:flex-wrap sm:gap-3 sm:overflow-visible">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-amber-100/90 ring-1 ring-white/10 sm:rounded-lg sm:text-sm">
             <HiClock className="h-4 w-4 text-amber-300" />
             Daily sessions
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/10">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-amber-100/90 ring-1 ring-white/10 sm:rounded-lg sm:text-sm">
             <HiPlayCircle className="h-4 w-4 text-amber-300" />
-            Class recordings
+            Recordings
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-2 ring-1 ring-white/10">
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-white/10 px-3 py-2 text-xs font-medium text-amber-100/90 ring-1 ring-white/10 sm:rounded-lg sm:text-sm">
             <HiTrophy className="h-4 w-4 text-amber-300" />
-            Full course + Golden Batch
+            Golden Batch
           </span>
         </div>
 
         {showCta && onFocusForm ? (
-          <div className="mt-7">
+          <div className="mt-6 sm:mt-7">
             <button
               type="button"
               onClick={onFocusForm}
-              className="inline-flex w-full sm:w-auto min-h-12 items-center justify-center gap-2 rounded-full border border-amber-600/40 bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 px-5 py-3.5 text-sm font-extrabold text-amber-950 shadow-md shadow-amber-900/20 transition hover:brightness-105"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-amber-600/40 bg-gradient-to-r from-amber-300 via-amber-400 to-yellow-500 px-5 py-3.5 text-sm font-extrabold text-amber-950 shadow-md shadow-amber-900/20 transition hover:brightness-105 sm:w-auto"
             >
               <HiSparkles className="h-4 w-4 shrink-0" />
               {ctaLabel}
@@ -159,7 +161,7 @@ function OfferHero({
 
 function BenefitsGrid({ onFocusForm }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
       {OFFER_POINTS.map((item, i) => {
         const Icon = item.icon;
         const Wrapper = onFocusForm ? 'button' : 'div';
@@ -173,20 +175,24 @@ function BenefitsGrid({ onFocusForm }) {
             <Wrapper
               type={onFocusForm ? 'button' : undefined}
               onClick={onFocusForm || undefined}
-              className={`group relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-4 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md ${
-                onFocusForm ? 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400' : ''
+              className={`group relative w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-3.5 text-left shadow-sm transition-all hover:border-amber-300 hover:shadow-md sm:p-4 ${
+                onFocusForm
+                  ? 'min-h-[4.5rem] cursor-pointer active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400'
+                  : ''
               }`}
             >
               <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-400 opacity-80" />
-              <div className="flex gap-3.5">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-amber-800 ring-1 ring-amber-200/80">
+              <div className="flex gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-100 to-orange-100 text-amber-800 ring-1 ring-amber-200/80 sm:h-11 sm:w-11">
                   <Icon className="h-5 w-5" />
                 </span>
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-900">{item.title}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-[13px]">{item.text}</p>
+                  <p className="mt-0.5 text-xs leading-relaxed text-slate-600 sm:mt-1 sm:text-[13px]">
+                    {item.text}
+                  </p>
                   {onFocusForm ? (
-                    <p className="mt-2 text-[11px] font-semibold text-amber-700 opacity-0 transition group-hover:opacity-100">
+                    <p className="mt-1.5 text-[11px] font-semibold text-amber-700 sm:mt-2 sm:opacity-0 sm:transition sm:group-hover:opacity-100">
                       Tap to continue →
                     </p>
                   ) : null}
@@ -200,69 +206,128 @@ function BenefitsGrid({ onFocusForm }) {
   );
 }
 
-function EnrolledCard({ course }) {
+function EnrolledHero({ course }) {
   const startLabel = formatCourseDate(course.free_starts_at);
   const hasStart = Boolean(course.free_starts_at);
 
   return (
-    <motion.article
+    <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="relative overflow-hidden rounded-3xl border border-emerald-200/80 bg-white shadow-lg shadow-emerald-900/5"
+      className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 shadow-sm sm:rounded-3xl"
     >
-      <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-emerald-500 via-teal-400 to-indigo-500" />
-      <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-emerald-100/80 blur-3xl" />
-
-      <div className="relative p-6 sm:p-8">
-        <div className="flex flex-wrap items-start gap-4">
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30">
-            <HiCheckBadge className="h-9 w-9" aria-hidden />
-          </div>
-          <div className="min-w-0 flex-1 space-y-2">
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200/80">
-              <HiSparkles className="h-3.5 w-3.5" />
-              You&apos;re in
-            </p>
-            <h2 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
-              Congratulations!
-            </h2>
-            <p className="text-base text-slate-600 sm:text-lg">
-              You have enrolled in{' '}
-              <span className="font-semibold text-slate-900">{course.title}</span>.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-3 sm:grid-cols-2">
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/90 px-4 py-4">
-            <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/80">
-              <HiCalendarDays className="h-5 w-5" />
+      <div className="px-4 py-5 sm:px-8 sm:py-8">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+            <HiCheckCircle className="h-3.5 w-3.5" aria-hidden />
+            Enrolled
+          </span>
+          {hasStart ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-700">
+              <HiCalendarDays className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+              Starts {startLabel}
             </span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                {hasStart ? 'Course starts from' : 'Schedule'}
-              </p>
-              <p className="mt-1 text-sm font-bold text-slate-900">
-                {hasStart ? startLabel : 'Dates will be announced soon'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/90 px-4 py-4">
-            <span className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-xl bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/80">
-              <HiAcademicCap className="h-5 w-5" />
-            </span>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">What&apos;s next</p>
-              <p className="mt-1 text-sm font-bold text-slate-900">Classes appear here</p>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Recordings &amp; schedule unlock as sessions are added.
-              </p>
-            </div>
-          </div>
+          ) : null}
         </div>
+        <h1 className="mt-3 text-[1.45rem] font-extrabold leading-snug tracking-tight text-slate-900 sm:mt-4 sm:text-3xl">
+          {course.title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-slate-600 sm:text-base">
+          You&apos;re in. Live class join links appear below when a session is posted.
+        </p>
       </div>
-    </motion.article>
+    </motion.section>
+  );
+}
+
+function EnrolledWhatsNext({ startLabel }) {
+  const steps = [
+    {
+      icon: HiCalendarDays,
+      title: 'Wait for the schedule',
+      text: startLabel
+        ? `Batch starts ${startLabel}. Daily live sessions post here.`
+        : 'Admin posts each day’s live class here before it starts.',
+    },
+    {
+      icon: HiPlayCircle,
+      title: 'Join on time',
+      text: 'Tap Join live class. If one room is full, use link 2.',
+    },
+    {
+      icon: HiTrophy,
+      title: 'Show up & learn',
+      text: 'Attend regularly — standouts can unlock Golden Batch later.',
+    },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600 sm:text-xs">
+        What&apos;s next
+      </p>
+      <h2 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">How to use this page</h2>
+      <ul className="mt-4 space-y-2.5 sm:mt-5 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0">
+        {steps.map((step, i) => {
+          const Icon = step.icon;
+          return (
+            <li
+              key={step.title}
+              className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 sm:flex-col sm:p-4"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/80">
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-slate-900">
+                  <span className="mr-1.5 text-indigo-500 sm:hidden">{i + 1}.</span>
+                  {step.title}
+                </p>
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{step.text}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function MobileHowItWorks({ onAction, actionLabel }) {
+  const rows = [
+    { step: '01', title: 'Request or join', text: 'Invited users join instantly. Others send a short reason.' },
+    { step: '02', title: 'Get approved', text: 'Admin reviews and unlocks your seat.' },
+    { step: '03', title: 'Attend live', text: 'Show up for class. Missed it? Rewatch when available.' },
+    { step: '04', title: 'Aim for Golden Batch', text: 'Stand out for full course + Golden Batch.' },
+  ];
+
+  return (
+    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:hidden">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">How it works</p>
+      <ol className="mt-3 space-y-3">
+        {rows.map((row) => (
+          <li key={row.step} className="flex gap-3">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-amber-300">
+              {row.step}
+            </span>
+            <div className="min-w-0 pt-0.5">
+              <p className="text-sm font-bold text-slate-900">{row.title}</p>
+              <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{row.text}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+      {onAction && actionLabel ? (
+        <button
+          type="button"
+          onClick={onAction}
+          className="mt-4 flex min-h-12 w-full items-center justify-center rounded-full bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800"
+        >
+          {actionLabel}
+        </button>
+      ) : null}
+    </section>
   );
 }
 
@@ -293,16 +358,16 @@ function JoinPanel({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.12, duration: 0.35 }}
-      className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg shadow-slate-900/5 transition ring-offset-2"
+      className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg shadow-slate-900/5 transition ring-offset-2 sm:rounded-3xl"
     >
-      <div className="relative overflow-hidden border-b border-amber-100 bg-gradient-to-br from-amber-50 via-yellow-50 to-white px-5 py-5 sm:px-6">
+      <div className="relative overflow-hidden border-b border-amber-100 bg-gradient-to-br from-amber-50 via-yellow-50 to-white px-4 py-4 sm:px-6 sm:py-5">
         <div className="pointer-events-none absolute -right-6 -top-6 h-28 w-28 rounded-full bg-amber-200/50 blur-2xl" />
         <div className="relative flex flex-wrap items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-700">Secure your seat</p>
-            <h2 className="mt-1.5 text-xl font-extrabold text-slate-900 sm:text-2xl">{course.title}</h2>
+            <h2 className="mt-1.5 text-lg font-extrabold leading-snug text-slate-900 sm:text-2xl">{course.title}</h2>
             <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-600">
-              <HiCalendarDays className="h-4 w-4 text-amber-600" />
+              <HiCalendarDays className="h-4 w-4 shrink-0 text-amber-600" />
               Starts {formatCourseDate(course.free_starts_at)}
             </p>
           </div>
@@ -314,7 +379,7 @@ function JoinPanel({
         </div>
       </div>
 
-      <div className="space-y-5 p-5 sm:p-6">
+      <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-slate-500">You&apos;ll get</p>
           <ul className="mt-2.5 space-y-2">
@@ -388,7 +453,7 @@ function JoinPanel({
                 value={reason}
                 onChange={(e) => onReasonChange(e.target.value)}
                 placeholder="Hi, I recently graduated and I'm really interested in AI/ML. I want to learn with NTH and work toward placements…"
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3.5 py-3 text-sm shadow-sm outline-none ring-amber-400/0 transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30"
+              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3.5 py-3 text-base shadow-sm outline-none ring-amber-400/0 transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 sm:text-sm"
               />
             </label>
             <button
@@ -413,6 +478,7 @@ function JoinPanel({
 }
 
 export default function CoursesPage() {
+  const user = useAppSelector((state) => state.auth.user);
   const { profileComplete, goToOnboarding, requireCompleteProfile } = useProfileOnboardingGate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -420,6 +486,7 @@ export default function CoursesPage() {
   const [reasonById, setReasonById] = useState({});
   const [busyId, setBusyId] = useState(null);
   const [actionMsg, setActionMsg] = useState({ id: '', type: '', text: '' });
+  const [celebration, setCelebration] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -429,17 +496,40 @@ export default function CoursesPage() {
     if (!res.ok) {
       setError(res.error || 'Failed to load courses');
       setCourses([]);
-      return;
+      return [];
     }
-    setCourses(res.courses || []);
+    const next = res.courses || [];
+    setCourses(next);
+    return next;
   };
 
   useEffect(() => {
     load();
   }, []);
 
-  const handleJoin = async (courseId) => {
+  useEffect(() => {
+    if (loading || !user?.id || celebration) return;
+    const invitedCourse = courses.find(
+      (c) => c.is_invited && c.membership_status !== 'free' && c.membership_status !== 'requested' && c.membership_status !== 'rejected'
+    );
+    if (!invitedCourse) return;
+    if (hasShownCourseCelebration(user.id, invitedCourse.id, 'invite')) return;
+    const t = window.setTimeout(() => {
+      setCelebration({ mode: 'invite', course: invitedCourse });
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [loading, courses, user?.id, celebration]);
+
+  const closeCelebration = () => {
+    if (celebration?.course?.id && user?.id) {
+      markCourseCelebrationShown(user.id, celebration.course.id, celebration.mode === 'joined' ? 'joined' : 'invite');
+    }
+    setCelebration(null);
+  };
+
+  const handleJoin = async (courseId, opts = {}) => {
     if (!requireCompleteProfile()) return;
+    const fromInviteModal = Boolean(opts.fromInviteModal);
     setBusyId(courseId);
     setActionMsg({ id: courseId, type: '', text: '' });
     const res = await joinCourseFree(courseId);
@@ -449,7 +539,16 @@ export default function CoursesPage() {
       return;
     }
     setActionMsg({ id: '', type: '', text: '' });
-    load();
+    const course =
+      courses.find((c) => c.id === courseId) ||
+      (celebration?.course?.id === courseId ? celebration.course : null);
+    if (user?.id && courseId) {
+      markCourseCelebrationShown(user.id, courseId, 'invite');
+    }
+    if (fromInviteModal || course?.is_invited) {
+      setCelebration({ mode: 'joined', course: course || { id: courseId, title: 'Free Coding Classes' } });
+    }
+    await load();
   };
 
   const handleRequest = async (courseId) => {
@@ -495,7 +594,7 @@ export default function CoursesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6 pb-6 px-0">
+    <div className="mx-auto max-w-5xl space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:space-y-6 sm:pb-6">
       {courses.length === 0 ? (
         <>
           <OfferHero
@@ -528,7 +627,23 @@ export default function CoursesPage() {
                       : undefined
                 }
               />
-              <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
+              <MobileHowItWorks
+                onAction={
+                  !profileComplete
+                    ? goToOnboarding
+                    : canFocusJoinForm
+                      ? scrollAndFocusJoinForm
+                      : undefined
+                }
+                actionLabel={
+                  !profileComplete
+                    ? 'Complete profile'
+                    : canFocusJoinForm
+                      ? 'Open join form'
+                      : undefined
+                }
+              />
+              <div className="grid gap-4 sm:gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
                 <div className="hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:block">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-700">How it works</p>
                   <ol className="mt-4 space-y-4">
@@ -585,7 +700,7 @@ export default function CoursesPage() {
                     </button>
                   ) : null}
                 </div>
-                <div className="space-y-5">
+                <div className="space-y-4 sm:space-y-5">
                   {otherCourses.map((c, index) => (
                     <JoinPanel
                       key={c.id}
@@ -606,11 +721,50 @@ export default function CoursesPage() {
             </>
           ) : null}
 
-          {joinedCourses.map((c) => (
-            <EnrolledCard key={c.id} course={c} />
-          ))}
+          {joinedCourses.length > 0 ? (
+            <div className="space-y-4 sm:space-y-6">
+              {joinedCourses.map((c) => {
+                const startLabel = formatCourseDate(c.free_starts_at);
+                return (
+                  <div key={c.id} className="space-y-4 sm:space-y-6">
+                    <EnrolledHero course={c} />
+                    <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-3xl sm:p-6">
+                      <UpcomingCourseClasses
+                        courseId={c.id}
+                        startHint={c.free_starts_at ? startLabel : ''}
+                      />
+                    </section>
+                    <EnrolledWhatsNext startLabel={c.free_starts_at ? startLabel : ''} />
+                  </div>
+                );
+              })}
+              <div>
+                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:mb-3 sm:text-xs">
+                  Included in this free batch
+                </p>
+                <BenefitsGrid />
+              </div>
+            </div>
+          ) : null}
         </>
       )}
+
+      <CourseInviteCelebration
+        open={Boolean(celebration)}
+        mode={celebration?.mode === 'joined' ? 'joined' : 'invite'}
+        courseTitle={celebration?.course?.title || ''}
+        primaryBusy={Boolean(celebration?.course?.id && busyId === celebration.course.id)}
+        onClose={closeCelebration}
+        onPrimary={() => {
+          if (!celebration?.course?.id) return;
+          if (!profileComplete) {
+            closeCelebration();
+            goToOnboarding();
+            return;
+          }
+          handleJoin(celebration.course.id, { fromInviteModal: true });
+        }}
+      />
     </div>
   );
 }

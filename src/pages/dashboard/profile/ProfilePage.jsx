@@ -1,4 +1,4 @@
-import { useState, useEffect, createElement } from 'react';
+import { useState, useEffect, useRef, createElement } from 'react';
 import { useAppSelector, useAppDispatch } from '../../../store/hooks';
 import { fetchAspirantProfile, setAspirantProfile } from '../../../store/slices/aspirantSlice';
 import { supabase } from '../../../lib/supabase';
@@ -49,7 +49,7 @@ import {
 } from '../../../lib/aspirantFilterOptions';
 
 const inputClass =
-  'w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow';
+  'w-full px-4 py-3 sm:py-2.5 rounded-lg border border-slate-200 bg-white text-base sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-shadow';
 const labelClass = 'block text-sm font-medium text-slate-700 mb-1.5';
 
 const selectClass = inputClass + ' cursor-pointer';
@@ -139,10 +139,18 @@ export default function ProfilePage() {
   const [resumeSignedUrl, setResumeSignedUrl] = useState(null);
   const [resumeReplacementFile, setResumeReplacementFile] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const messageRef = useRef(null);
 
   useEffect(() => {
     if (user?.id && !profile) dispatch(fetchAspirantProfile(user.id));
   }, [user?.id, dispatch, profile]);
+
+  useEffect(() => {
+    if (!message.text) return;
+    requestAnimationFrame(() => {
+      messageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }, [message]);
 
   const applyProfileToForm = (p) => {
     const f = profileToForm(p);
@@ -458,6 +466,7 @@ export default function ProfilePage() {
       {/* Alert */}
       {message.text && (
         <div
+          ref={messageRef}
           className={`flex items-center gap-3 rounded-lg px-4 py-3 text-sm ${
             message.type === 'error'
               ? 'bg-red-50 text-red-800 border border-red-100'
@@ -1000,11 +1009,11 @@ export default function ProfilePage() {
                   </div>
                 )}
                 <div>
-                  <label htmlFor="profile-sal-min" className={labelClass}>Expected salary min (LPA)</label>
+                  <label htmlFor="profile-sal-min" className={labelClass}>Expected salary (LPA)</label>
                   <input id="profile-sal-min" type="text" value={expectedSalaryMin} onChange={(e) => setExpectedSalaryMin(e.target.value)} className={inputClass} />
                 </div>
                 <div>
-                  <label htmlFor="profile-sal-max" className={labelClass}>Expected salary max (LPA)</label>
+                  <label htmlFor="profile-sal-max" className={labelClass}>Current salary (LPA)</label>
                   <input id="profile-sal-max" type="text" value={expectedSalaryMax} onChange={(e) => setExpectedSalaryMax(e.target.value)} className={inputClass} />
                 </div>
               </div>

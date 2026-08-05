@@ -5,7 +5,7 @@ import { signOut } from '../store/slices/authSlice';
 import { clearAspirantProfile } from '../store/slices/aspirantSlice';
 import { clearAdminProfile } from '../store/slices/adminSlice';
 import { clearInterviewerProfile } from '../store/slices/interviewerSlice';
-import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight, HiChartBar } from 'react-icons/hi2';
+import { HiHome, HiCalendarDays, HiAcademicCap, HiChatBubbleLeftRight, HiChartBar, HiBookOpen } from 'react-icons/hi2';
 import SignOutConfirmModal from '../components/SignOutConfirmModal';
 import AdminNavbar from '../components/AdminNavbar';
 import { useInterviewerMessageUnread } from '../hooks/useInterviewerMessageUnread';
@@ -53,6 +53,10 @@ export default function InterviewerLayout() {
           <Link to="/interviewer" className={navLinkClass(isActive('/interviewer', true))}>
             <HiHome className="w-5 h-5 shrink-0" />
             Overview
+          </Link>
+          <Link to="/interviewer/courses" className={navLinkClass(isActive('/interviewer/courses'))}>
+            <HiBookOpen className="w-5 h-5 shrink-0" />
+            Live classes
           </Link>
           <Link to="/interviewer/slots" className={navLinkClass(isActive('/interviewer/slots'))}>
             <HiCalendarDays className="w-5 h-5 shrink-0" />
