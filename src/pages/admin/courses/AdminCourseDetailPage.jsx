@@ -23,6 +23,8 @@ import {
   parseEmailList,
   toDatetimeLocalIst,
 } from '../../../lib/courses';
+import UserProfileModal from '../users/UserProfileModal';
+import CourseClassFeedbackPanel from '../../../components/courses/CourseClassFeedbackPanel';
 
 function StatPill({ label, value, tone = 'slate' }) {
   const tones = {
@@ -61,7 +63,7 @@ export default function AdminCourseDetailPage() {
   const [reviewBusyId, setReviewBusyId] = useState(null);
   const [toggleBusy, setToggleBusy] = useState(false);
   const [tab, setTab] = useState('invites'); // invites | requests | members
-
+  const [profileAspirantId, setProfileAspirantId] = useState(null);
   const [editingDetails, setEditingDetails] = useState(false);
   const [detailsForm, setDetailsForm] = useState({ title: '', freeStartsAt: '', freeEndsAt: '' });
   const [detailsMsg, setDetailsMsg] = useState({ type: '', text: '' });
@@ -297,6 +299,7 @@ export default function AdminCourseDetailPage() {
     { id: 'invites', label: 'Invites', count: invites.length },
     { id: 'requests', label: 'Requests', count: requests.length },
     { id: 'members', label: 'Joined', count: members.length },
+    { id: 'feedback', label: 'Class feedback' },
   ];
 
   return (
@@ -710,23 +713,32 @@ export default function AdminCourseDetailPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-700 max-w-md whitespace-pre-wrap">{r.reason || '—'}</td>
                       <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{formatCourseDate(r.created_at)}</td>
-                      <td className="px-4 py-3 whitespace-nowrap text-right space-x-2">
-                        <button
-                          type="button"
-                          disabled={reviewBusyId === r.id}
-                          onClick={() => handleReview(r.id, true)}
-                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          type="button"
-                          disabled={reviewBusyId === r.id}
-                          onClick={() => handleReview(r.id, false)}
-                          className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-60"
-                        >
-                          Reject
-                        </button>
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setProfileAspirantId(r.aspirant_id)}
+                            className="px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-800 text-xs font-semibold hover:bg-indigo-100"
+                          >
+                            Profile
+                          </button>
+                          <button
+                            type="button"
+                            disabled={reviewBusyId === r.id}
+                            onClick={() => handleReview(r.id, true)}
+                            className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 disabled:opacity-60"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            type="button"
+                            disabled={reviewBusyId === r.id}
+                            onClick={() => handleReview(r.id, false)}
+                            className="px-3 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-medium hover:bg-slate-50 disabled:opacity-60"
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -768,6 +780,19 @@ export default function AdminCourseDetailPage() {
             </div>
           )}
         </section>
+      ) : null}
+
+      {tab === 'feedback' ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+          <CourseClassFeedbackPanel courseId={course.id} />
+        </section>
+      ) : null}
+
+      {profileAspirantId ? (
+        <UserProfileModal
+          aspirantId={profileAspirantId}
+          onClose={() => setProfileAspirantId(null)}
+        />
       ) : null}
     </div>
   );
