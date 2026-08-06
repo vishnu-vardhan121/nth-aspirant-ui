@@ -23,7 +23,7 @@ import CourseInviteCelebration, {
   hasShownCourseCelebration,
   markCourseCelebrationShown,
 } from './CourseInviteCelebration';
-import UpcomingCourseClasses from '../../../components/courses/UpcomingCourseClasses';
+import EnrolledCourseBoard from '../../../components/courses/EnrolledCourseBoard';
 
 const OFFER_POINTS = [
   {
@@ -215,82 +215,29 @@ function EnrolledHero({ course }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="relative overflow-hidden rounded-2xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-indigo-50 shadow-sm sm:rounded-3xl"
+      className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl"
     >
-      <div className="px-4 py-5 sm:px-8 sm:py-8">
+      <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-4 py-4 sm:px-6 sm:py-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
             <HiCheckCircle className="h-3.5 w-3.5" aria-hidden />
-            Enrolled
+            Your batch
           </span>
           {hasStart ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1 text-[11px] font-semibold text-slate-700">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700">
               <HiCalendarDays className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
-              Starts {startLabel}
+              Started {startLabel}
             </span>
           ) : null}
         </div>
-        <h1 className="mt-3 text-[1.45rem] font-extrabold leading-snug tracking-tight text-slate-900 sm:mt-4 sm:text-3xl">
+        <h1 className="mt-2.5 text-[1.35rem] font-extrabold leading-snug tracking-tight text-slate-900 sm:text-2xl">
           {course.title}
         </h1>
-        <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-slate-600 sm:text-base">
-          You&apos;re in. Live class join links appear below when a session is posted.
+        <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-slate-600 sm:text-sm">
+          Upcoming join links, completed classes, doubt requests, and short feedback — all here.
         </p>
       </div>
     </motion.section>
-  );
-}
-
-function EnrolledWhatsNext({ startLabel }) {
-  const steps = [
-    {
-      icon: HiCalendarDays,
-      title: 'Wait for the schedule',
-      text: startLabel
-        ? `Batch starts ${startLabel}. Daily live sessions post here.`
-        : 'Admin posts each day’s live class here before it starts.',
-    },
-    {
-      icon: HiPlayCircle,
-      title: 'Join on time',
-      text: 'Tap Join live class. If one room is full, use link 2.',
-    },
-    {
-      icon: HiTrophy,
-      title: 'Show up & learn',
-      text: 'Attend regularly — standouts can unlock Golden Batch later.',
-    },
-  ];
-
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
-      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600 sm:text-xs">
-        What&apos;s next
-      </p>
-      <h2 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">How to use this page</h2>
-      <ul className="mt-4 space-y-2.5 sm:mt-5 sm:grid sm:grid-cols-3 sm:gap-3 sm:space-y-0">
-        {steps.map((step, i) => {
-          const Icon = step.icon;
-          return (
-            <li
-              key={step.title}
-              className="flex gap-3 rounded-2xl border border-slate-100 bg-slate-50/80 p-3.5 sm:flex-col sm:p-4"
-            >
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200/80">
-                <Icon className="h-5 w-5" aria-hidden />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900">
-                  <span className="mr-1.5 text-indigo-500 sm:hidden">{i + 1}.</span>
-                  {step.title}
-                </p>
-                <p className="mt-0.5 text-xs leading-relaxed text-slate-600">{step.text}</p>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }
 
@@ -349,8 +296,8 @@ function JoinPanel({
   const rejected = status === 'rejected';
   /** Pending or closed seat — never show rejection copy; no form. */
   const seatWaiting = pending || rejected;
-  const needsProfile = !profileComplete && !seatWaiting;
-  const canAct = !seatWaiting && profileComplete;
+  const canAct = !seatWaiting;
+  const showCompleteProfile = Boolean(onCompleteProfile) && !profileComplete && !seatWaiting;
 
   return (
     <motion.article
@@ -398,21 +345,22 @@ function JoinPanel({
 
         {seatWaiting ? (
           <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3.5 text-sm leading-relaxed text-amber-950">
-            Your seat request is pending. We&apos;ll unlock access when a slot is available —
-            keep this page bookmarked for updates.
+            Your join request is pending. Please wait up to{' '}
+            <span className="font-semibold">24 hours</span> for admin approval — keep this page
+            bookmarked for updates.
           </div>
         ) : null}
 
-        {needsProfile ? (
-          <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 sm:px-5">
-            <p className="text-sm font-semibold text-amber-950">Please complete your profile</p>
-            <p className="text-sm leading-relaxed text-amber-900/85">
-              Add your basic details on the profile page, then come back to join.
+        {showCompleteProfile ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 sm:px-5">
+            <p className="text-sm font-semibold text-amber-950">Complete your profile (recommended)</p>
+            <p className="mt-1 text-sm leading-relaxed text-amber-900/85">
+              You can still join or request a seat now. Completing your profile helps us match you better.
             </p>
             <button
               type="button"
               onClick={onCompleteProfile}
-              className="inline-flex w-full items-center justify-center rounded-full bg-amber-600 px-5 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-amber-500 sm:w-auto sm:min-w-[200px]"
+              className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-full border border-amber-300 bg-white px-5 py-2.5 text-sm font-bold text-amber-950 shadow-sm transition hover:bg-amber-100 sm:w-auto sm:min-w-[200px]"
             >
               Complete profile
             </button>
@@ -438,22 +386,23 @@ function JoinPanel({
         ) : null}
 
         {canAct && !invited ? (
-          <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:p-5">
+          <div className="space-y-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 sm:p-5">
             <div>
-              <p className="text-sm font-bold text-slate-900">Request to join</p>
-              <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-sm">
-                Tell us why you&apos;re serious. Clear, honest reasons get approved faster.
+              <p className="text-sm font-bold text-slate-900">You&apos;re not shortlisted</p>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-700">
+                Please request join access below. After you submit, wait up to{' '}
+                <span className="font-semibold">24 hours</span> for admin approval.
               </p>
             </div>
             <label className="block text-sm">
-              <span className="font-semibold text-slate-800">Your reason</span>
+              <span className="font-semibold text-slate-800">Why do you want to join?</span>
               <textarea
                 name="join-reason"
                 rows={4}
                 value={reason}
                 onChange={(e) => onReasonChange(e.target.value)}
                 placeholder="Hi, I recently graduated and I'm really interested in AI/ML. I want to learn with NTH and work toward placements…"
-              className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3.5 py-3 text-base shadow-sm outline-none ring-amber-400/0 transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 sm:text-sm"
+                className="mt-2 w-full rounded-2xl border border-slate-300 bg-white px-3.5 py-3 text-base shadow-sm outline-none ring-amber-400/0 transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 sm:text-sm"
               />
             </label>
             <button
@@ -462,7 +411,7 @@ function JoinPanel({
               onClick={onRequest}
               className="inline-flex w-full items-center justify-center rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-md shadow-slate-900/20 transition hover:bg-slate-800 disabled:opacity-60 sm:w-auto sm:min-w-[200px]"
             >
-              {busy ? 'Submitting…' : 'Submit join request'}
+              {busy ? 'Submitting…' : 'Request join access'}
             </button>
           </div>
         ) : null}
@@ -479,7 +428,7 @@ function JoinPanel({
 
 export default function CoursesPage() {
   const user = useAppSelector((state) => state.auth.user);
-  const { profileComplete, goToOnboarding, requireCompleteProfile } = useProfileOnboardingGate();
+  const { profileComplete, goToOnboarding } = useProfileOnboardingGate();
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -528,7 +477,6 @@ export default function CoursesPage() {
   };
 
   const handleJoin = async (courseId, opts = {}) => {
-    if (!requireCompleteProfile()) return;
     const fromInviteModal = Boolean(opts.fromInviteModal);
     setBusyId(courseId);
     setActionMsg({ id: courseId, type: '', text: '' });
@@ -552,7 +500,6 @@ export default function CoursesPage() {
   };
 
   const handleRequest = async (courseId) => {
-    if (!requireCompleteProfile()) return;
     const reason = (reasonById[courseId] || '').trim();
     setBusyId(courseId);
     setActionMsg({ id: courseId, type: '', text: '' });
@@ -565,7 +512,7 @@ export default function CoursesPage() {
     setActionMsg({
       id: courseId,
       type: 'success',
-      text: 'Request submitted. Admin will review and unlock you soon.',
+      text: 'Request submitted. Please wait up to 24 hours for admin approval.',
     });
     load();
   };
@@ -576,13 +523,9 @@ export default function CoursesPage() {
   const featuredSeatWaiting =
     featured &&
     (featured.membership_status === 'requested' || featured.membership_status === 'rejected');
-  const canFocusJoinForm = Boolean(featured) && !featuredSeatWaiting && profileComplete;
-  const heroCtaHandler = !profileComplete
-    ? goToOnboarding
-    : canFocusJoinForm
-      ? scrollAndFocusJoinForm
-      : undefined;
-  const heroCtaLabel = !profileComplete ? 'Complete profile' : 'Request / Join now';
+  const canFocusJoinForm = Boolean(featured) && !featuredSeatWaiting && otherCourses.length > 0;
+  const heroCtaHandler = canFocusJoinForm ? scrollAndFocusJoinForm : undefined;
+  const heroCtaLabel = 'Request / Join now';
   const showHeroCta = Boolean(heroCtaHandler);
 
   if (loading) {
@@ -618,30 +561,38 @@ export default function CoursesPage() {
                 showCta={showHeroCta}
                 ctaLabel={heroCtaLabel}
               />
-              <BenefitsGrid
-                onFocusForm={
-                  !profileComplete
-                    ? goToOnboarding
-                    : canFocusJoinForm
-                      ? scrollAndFocusJoinForm
-                      : undefined
-                }
-              />
+              {!profileComplete ? (
+                <div className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-amber-950">Complete your profile</p>
+                    <p className="mt-0.5 text-sm text-amber-900/85">
+                      Optional for joining free classes — recommended so we know you better.
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:shrink-0">
+                    <button
+                      type="button"
+                      onClick={goToOnboarding}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full bg-amber-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-amber-500"
+                    >
+                      Complete profile
+                    </button>
+                    {canFocusJoinForm ? (
+                      <button
+                        type="button"
+                        onClick={scrollAndFocusJoinForm}
+                        className="inline-flex min-h-11 items-center justify-center rounded-full border border-amber-300 bg-white px-5 py-2.5 text-sm font-bold text-amber-950 hover:bg-amber-100"
+                      >
+                        Join / request
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+              <BenefitsGrid onFocusForm={canFocusJoinForm ? scrollAndFocusJoinForm : undefined} />
               <MobileHowItWorks
-                onAction={
-                  !profileComplete
-                    ? goToOnboarding
-                    : canFocusJoinForm
-                      ? scrollAndFocusJoinForm
-                      : undefined
-                }
-                actionLabel={
-                  !profileComplete
-                    ? 'Complete profile'
-                    : canFocusJoinForm
-                      ? 'Open join form'
-                      : undefined
-                }
+                onAction={canFocusJoinForm ? scrollAndFocusJoinForm : undefined}
+                actionLabel={canFocusJoinForm ? 'Open join form' : undefined}
               />
               <div className="grid gap-4 sm:gap-5 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
                 <div className="hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:block">
@@ -654,10 +605,10 @@ export default function CoursesPage() {
                       { step: '04', title: 'Aim for Golden Batch', text: 'Stand out — selected aspirants unlock full course + Golden Batch.' },
                     ].map((row) => (
                       <li key={row.step}>
-                        {canFocusJoinForm || !profileComplete ? (
+                        {canFocusJoinForm ? (
                           <button
                             type="button"
-                            onClick={!profileComplete ? goToOnboarding : scrollAndFocusJoinForm}
+                            onClick={scrollAndFocusJoinForm}
                             className="flex w-full gap-3 rounded-xl p-1 text-left transition hover:bg-amber-50/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                           >
                             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-bold text-amber-300">
@@ -682,23 +633,26 @@ export default function CoursesPage() {
                       </li>
                     ))}
                   </ol>
-                  {!profileComplete ? (
-                    <button
-                      type="button"
-                      onClick={goToOnboarding}
-                      className="mt-5 w-full rounded-full bg-amber-600 px-4 py-3 text-sm font-bold text-white hover:bg-amber-500"
-                    >
-                      Complete profile
-                    </button>
-                  ) : canFocusJoinForm ? (
-                    <button
-                      type="button"
-                      onClick={scrollAndFocusJoinForm}
-                      className="mt-5 w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800"
-                    >
-                      Open join form
-                    </button>
-                  ) : null}
+                  <div className="mt-5 flex flex-col gap-2">
+                    {canFocusJoinForm ? (
+                      <button
+                        type="button"
+                        onClick={scrollAndFocusJoinForm}
+                        className="w-full rounded-full bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-800"
+                      >
+                        Open join form
+                      </button>
+                    ) : null}
+                    {!profileComplete ? (
+                      <button
+                        type="button"
+                        onClick={goToOnboarding}
+                        className="w-full rounded-full border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-950 hover:bg-amber-100"
+                      >
+                        Complete profile
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="space-y-4 sm:space-y-5">
                   {otherCourses.map((c, index) => (
@@ -722,28 +676,15 @@ export default function CoursesPage() {
           ) : null}
 
           {joinedCourses.length > 0 ? (
-            <div className="space-y-4 sm:space-y-6">
-              {joinedCourses.map((c) => {
-                const startLabel = formatCourseDate(c.free_starts_at);
-                return (
-                  <div key={c.id} className="space-y-4 sm:space-y-6">
-                    <EnrolledHero course={c} />
-                    <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:rounded-3xl sm:p-6">
-                      <UpcomingCourseClasses
-                        courseId={c.id}
-                        startHint={c.free_starts_at ? startLabel : ''}
-                      />
-                    </section>
-                    <EnrolledWhatsNext startLabel={c.free_starts_at ? startLabel : ''} />
-                  </div>
-                );
-              })}
-              <div>
-                <p className="mb-2.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500 sm:mb-3 sm:text-xs">
-                  Included in this free batch
-                </p>
-                <BenefitsGrid />
-              </div>
+            <div className="space-y-4 sm:space-y-5">
+              {joinedCourses.map((c) => (
+                <div key={c.id} className="space-y-4">
+                  <EnrolledHero course={c} />
+                  <section className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3.5 sm:rounded-3xl sm:p-5">
+                    <EnrolledCourseBoard courseId={c.id} />
+                  </section>
+                </div>
+              ))}
             </div>
           ) : null}
         </>
@@ -757,11 +698,6 @@ export default function CoursesPage() {
         onClose={closeCelebration}
         onPrimary={() => {
           if (!celebration?.course?.id) return;
-          if (!profileComplete) {
-            closeCelebration();
-            goToOnboarding();
-            return;
-          }
           handleJoin(celebration.course.id, { fromInviteModal: true });
         }}
       />

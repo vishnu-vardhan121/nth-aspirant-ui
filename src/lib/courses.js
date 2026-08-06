@@ -233,6 +233,13 @@ export async function listMyUpcomingCourseClasses() {
   return parseRpc(data, error);
 }
 
+export async function listMyCourseClassesBoard(courseId = null) {
+  const { data, error } = await supabase.rpc('list_my_course_classes_board', {
+    p_course_id: courseId || null,
+  });
+  return parseRpc(data, error);
+}
+
 export async function staffListCoursesForClasses() {
   const { data, error } = await supabase.rpc('staff_list_courses_for_classes');
   return parseRpc(data, error);
@@ -270,5 +277,115 @@ export async function staffUpdateCourseClass(id, payload) {
 
 export async function staffDeleteCourseClass(id) {
   const { data, error } = await supabase.rpc('staff_delete_course_class', { p_id: id });
+  return parseRpc(data, error);
+}
+
+export async function staffSaveCourseClassTopics(classId, coveredTopics) {
+  const { data, error } = await supabase.rpc('staff_save_course_class_topics', {
+    p_class_id: classId,
+    p_covered_topics: coveredTopics,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffSaveCourseClassRecording(classId, recordingUrl) {
+  const { data, error } = await supabase.rpc('staff_save_course_class_recording', {
+    p_class_id: classId,
+    p_recording_url: recordingUrl,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffListCourseClassFreeMembers(courseId) {
+  const { data, error } = await supabase.rpc('staff_list_course_class_free_members', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffGetCourseClassSession(classId) {
+  const { data, error } = await supabase.rpc('staff_get_course_class_session', {
+    p_class_id: classId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffUploadCourseClassAttendance(classId, minDurationMinutes, rows) {
+  const { data, error } = await supabase.rpc('staff_upload_course_class_attendance', {
+    p_class_id: classId,
+    p_min_duration_minutes: minDurationMinutes,
+    p_rows: rows,
+  });
+  return parseRpc(data, error);
+}
+
+export async function listMyCourseClassFollowups(courseId = null) {
+  const { data, error } = await supabase.rpc('list_my_course_class_followups', {
+    p_course_id: courseId || null,
+  });
+  return parseRpc(data, error);
+}
+
+export async function submitCourseClassDoubtRequest(classId, topics) {
+  const { data, error } = await supabase.rpc('submit_course_class_doubt_request', {
+    p_class_id: classId,
+    p_topics: topics,
+  });
+  return parseRpc(data, error);
+}
+
+export async function submitCourseClassFeedback(classId, body) {
+  const { data, error } = await supabase.rpc('submit_course_class_feedback', {
+    p_class_id: classId,
+    p_body: body,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffCreateCourseDoubtSession(payload) {
+  const { data, error } = await supabase.rpc('staff_create_course_doubt_session', {
+    p_class_id: payload.classId,
+    p_title: payload.title,
+    p_starts_at: payload.startsAt,
+    p_meet_url: payload.meetUrl,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffUpdateCourseDoubtSession(payload) {
+  const { data, error } = await supabase.rpc('staff_update_course_doubt_session', {
+    p_id: payload.id,
+    p_title: payload.title,
+    p_starts_at: payload.startsAt,
+    p_meet_url: payload.meetUrl,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffListCourseDoubtSessions(courseId) {
+  const { data, error } = await supabase.rpc('staff_list_course_doubt_sessions', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffListCourseDoubtRequests(classId) {
+  const { data, error } = await supabase.rpc('staff_list_course_doubt_requests', {
+    p_class_id: classId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminListCourseClassFeedback(courseId) {
+  const { data, error } = await supabase.rpc('admin_list_course_class_feedback', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminListClassFeedback(classId) {
+  const { data, error } = await supabase.rpc('admin_list_class_feedback', {
+    p_class_id: classId,
+  });
   return parseRpc(data, error);
 }

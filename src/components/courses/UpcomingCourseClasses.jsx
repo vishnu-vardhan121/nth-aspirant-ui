@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { HiCalendarDays, HiVideoCamera } from 'react-icons/hi2';
 import { formatClassDateTimeIst, listMyUpcomingCourseClasses } from '../../lib/courses';
+import { useAppSelector } from '../../store/hooks';
+import JoinLiveClassModal from './JoinLiveClassModal';
 
 const FULL_ROOM_HINT = 'If this meeting is full, use the other link.';
 
@@ -36,8 +38,16 @@ function SectionHeading() {
 
 /** Classic list of upcoming live classes for enrolled aspirants. */
 export default function UpcomingCourseClasses({ courseId = null, startHint = '' }) {
+  const user = useAppSelector((state) => state.auth.user);
+  const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
+  const registeredEmail =
+    String(aspirantProfile?.email || user?.email || '')
+      .trim()
+      .toLowerCase() || '';
+
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [joinPrompt, setJoinPrompt] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,6 +67,10 @@ export default function UpcomingCourseClasses({ courseId = null, startHint = '' 
       cancelled = true;
     };
   }, [courseId]);
+
+  const openJoinPrompt = (meetUrl, linkLabel) => {
+    setJoinPrompt({ meetUrl, linkLabel });
+  };
 
   if (loading) {
     return (
@@ -103,34 +117,31 @@ export default function UpcomingCourseClasses({ courseId = null, startHint = '' 
                 <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
                   {hasTwo ? (
                     <>
-                      <a
-                        href={row.meet_url_1}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <button
+                        type="button"
+                        onClick={() => openJoinPrompt(row.meet_url_1, 'Join live class — Link 1')}
                         className={joinBtnPrimary}
                       >
                         <span className="sm:hidden">Join — Link 1</span>
                         <span className="hidden sm:inline">Join live class — Link 1</span>
-                      </a>
-                      <a
-                        href={row.meet_url_2}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openJoinPrompt(row.meet_url_2, 'Join live class — Link 2')}
                         className={joinBtnSecondary}
                       >
                         <span className="sm:hidden">Join — Link 2</span>
                         <span className="hidden sm:inline">Join live class — Link 2</span>
-                      </a>
+                      </button>
                     </>
                   ) : (
-                    <a
-                      href={row.meet_url_1}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      type="button"
+                      onClick={() => openJoinPrompt(row.meet_url_1, 'Join live class')}
                       className={joinBtnPrimary}
                     >
                       Join live class
-                    </a>
+                    </button>
                   )}
                 </div>
               </div>
@@ -138,6 +149,14 @@ export default function UpcomingCourseClasses({ courseId = null, startHint = '' 
           );
         })}
       </ul>
+
+      <JoinLiveClassModal
+        open={Boolean(joinPrompt)}
+        email={registeredEmail}
+        meetUrl={joinPrompt?.meetUrl || ''}
+        linkLabel="I’ve joined with this email — Open class"
+        onClose={() => setJoinPrompt(null)}
+      />
     </div>
   );
 }
