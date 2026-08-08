@@ -6,6 +6,7 @@ import {
   HiPencilSquare,
   HiPlus,
   HiTrash,
+  HiUserGroup,
   HiVideoCamera,
 } from 'react-icons/hi2';
 import {
@@ -23,6 +24,7 @@ import { clearDraft, loadDraft, saveDraft } from '../../lib/draftStorage';
 import { useAppSelector } from '../../store/hooks';
 import {
   CourseClassAttendanceModal,
+  CourseClassRecordingModal,
   CourseClassTopicsModal,
 } from './CourseClassSessionModal';
 import {
@@ -61,6 +63,7 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
   const [classModal, setClassModal] = useState(null);
   const [topicsClass, setTopicsClass] = useState(null);
   const [attendanceClass, setAttendanceClass] = useState(null);
+  const [recordingClass, setRecordingClass] = useState(null);
   const [requestsClass, setRequestsClass] = useState(null);
   const [feedbackClass, setFeedbackClass] = useState(null);
   const [doubtModal, setDoubtModal] = useState(null);
@@ -233,15 +236,6 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
                       >
                         Edit class
                       </ActionBtn>
-                      {!hasDoubt ? (
-                        <ActionBtn
-                          icon={HiTrash}
-                          danger
-                          onClick={() => handleDelete(row.id, load)}
-                        >
-                          Delete
-                        </ActionBtn>
-                      ) : null}
                     </ActionGroup>
 
                     <ActionGroup label="After class">
@@ -253,6 +247,12 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
                       </ActionBtn>
                       <ActionBtn
                         icon={HiVideoCamera}
+                        onClick={() => setRecordingClass({ id: row.id, title: row.title })}
+                      >
+                        Recording
+                      </ActionBtn>
+                      <ActionBtn
+                        icon={HiUserGroup}
                         onClick={() => setAttendanceClass({ id: row.id, title: row.title })}
                       >
                         Attendance
@@ -353,8 +353,17 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
         courseId={courseId}
         mode={classModal?.mode || 'create'}
         row={classModal?.row || null}
+        canDelete={
+          classModal?.mode === 'edit' &&
+          classModal?.row?.id &&
+          !(sessions || []).some((s) => s.class_id === classModal.row.id)
+        }
         onClose={() => setClassModal(null)}
         onSaved={() => {
+          setClassModal(null);
+          load();
+        }}
+        onDeleted={() => {
           setClassModal(null);
           load();
         }}
@@ -366,6 +375,16 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
           classId={topicsClass.id}
           classTitle={topicsClass.title}
           onClose={() => setTopicsClass(null)}
+          onSaved={() => load()}
+        />
+      ) : null}
+
+      {recordingClass ? (
+        <CourseClassRecordingModal
+          open
+          classId={recordingClass.id}
+          classTitle={recordingClass.title}
+          onClose={() => setRecordingClass(null)}
           onSaved={() => load()}
         />
       ) : null}
@@ -458,16 +477,6 @@ function ActionGroup({ label, children }) {
   );
 }
 
-async function handleDelete(id, reload) {
-  if (!window.confirm('Delete this class?')) return;
-  const res = await staffDeleteCourseClass(id);
-  if (!res.ok) {
-    window.alert(res.error || 'Delete failed');
-    return;
-  }
-  reload();
-}
-
 function ActionBtn({ children, onClick, primary, danger, icon: Icon }) {
   const cls = primary
     ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
@@ -486,11 +495,12 @@ function ActionBtn({ children, onClick, primary, danger, icon: Icon }) {
   );
 }
 
-function ClassFormModal({ open, courseId, mode, row, onClose, onSaved }) {
+function ClassFormModal({ open, courseId, mode, row, canDelete, onClose, onSaved, onDeleted }) {
   const draftKey =
     mode === 'edit' && row?.id ? `class-edit:${row.id}` : `class-create:${courseId || 'none'}`;
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [hydrated, setHydrated] = useState(false);
 
@@ -568,6 +578,21 @@ function ClassFormModal({ open, courseId, mode, row, onClose, onSaved }) {
     onSaved?.();
   };
 
+  const deleteClass = async () => {
+    if (!row?.id) return;
+    if (!window.confirm('Delete this class?')) return;
+    setDeleting(true);
+    setMsg({ type: '', text: '' });
+    const res = await staffDeleteCourseClass(row.id);
+    setDeleting(false);
+    if (!res.ok) {
+      setMsg({ type: 'error', text: res.error || 'Delete failed' });
+      return;
+    }
+    clearDraft(draftKey);
+    onDeleted?.();
+  };
+
   return (
     <StaffFormModal
       open={open}
@@ -575,6 +600,20 @@ function ClassFormModal({ open, courseId, mode, row, onClose, onSaved }) {
       subtitle="Title, IST time, join link(s)"
       onClose={onClose}
       wide
+      headerAction={
+        mode === 'edit' && canDelete ? (
+          <button
+            type="button"
+            disabled={busy || deleting}
+            onClick={deleteClass}
+            className="rounded p-1 text-red-500 hover:bg-red-50 disabled:opacity-50"
+            aria-label="Delete class"
+            title="Delete class"
+          >
+            <HiTrash className="h-3.5 w-3.5" />
+          </button>
+        ) : null
+      }
     >
       <form onSubmit={submit} className="space-y-3">
         {msg.text ? (
@@ -629,7 +668,7 @@ function ClassFormModal({ open, courseId, mode, row, onClose, onSaved }) {
         </p>
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || deleting}
           className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
         >
           {busy ? 'Saving…' : mode === 'edit' ? 'Update class' : 'Create class'}
