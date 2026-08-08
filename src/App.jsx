@@ -56,6 +56,7 @@ import AdminCourseClassesPage from './pages/admin/courses/AdminCourseClassesPage
 import CreateJobPage from './pages/admin/CreateJobPage';
 import EditJobPage from './pages/admin/EditJobPage';
 import CoursesPage from './pages/dashboard/courses/CoursesPage';
+import CourseClassWatchPage from './pages/dashboard/courses/CourseClassWatchPage';
 import InterviewerOverviewPage from './pages/interviewer/InterviewerOverviewPage';
 import InterviewerSlotsPage from './pages/interviewer/InterviewerSlotsPage';
 import InterviewerMocksPage from './pages/interviewer/InterviewerMocksPage';
@@ -175,6 +176,7 @@ function App() {
           <Route path="mocks" element={<MocksPage />} />
           <Route path="messages" element={<MessagesPage />} />
           <Route path="courses" element={<CoursesPage />} />
+          <Route path="courses/class/:classId/watch" element={<CourseClassWatchPage />} />
           <Route path="support" element={<SupportPage />} />
         </Route>
       </Routes>

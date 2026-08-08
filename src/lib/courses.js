@@ -228,6 +228,17 @@ export function istLocalInputToIso(localValue) {
   return d.toISOString();
 }
 
+/** Convert Google Drive view/share links to /preview for iframe embed (10k-style). */
+export function toDrivePreviewUrl(url) {
+  const v = String(url || '').trim();
+  if (v.length < 8) return null;
+  if (/\/preview\/?(\?|$)/i.test(v)) return v.replace(/\?.*$/, '');
+  const m = v.match(/drive\.google\.com\/file\/d\/([^/]+)/i);
+  if (m?.[1]) return `https://drive.google.com/file/d/${m[1]}/preview`;
+  if (/^https?:\/\//i.test(v)) return v;
+  return null;
+}
+
 export async function listMyUpcomingCourseClasses() {
   const { data, error } = await supabase.rpc('list_my_upcoming_course_classes');
   return parseRpc(data, error);
@@ -236,6 +247,13 @@ export async function listMyUpcomingCourseClasses() {
 export async function listMyCourseClassesBoard(courseId = null) {
   const { data, error } = await supabase.rpc('list_my_course_classes_board', {
     p_course_id: courseId || null,
+  });
+  return parseRpc(data, error);
+}
+
+export async function getMyCourseClassWatch(classId) {
+  const { data, error } = await supabase.rpc('get_my_course_class_watch', {
+    p_class_id: classId,
   });
   return parseRpc(data, error);
 }

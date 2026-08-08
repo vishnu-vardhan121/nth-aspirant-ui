@@ -6,6 +6,7 @@ import {
   staffSaveCourseClassRecording,
   staffSaveCourseClassTopics,
   staffUploadCourseClassAttendance,
+  toDrivePreviewUrl,
 } from '../../lib/courses';
 import { loadDraft, saveDraft } from '../../lib/draftStorage';
 import { parseZoomParticipantsCsv } from '../../lib/zoomParticipantsCsv';
@@ -136,37 +137,27 @@ export function CourseClassTopicsModal({ open, onClose, classId, classTitle, onS
 }
 
 /** Recording link + attendance CSV. */
-export function CourseClassAttendanceModal({
+export function CourseClassRecordingModal({
   open,
   onClose,
-  courseId,
   classId,
   classTitle,
   onSaved,
 }) {
-  const draftKey = classId ? `attendance:${classId}` : '';
+  const draftKey = classId ? `recording:${classId}` : '';
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState('');
+  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState({ type: '', text: '' });
   const [recordingUrl, setRecordingUrl] = useState('');
-  const [minDuration, setMinDuration] = useState(30);
-  const [members, setMembers] = useState([]);
-  const [attendance, setAttendance] = useState([]);
-  const [preview, setPreview] = useState(null);
-  const [csvError, setCsvError] = useState('');
   const [hydrated, setHydrated] = useState(false);
+  const demoSrc = toDrivePreviewUrl(recordingUrl);
 
   const load = useCallback(async () => {
-    if (!classId || !courseId) return;
+    if (!classId) return;
     setLoading(true);
     setHydrated(false);
     setMsg({ type: '', text: '' });
-    setCsvError('');
-    setPreview(null);
-    const [sessionRes, membersRes] = await Promise.all([
-      staffGetCourseClassSession(classId),
-      staffListCourseClassFreeMembers(courseId),
-    ]);
+    const sessionRes = await staffGetCourseClassSession(classId);
     setLoading(false);
     if (!sessionRes.ok) {
       setMsg({ type: 'error', text: sessionRes.error || 'Failed to load' });
@@ -180,6 +171,134 @@ export function CourseClassAttendanceModal({
         ? draft.recordingUrl
         : cl.recording_url || ''
     );
+    setHydrated(true);
+  }, [classId, draftKey]);
+
+  useEffect(() => {
+    if (open) load();
+  }, [open, load]);
+
+  useEffect(() => {
+    if (!open || !draftKey || !hydrated || loading) return;
+    saveDraft(draftKey, { recordingUrl });
+  }, [recordingUrl, open, draftKey, hydrated, loading]);
+
+  const saveRecording = async () => {
+    setMsg({ type: '', text: '' });
+    if (recordingUrl.trim().length < 8) {
+      setMsg({ type: 'error', text: 'Paste a recording link.' });
+      return;
+    }
+    setBusy(true);
+    const res = await staffSaveCourseClassRecording(classId, recordingUrl.trim());
+    setBusy(false);
+    if (!res.ok) {
+      setMsg({ type: 'error', text: res.error || 'Failed to save recording' });
+      return;
+    }
+    setMsg({ type: 'success', text: 'Recording link saved.' });
+    onSaved?.();
+  };
+
+  return (
+    <StaffFormModal open={open} title="Recording" subtitle={classTitle} onClose={onClose} wide>
+      {loading ? (
+        <p className="text-sm text-slate-500">Loading…</p>
+      ) : (
+        <div className="space-y-4">
+          {msg.text ? (
+            <p className={`text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}>
+              {msg.text}
+            </p>
+          ) : null}
+          <p className="text-xs text-slate-500">
+            Paste the Drive share link — preview appears below so you can confirm it plays before
+            students see it.
+          </p>
+          <input
+            type="url"
+            value={recordingUrl}
+            onChange={(e) => setRecordingUrl(e.target.value)}
+            className={fieldClass}
+            placeholder="https://drive.google.com/file/d/…/view"
+          />
+          <button
+            type="button"
+            disabled={busy}
+            onClick={saveRecording}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {busy ? 'Saving…' : 'Save recording'}
+          </button>
+          {!demoSrc && recordingUrl.trim() ? (
+            <p className="text-xs text-amber-800">
+              Couldn’t build a preview URL. Use a Google Drive file link (…/file/d/…/view).
+            </p>
+          ) : null}
+          {demoSrc ? (
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
+              <p className="bg-slate-900 px-3 py-1.5 text-[11px] font-medium text-slate-300">
+                Staff preview — same embed students get on the watch page
+              </p>
+              <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                <iframe
+                  key={demoSrc}
+                  title="Recording demo preview"
+                  src={demoSrc}
+                  className="absolute inset-0 h-full w-full"
+                  allow="autoplay; encrypted-media"
+                  allowFullScreen
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )}
+    </StaffFormModal>
+  );
+}
+
+export function CourseClassAttendanceModal({
+  open,
+  onClose,
+  courseId,
+  classId,
+  classTitle,
+  onSaved,
+}) {
+  const draftKey = classId ? `attendance:${classId}` : '';
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState({ type: '', text: '' });
+  const [minDuration, setMinDuration] = useState(30);
+  const [members, setMembers] = useState([]);
+  const [attendance, setAttendance] = useState([]);
+  const [preview, setPreview] = useState(null);
+  const [csvError, setCsvError] = useState('');
+  const [csvName, setCsvName] = useState('');
+  const [hydrated, setHydrated] = useState(false);
+
+  const load = useCallback(async () => {
+    if (!classId || !courseId) return;
+    setLoading(true);
+    setHydrated(false);
+    setMsg({ type: '', text: '' });
+    setCsvError('');
+    setCsvName('');
+    setPreview(null);
+    const [sessionRes, membersRes] = await Promise.all([
+      staffGetCourseClassSession(classId),
+      staffListCourseClassFreeMembers(courseId),
+    ]);
+    setLoading(false);
+    if (!sessionRes.ok) {
+      setMsg({ type: 'error', text: sessionRes.error || 'Failed to load' });
+      setHydrated(true);
+      return;
+    }
+    const cl = sessionRes.class || {};
+    const draft = loadDraft(draftKey, null);
     setMinDuration(
       draft?.minDuration != null ? draft.minDuration : cl.attendance_min_duration_minutes || 30
     );
@@ -190,33 +309,18 @@ export function CourseClassAttendanceModal({
 
   useEffect(() => {
     if (open) load();
+    else setCsvName('');
   }, [open, load]);
 
   useEffect(() => {
     if (!open || !draftKey || !hydrated || loading) return;
-    saveDraft(draftKey, { recordingUrl, minDuration });
-  }, [recordingUrl, minDuration, open, draftKey, hydrated, loading]);
-
-  const saveRecording = async () => {
-    setMsg({ type: '', text: '' });
-    if (recordingUrl.trim().length < 8) {
-      setMsg({ type: 'error', text: 'Paste a recording link.' });
-      return;
-    }
-    setBusy('recording');
-    const res = await staffSaveCourseClassRecording(classId, recordingUrl.trim());
-    setBusy('');
-    if (!res.ok) {
-      setMsg({ type: 'error', text: res.error || 'Failed to save recording' });
-      return;
-    }
-    setMsg({ type: 'success', text: 'Recording link saved.' });
-    onSaved?.();
-  };
+    saveDraft(draftKey, { minDuration });
+  }, [minDuration, open, draftKey, hydrated, loading]);
 
   const onCsvFile = async (file) => {
     setCsvError('');
     setPreview(null);
+    setCsvName(file?.name || '');
     if (!file) return;
     const text = await file.text();
     const parsed = parseZoomParticipantsCsv(text);
@@ -244,9 +348,9 @@ export function CourseClassAttendanceModal({
       setMsg({ type: 'error', text: 'Min duration must be at least 1 minute.' });
       return;
     }
-    setBusy('attendance');
+    setBusy(true);
     const res = await staffUploadCourseClassAttendance(classId, min, preview.rows);
-    setBusy('');
+    setBusy(false);
     if (!res.ok) {
       setMsg({ type: 'error', text: res.error || 'Failed to save attendance' });
       return;
@@ -260,48 +364,21 @@ export function CourseClassAttendanceModal({
   };
 
   return (
-    <StaffFormModal
-      open={open}
-      title="Attendance & recording"
-      subtitle={classTitle}
-      onClose={onClose}
-      wide
-    >
+    <StaffFormModal open={open} title="Attendance" subtitle={classTitle} onClose={onClose} wide>
       {loading ? (
         <p className="text-sm text-slate-500">Loading…</p>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4">
           {msg.text ? (
             <p className={`text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}>
               {msg.text}
             </p>
           ) : null}
-
-          <section className="space-y-2">
-            <p className="text-sm font-medium text-slate-800">Recording link</p>
-            <input
-              type="url"
-              value={recordingUrl}
-              onChange={(e) => setRecordingUrl(e.target.value)}
-              className={fieldClass}
-              placeholder="https://…"
-            />
-            <button
-              type="button"
-              disabled={busy === 'recording'}
-              onClick={saveRecording}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
-              {busy === 'recording' ? 'Saving…' : 'Save recording'}
-            </button>
-          </section>
-
-          <section className="space-y-2 border-t border-slate-100 pt-4">
-            <p className="text-sm font-medium text-slate-800">Attendance CSV</p>
-            <p className="text-xs text-slate-500">
-              Zoom export with User Email + Total Duration (Minutes). Draft for min duration is kept
-              if you close.
-            </p>
+          <p className="text-xs text-slate-500">
+            Zoom export with User Email + Total Duration (Minutes). Draft for min duration is kept
+            if you close.
+          </p>
+          <div>
             <label className="mb-1 block text-sm text-slate-700">Min duration (minutes)</label>
             <input
               type="number"
@@ -313,47 +390,55 @@ export function CourseClassAttendanceModal({
               }}
               className={fieldClass}
             />
+          </div>
+          <label className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center hover:border-indigo-300 hover:bg-indigo-50/40">
+            <span className="text-sm font-semibold text-slate-800">
+              {csvName ? 'Change CSV file' : 'Upload Zoom participants CSV'}
+            </span>
+            <span className="text-xs text-slate-500">
+              {csvName || '.csv from Zoom · User Email + Total Duration'}
+            </span>
             <input
               type="file"
               accept=".csv,text/csv"
+              className="sr-only"
               onChange={(e) => onCsvFile(e.target.files?.[0])}
-              className="block w-full text-sm text-slate-600"
             />
-            {csvError ? <p className="text-sm text-red-600">{csvError}</p> : null}
-            {preview ? (
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
-                <p>
-                  Attended {preview.summary.attended} · Too short {preview.summary.too_short} · Not
-                  in batch {preview.summary.not_in_batch} · Absent {preview.summary.absent}
-                </p>
-                <div className="mt-2 max-h-40 overflow-y-auto">
-                  <table className="w-full text-left">
-                    <tbody>
-                      {preview.rows.slice(0, 40).map((r) => (
-                        <tr key={`${r.email}-${r.status}`} className="border-t border-slate-200">
-                          <td className="py-1 pr-2">{r.email}</td>
-                          <td className="py-1 pr-2">{r.duration_minutes ?? '—'}</td>
-                          <td className="py-1">{r.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            ) : attendance.length ? (
-              <p className="text-xs text-slate-500">
-                {attendance.length} attendance rows already saved.
+          </label>
+          {csvError ? <p className="text-sm text-red-600">{csvError}</p> : null}
+          {preview ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+              <p>
+                Attended {preview.summary.attended} · Too short {preview.summary.too_short} · Not in
+                batch {preview.summary.not_in_batch} · Absent {preview.summary.absent}
               </p>
-            ) : null}
-            <button
-              type="button"
-              disabled={busy === 'attendance' || !preview}
-              onClick={saveAttendance}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
-            >
-              {busy === 'attendance' ? 'Saving…' : 'Save attendance'}
-            </button>
-          </section>
+              <div className="mt-2 max-h-40 overflow-y-auto">
+                <table className="w-full text-left">
+                  <tbody>
+                    {preview.rows.slice(0, 40).map((r) => (
+                      <tr key={`${r.email}-${r.status}`} className="border-t border-slate-200">
+                        <td className="py-1 pr-2">{r.email}</td>
+                        <td className="py-1 pr-2">{r.duration_minutes ?? '—'}</td>
+                        <td className="py-1">{r.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : attendance.length ? (
+            <p className="text-xs text-slate-500">
+              {attendance.length} attendance rows already saved.
+            </p>
+          ) : null}
+          <button
+            type="button"
+            disabled={busy || !preview}
+            onClick={saveAttendance}
+            className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {busy ? 'Saving…' : 'Save attendance'}
+          </button>
         </div>
       )}
     </StaffFormModal>
