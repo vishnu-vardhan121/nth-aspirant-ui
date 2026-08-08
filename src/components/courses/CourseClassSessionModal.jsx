@@ -6,6 +6,7 @@ import {
   staffSaveCourseClassRecording,
   staffSaveCourseClassTopics,
   staffUploadCourseClassAttendance,
+  toDrivePreviewUrl,
 } from '../../lib/courses';
 import { loadDraft, saveDraft } from '../../lib/draftStorage';
 import { parseZoomParticipantsCsv } from '../../lib/zoomParticipantsCsv';
@@ -155,6 +156,8 @@ export function CourseClassAttendanceModal({
   const [preview, setPreview] = useState(null);
   const [csvError, setCsvError] = useState('');
   const [hydrated, setHydrated] = useState(false);
+  const [showDemo, setShowDemo] = useState(false);
+  const demoSrc = toDrivePreviewUrl(recordingUrl);
 
   const load = useCallback(async () => {
     if (!classId || !courseId) return;
@@ -190,6 +193,7 @@ export function CourseClassAttendanceModal({
 
   useEffect(() => {
     if (open) load();
+    else setShowDemo(false);
   }, [open, load]);
 
   useEffect(() => {
@@ -279,21 +283,60 @@ export function CourseClassAttendanceModal({
 
           <section className="space-y-2">
             <p className="text-sm font-medium text-slate-800">Recording link</p>
+            <p className="text-xs text-slate-500">
+              Paste the Drive share link, then preview here to confirm it plays before students
+              see it.
+            </p>
             <input
               type="url"
               value={recordingUrl}
-              onChange={(e) => setRecordingUrl(e.target.value)}
+              onChange={(e) => {
+                setRecordingUrl(e.target.value);
+                setShowDemo(false);
+              }}
               className={fieldClass}
-              placeholder="https://…"
+              placeholder="https://drive.google.com/file/d/…/view"
             />
-            <button
-              type="button"
-              disabled={busy === 'recording'}
-              onClick={saveRecording}
-              className="inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
-              {busy === 'recording' ? 'Saving…' : 'Save recording'}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                disabled={!demoSrc}
+                onClick={() => setShowDemo((v) => !v)}
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-indigo-200 bg-indigo-50 px-4 text-sm font-semibold text-indigo-900 hover:bg-indigo-100 disabled:opacity-50"
+              >
+                {showDemo ? 'Hide preview' : 'Play demo'}
+              </button>
+              <button
+                type="button"
+                disabled={busy === 'recording'}
+                onClick={saveRecording}
+                className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+              >
+                {busy === 'recording' ? 'Saving…' : 'Save recording'}
+              </button>
+            </div>
+            {!demoSrc && recordingUrl.trim() ? (
+              <p className="text-xs text-amber-800">
+                Couldn’t build a preview URL. Use a Google Drive file link (…/file/d/…/view).
+              </p>
+            ) : null}
+            {showDemo && demoSrc ? (
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
+                <p className="bg-slate-900 px-3 py-1.5 text-[11px] font-medium text-slate-300">
+                  Staff preview only — same embed students get on the watch page
+                </p>
+                <div className="relative w-full" style={{ paddingTop: '56.25%' }}>
+                  <iframe
+                    title="Recording demo preview"
+                    src={demoSrc}
+                    className="absolute inset-0 h-full w-full"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              </div>
+            ) : null}
           </section>
 
           <section className="space-y-2 border-t border-slate-100 pt-4">

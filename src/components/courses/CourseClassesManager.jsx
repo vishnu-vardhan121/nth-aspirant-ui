@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  HiCalendarDays,
+  HiChatBubbleLeftRight,
+  HiClipboardDocumentCheck,
+  HiPencilSquare,
+  HiPlus,
+  HiTrash,
+  HiVideoCamera,
+} from 'react-icons/hi2';
 import {
   formatClassDateTimeIst,
   istLocalInputToIso,
@@ -34,10 +43,10 @@ const emptyForm = () => ({
 });
 
 const fieldClass =
-  'w-full rounded-xl border border-slate-300 px-3.5 py-3 text-base shadow-sm sm:rounded-md sm:py-2 sm:text-sm';
+  'w-full rounded-xl border border-slate-300 px-3.5 py-3 text-base shadow-sm sm:py-2.5 sm:text-sm';
 
 /**
- * Live classes list — create/edit + session + doubt requests/schedule via modals.
+ * Live classes for admin + interviewer — cards with grouped actions.
  */
 export default function CourseClassesManager({ courseId, courseTitle }) {
   const adminRole = useAppSelector((state) => state.admin.profile?.role);
@@ -49,12 +58,11 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [classModal, setClassModal] = useState(null); // null | { mode: 'create'|'edit', row? }
+  const [classModal, setClassModal] = useState(null);
   const [topicsClass, setTopicsClass] = useState(null);
   const [attendanceClass, setAttendanceClass] = useState(null);
   const [requestsClass, setRequestsClass] = useState(null);
   const [feedbackClass, setFeedbackClass] = useState(null);
-  /** { classRow, session? } — session set = edit mode */
   const [doubtModal, setDoubtModal] = useState(null);
 
   const load = useCallback(async () => {
@@ -96,149 +104,249 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
     load();
   }, [load]);
 
+  const stats = useMemo(() => {
+    const withTopics = classes.filter(
+      (c) => c.topics_saved_at || (c.covered_topics || []).length >= 3
+    ).length;
+    const pendingTotal = Object.values(pendingByClass).reduce((a, n) => a + (n || 0), 0);
+    return {
+      classes: classes.length,
+      withTopics,
+      pendingTotal,
+      doubts: sessions.length,
+    };
+  }, [classes, pendingByClass, sessions.length]);
+
   if (!courseId) {
-    return <p className="text-sm text-slate-600">Select a course to manage live classes.</p>;
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-600">
+        Select a course to manage live classes.
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-5 sm:space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-6">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h3 className="text-base font-semibold text-slate-900">Live classes</h3>
-          <p className="mt-1 text-[13px] leading-relaxed text-slate-600 sm:text-sm">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">
+            Class manager
+          </p>
+          <h2 className="mt-1 text-xl font-bold text-slate-900 sm:text-2xl">Live classes</h2>
+          <p className="mt-1 text-sm text-slate-600">
             {courseTitle ? (
               <>
-                Schedule for <span className="font-medium text-slate-800">{courseTitle}</span>. Times
-                are in IST.
+                <span className="font-medium text-slate-800">{courseTitle}</span>
+                <span className="text-slate-400"> · </span>
+                Times in IST
               </>
             ) : (
-              'Create classes, post topics/session details, review doubt requests, schedule doubt Zoom.'
+              'Schedule classes, post topics, attendance, and doubt sessions.'
             )}
           </p>
         </div>
         <button
           type="button"
           onClick={() => setClassModal({ mode: 'create' })}
-          className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+          className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
         >
+          <HiPlus className="h-5 w-5" aria-hidden />
           Create class
         </button>
+      </header>
+
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <StatCard label="Classes" value={stats.classes} />
+        <StatCard label="Topics posted" value={stats.withTopics} />
+        <StatCard label="Pending doubts" value={stats.pendingTotal} tone="amber" />
+        <StatCard label="Doubt sessions" value={stats.doubts} tone="indigo" />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white sm:rounded-lg">
+      <section className="space-y-3">
+        <SectionLabel icon={HiVideoCamera}>Classes</SectionLabel>
+
         {loading ? (
-          <p className="px-4 py-6 text-sm text-slate-500">Loading classes…</p>
+          <div className="rounded-2xl border border-slate-200 bg-white px-4 py-10 text-center text-sm text-slate-500">
+            Loading classes…
+          </div>
         ) : error ? (
-          <p className="px-4 py-6 text-sm text-red-600">{error}</p>
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-6 text-sm text-red-700">
+            {error}
+          </div>
         ) : classes.length === 0 ? (
-          <p className="px-4 py-6 text-sm text-slate-500">No classes yet. Use Create class.</p>
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-10 text-center">
+            <p className="text-sm font-semibold text-slate-800">No classes yet</p>
+            <p className="mt-1 text-sm text-slate-500">Create a class to add join links and topics.</p>
+            <button
+              type="button"
+              onClick={() => setClassModal({ mode: 'create' })}
+              className="mt-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+            >
+              <HiPlus className="h-4 w-4" /> Create first class
+            </button>
+          </div>
         ) : (
-          <ul className="divide-y divide-slate-100">
+          <ul className="space-y-4">
             {classes.map((row) => {
               const pending = pendingByClass[row.id] || 0;
               const linkedSessions = sessions.filter((s) => s.class_id === row.id);
+              const hasTopics =
+                Boolean(row.topics_saved_at) || (row.covered_topics || []).length >= 3;
+              const hasRecording = Boolean(String(row.recording_url || '').trim());
+              const hasDoubt = linkedSessions.length > 0;
+
               return (
-                <li key={row.id} className="space-y-3 p-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{row.title}</p>
-                    <p className="mt-1 text-[13px] text-slate-600">
-                      {formatClassDateTimeIst(row.starts_at)}
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                        {row.meet_url_2 ? '2 join links' : '1 join link'}
-                      </span>
-                      {row.topics_saved_at || (row.covered_topics || []).length >= 3 ? (
-                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
-                          Topics saved
-                        </span>
-                      ) : null}
-                      {pending > 0 ? (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-900">
-                          {pending} pending request{pending === 1 ? '' : 's'}
-                        </span>
-                      ) : null}
-                      {linkedSessions.length > 0 ? (
-                        <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-800">
-                          {linkedSessions.length} doubt session
-                          {linkedSessions.length === 1 ? '' : 's'}
-                        </span>
-                      ) : null}
+                <li
+                  key={row.id}
+                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+                >
+                  <div className="border-b border-slate-100 bg-slate-50/80 px-4 py-3.5 sm:px-5">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-base font-bold text-slate-900">{row.title}</p>
+                        <p className="mt-1 flex items-center gap-1.5 text-sm text-slate-600">
+                          <HiCalendarDays className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                          {formatClassDateTimeIst(row.starts_at)}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Pill>{row.meet_url_2 ? '2 join links' : '1 join link'}</Pill>
+                        <Pill tone={hasTopics ? 'emerald' : 'slate'}>
+                          {hasTopics ? 'Topics ready' : 'Topics pending'}
+                        </Pill>
+                        {hasRecording ? <Pill tone="indigo">Recording</Pill> : null}
+                        {pending > 0 ? (
+                          <Pill tone="amber">
+                            {pending} request{pending === 1 ? '' : 's'}
+                          </Pill>
+                        ) : null}
+                        {hasDoubt ? <Pill tone="indigo">Doubt scheduled</Pill> : null}
+                      </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                    <ActionBtn onClick={() => setClassModal({ mode: 'edit', row })}>Edit</ActionBtn>
-                    <ActionBtn onClick={() => setTopicsClass({ id: row.id, title: row.title })}>
-                      Topics
-                    </ActionBtn>
-                    <ActionBtn onClick={() => setAttendanceClass({ id: row.id, title: row.title })}>
-                      Attendance
-                    </ActionBtn>
-                    <ActionBtn onClick={() => setRequestsClass(row)}>
-                      Requests{pending ? ` (${pending})` : ''}
-                    </ActionBtn>
-                    {showFeedbackButton ? (
-                      <ActionBtn onClick={() => setFeedbackClass(row)}>Feedback</ActionBtn>
-                    ) : null}
-                    {linkedSessions.length > 0 ? (
-                      <span className="col-span-2 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-900 sm:col-span-1 sm:justify-start">
-                        Doubt scheduled
+
+                  <div className="space-y-4 px-4 py-4 sm:px-5">
+                    <ActionGroup label="Class setup">
+                      <ActionBtn
+                        icon={HiPencilSquare}
+                        onClick={() => setClassModal({ mode: 'edit', row })}
+                      >
+                        Edit class
+                      </ActionBtn>
+                      {!hasDoubt ? (
+                        <ActionBtn
+                          icon={HiTrash}
+                          danger
+                          onClick={() => handleDelete(row.id, load)}
+                        >
+                          Delete
+                        </ActionBtn>
+                      ) : null}
+                    </ActionGroup>
+
+                    <ActionGroup label="After class">
+                      <ActionBtn
+                        icon={HiClipboardDocumentCheck}
+                        onClick={() => setTopicsClass({ id: row.id, title: row.title })}
+                      >
+                        Topics
+                      </ActionBtn>
+                      <ActionBtn
+                        icon={HiVideoCamera}
+                        onClick={() => setAttendanceClass({ id: row.id, title: row.title })}
+                      >
+                        Attendance
+                      </ActionBtn>
+                      {showFeedbackButton ? (
+                        <ActionBtn
+                          icon={HiChatBubbleLeftRight}
+                          onClick={() => setFeedbackClass(row)}
+                        >
+                          Feedback
+                        </ActionBtn>
+                      ) : null}
+                    </ActionGroup>
+
+                    <ActionGroup label="Doubt session">
+                      <ActionBtn
+                        icon={HiChatBubbleLeftRight}
+                        onClick={() => setRequestsClass(row)}
+                      >
+                        Requests{pending ? ` (${pending})` : ''}
+                      </ActionBtn>
+                      {hasDoubt ? (
                         <button
                           type="button"
                           onClick={() =>
                             setDoubtModal({ classRow: row, session: linkedSessions[0] })
                           }
-                          className="font-semibold text-indigo-600 underline-offset-2 hover:underline"
+                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3.5 text-sm font-semibold text-indigo-900 hover:bg-indigo-100"
                         >
-                          Edit
+                          Doubt scheduled
+                          <span className="text-indigo-600 underline-offset-2 hover:underline">
+                            Edit
+                          </span>
                         </button>
-                      </span>
-                    ) : (
-                      <ActionBtn
-                        primary
-                        onClick={() => setDoubtModal({ classRow: row, session: null })}
-                      >
-                        Schedule doubt
-                      </ActionBtn>
-                    )}
-                    {linkedSessions.length === 0 ? (
-                      <ActionBtn danger onClick={() => handleDelete(row.id, load)}>
-                        Delete
-                      </ActionBtn>
-                    ) : null}
+                      ) : (
+                        <ActionBtn
+                          primary
+                          onClick={() => setDoubtModal({ classRow: row, session: null })}
+                        >
+                          Schedule doubt
+                        </ActionBtn>
+                      )}
+                    </ActionGroup>
                   </div>
                 </li>
               );
             })}
           </ul>
         )}
-      </div>
+      </section>
 
-      {sessions.length > 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 sm:rounded-lg">
-          <p className="text-sm font-semibold text-slate-900">Scheduled doubt sessions</p>
-          <ul className="mt-2 divide-y divide-slate-200">
+      <section className="space-y-3">
+        <SectionLabel icon={HiChatBubbleLeftRight}>Scheduled doubt sessions</SectionLabel>
+        {sessions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-6 text-sm text-slate-500">
+            No doubt sessions yet. Use <span className="font-medium text-slate-700">Schedule doubt</span>{' '}
+            on a class after students request topics.
+          </div>
+        ) : (
+          <ul className="grid gap-3 sm:grid-cols-2">
             {sessions.map((s) => (
-              <li key={s.id} className="py-2.5">
-                <p className="text-sm font-medium text-slate-900">{s.title}</p>
-                <p className="text-xs text-slate-500">For: {s.class_title}</p>
-                <p className="text-[13px] text-slate-600">{formatClassDateTimeIst(s.starts_at)}</p>
-                <p className="text-xs text-slate-500">
-                  {s.request_count || 0} notified ·{' '}
+              <li
+                key={s.id}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+              >
+                <p className="text-sm font-bold text-slate-900">{s.title}</p>
+                <p className="mt-1 text-xs text-slate-500">Linked class: {s.class_title}</p>
+                <p className="mt-2 text-sm text-slate-600">{formatClassDateTimeIst(s.starts_at)}</p>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                  <span>{s.request_count || 0} notified</span>
                   <a
                     href={s.meet_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-indigo-600 hover:underline"
+                    className="font-semibold text-indigo-600 hover:underline"
                   >
                     Open Zoom
                   </a>
-                </p>
+                  <button
+                    type="button"
+                    className="font-semibold text-indigo-600 hover:underline"
+                    onClick={() => {
+                      const classRow = classes.find((c) => c.id === s.class_id);
+                      if (classRow) setDoubtModal({ classRow, session: s });
+                    }}
+                  >
+                    Edit
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
-        </div>
-      ) : null}
+        )}
+      </section>
 
       <ClassFormModal
         open={Boolean(classModal)}
@@ -300,6 +408,56 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
   );
 }
 
+function StatCard({ label, value, tone = 'slate' }) {
+  const tones = {
+    slate: 'bg-white border-slate-200',
+    amber: 'bg-amber-50/80 border-amber-100',
+    indigo: 'bg-indigo-50/80 border-indigo-100',
+  };
+  return (
+    <div className={`rounded-2xl border px-3 py-3 shadow-sm sm:px-4 ${tones[tone] || tones.slate}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="mt-0.5 text-2xl font-bold tabular-nums text-slate-900">{value}</p>
+    </div>
+  );
+}
+
+function SectionLabel({ icon: Icon, children }) {
+  return (
+    <div className="flex items-center gap-2">
+      <Icon className="h-5 w-5 text-indigo-600" aria-hidden />
+      <h3 className="text-sm font-bold text-slate-900 sm:text-base">{children}</h3>
+    </div>
+  );
+}
+
+function Pill({ children, tone = 'slate' }) {
+  const tones = {
+    slate: 'bg-slate-100 text-slate-700',
+    emerald: 'bg-emerald-50 text-emerald-800',
+    amber: 'bg-amber-50 text-amber-900',
+    indigo: 'bg-indigo-50 text-indigo-800',
+  };
+  return (
+    <span
+      className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+        tones[tone] || tones.slate
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+function ActionGroup({ label, children }) {
+  return (
+    <div>
+      <p className="mb-2 text-[11px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+      <div className="flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
 async function handleDelete(id, reload) {
   if (!window.confirm('Delete this class?')) return;
   const res = await staffDeleteCourseClass(id);
@@ -310,7 +468,7 @@ async function handleDelete(id, reload) {
   reload();
 }
 
-function ActionBtn({ children, onClick, primary, danger }) {
+function ActionBtn({ children, onClick, primary, danger, icon: Icon }) {
   const cls = primary
     ? 'border-indigo-600 bg-indigo-600 text-white shadow-sm hover:bg-indigo-700'
     : danger
@@ -320,8 +478,9 @@ function ActionBtn({ children, onClick, primary, danger }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-11 w-full items-center justify-center rounded-xl border px-3.5 text-sm font-semibold transition sm:w-auto sm:min-w-[6.5rem] ${cls}`}
+      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition ${cls}`}
     >
+      {Icon ? <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden /> : null}
       {children}
     </button>
   );
