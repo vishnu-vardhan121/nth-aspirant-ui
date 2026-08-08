@@ -36,8 +36,11 @@ export default function AdminCourseClassesPage() {
 
   if (error || !course) {
     return (
-      <div className="space-y-3 max-w-4xl">
-        <Link to="/admin/courses" className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline">
+      <div className="mx-auto max-w-5xl space-y-3">
+        <Link
+          to="/admin/courses"
+          className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline"
+        >
           <HiArrowLeft className="h-4 w-4" /> Back to courses
         </Link>
         <p className="text-sm text-red-600">{error || 'Course not found'}</p>
@@ -46,29 +49,26 @@ export default function AdminCourseClassesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <div>
-        <Link to="/admin/courses" className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline">
+    <div className="mx-auto max-w-5xl space-y-5 pb-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <Link
+          to="/admin/courses"
+          className="inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:underline"
+        >
           <HiArrowLeft className="h-4 w-4" /> Back to courses
         </Link>
-        <h1 className="mt-3 text-2xl font-bold text-slate-900">Live classes</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          {course.title}
-          <span className="text-slate-400"> · </span>
-          <span className="font-mono text-slate-700">{course.code}</span>
-        </p>
+        <Link
+          to={`/admin/courses/${course.id}`}
+          className="text-sm font-medium text-slate-600 hover:text-indigo-600 hover:underline"
+        >
+          Invites &amp; members →
+        </Link>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6">
+        <p className="mb-1 font-mono text-xs text-slate-500">{course.code}</p>
         <CourseClassesManager courseId={course.id} courseTitle={course.title} />
       </div>
-
-      <p className="text-sm text-slate-500">
-        Invites, join requests, and members:{' '}
-        <Link to={`/admin/courses/${course.id}`} className="font-medium text-indigo-600 hover:underline">
-          Open full course manage
-        </Link>
-      </p>
     </div>
   );
 }

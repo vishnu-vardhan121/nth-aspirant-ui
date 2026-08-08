@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   HiCalendarDays,
   HiCheckCircle,
   HiChatBubbleLeftRight,
   HiPencilSquare,
+  HiPlayCircle,
   HiVideoCamera,
   HiXMark,
 } from 'react-icons/hi2';
@@ -299,10 +301,21 @@ function CompletedClassCard({ row, index, onDoubt, onFeedback, onJoinDoubt }) {
           ) : (
             <Chip tone="slate">Topics soon</Chip>
           )}
+          {row.has_recording ? <Chip tone="indigo">Recording</Chip> : null}
           {hasFb ? <Chip tone="amber">Feedback sent</Chip> : null}
           {row.my_request_status === 'pending' ? <Chip tone="indigo">Doubt requested</Chip> : null}
           {hasDoubtScheduled ? <Chip tone="indigo">Doubt session scheduled</Chip> : null}
         </div>
+
+        {row.has_recording ? (
+          <Link
+            to={`/dashboard/courses/class/${row.id}/watch`}
+            className={`${btnPrimary} mt-3 gap-1.5`}
+          >
+            <HiPlayCircle className="h-5 w-5" aria-hidden />
+            Play recording
+          </Link>
+        ) : null}
 
         {hasDoubtScheduled ? (
           <DoubtSessionBlock sessions={sessions} onJoin={onJoinDoubt} />
