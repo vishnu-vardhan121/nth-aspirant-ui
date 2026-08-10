@@ -1,5 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../../lib/supabase';
+
+/** Slow enough to read name/role; duration follows track length so speed stays constant. */
+const MARQUEE_PX_PER_SEC = 48;
 
 /**
  * Pricing-only interview ticker. Same data source as the landing hero, but UI and
@@ -7,6 +10,8 @@ import { supabase } from '../../../../lib/supabase';
  */
 export default function PricingInterviewsMarquee({ className = '' }) {
   const [interviews, setInterviews] = useState([]);
+  const trackRef = useRef(null);
+  const [durationSec, setDurationSec] = useState(90);
 
   useEffect(() => {
     let cancelled = false;
@@ -27,6 +32,22 @@ export default function PricingInterviewsMarquee({ className = '' }) {
     };
   }, []);
 
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el || interviews.length === 0) return undefined;
+
+    const syncDuration = () => {
+      const distancePx = el.scrollWidth / 2;
+      if (distancePx <= 0) return;
+      setDurationSec(Math.max(20, distancePx / MARQUEE_PX_PER_SEC));
+    };
+
+    syncDuration();
+    const ro = new ResizeObserver(syncDuration);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [interviews]);
+
   const list = interviews.length > 0 ? [...interviews, ...interviews] : [];
   if (list.length === 0) return null;
 
@@ -38,7 +59,11 @@ export default function PricingInterviewsMarquee({ className = '' }) {
         </h2>
       </div>
       <div className="w-screen relative left-1/2 -translate-x-1/2 overflow-hidden pb-1">
-        <div className="flex w-max animate-marquee-pricing gap-2.5 sm:gap-3 pl-4 sm:pl-6">
+        <div
+          ref={trackRef}
+          className="flex w-max animate-marquee-pricing gap-2.5 sm:gap-3 pl-4 sm:pl-6"
+          style={{ animationDuration: `${durationSec}s` }}
+        >
           {list.map((item, i) => (
             <div
               key={`${item.id}-${i}`}
