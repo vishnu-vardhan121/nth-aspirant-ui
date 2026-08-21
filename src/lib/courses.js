@@ -12,6 +12,34 @@ export async function listActiveCourses() {
   return parseRpc(data, error);
 }
 
+/**
+ * Find the golden `course_members` row whose grant landed at the same moment the
+ * aspirant's plan flipped to Gold (same DB transaction ⇒ same `now()`), so we can
+ * tell "Gold from Golden Batch payment" apart from "Gold from a placement purchase".
+ */
+export async function getMyRecentGoldenCourseGrant(aspirantId, planStartedAt) {
+  if (!aspirantId || !planStartedAt) return null;
+  const { data, error } = await supabase
+    .from('course_members')
+    .select('course_id, updated_at, courses(title)')
+    .eq('aspirant_id', aspirantId)
+    .eq('status', 'golden')
+    .order('updated_at', { ascending: false })
+    .limit(5);
+  if (error || !Array.isArray(data)) return null;
+
+  const target = new Date(planStartedAt).getTime();
+  if (!Number.isFinite(target)) return null;
+
+  const match = data.find((row) => {
+    const t = new Date(row.updated_at).getTime();
+    return Number.isFinite(t) && Math.abs(t - target) < 10000;
+  });
+  if (!match) return null;
+
+  return { courseId: match.course_id, courseTitle: match.courses?.title || '' };
+}
+
 export async function joinCourseFree(courseId) {
   const { data, error } = await supabase.rpc('join_course_free', { p_course_id: courseId });
   return parseRpc(data, error);
@@ -56,6 +84,144 @@ export async function adminUpdateCourse(courseId, payload) {
   return parseRpc(data, error);
 }
 
+/** G6: when premium/Golden phase starts for this course — lock free Play. */
+export async function adminSetCourseRecordingsLocked(courseId, locked) {
+  const { data, error } = await supabase.rpc('admin_set_course_recordings_locked', {
+    p_course_id: courseId,
+    p_locked: Boolean(locked),
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminUpsertCourseGoldenTerms(courseId, { enabled, bullets }) {
+  const seen = new Set();
+  const list = [];
+  for (const b of Array.isArray(bullets) ? bullets : []) {
+    const item = String(b || '').trim();
+    if (!item) continue;
+    const key = item.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    list.push(item);
+  }
+  const { data, error } = await supabase.rpc('admin_upsert_course_golden_terms', {
+    p_course_id: courseId,
+    p_enabled: Boolean(enabled),
+    p_bullets: list,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminGetCoursePricing(courseId) {
+  const { data, error } = await supabase.rpc('admin_get_course_pricing', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminUpsertCoursePricing(courseId, payload) {
+  const { data, error } = await supabase.rpc('admin_upsert_course_pricing', {
+    p_course_id: courseId,
+    p_full_amount_inr: Number(payload.fullAmountInr),
+    p_two_amounts_inr: payload.twoAmountsInr,
+    p_three_amounts_inr: payload.threeAmountsInr,
+    p_upi_id: payload.upiId,
+    p_upi_payee_name: payload.upiPayeeName,
+    p_instructions: payload.instructions ?? null,
+  });
+  return parseRpc(data, error);
+}
+
+export async function getMyCoursePricing(courseId) {
+  const { data, error } = await supabase.rpc('get_my_course_pricing', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function chooseCoursePack(courseId, pack) {
+  const { data, error } = await supabase.rpc('choose_course_pack', {
+    p_course_id: courseId,
+    p_pack: pack,
+  });
+  return parseRpc(data, error);
+}
+
+export async function createCoursePaymentOrder(courseId) {
+  const { data, error } = await supabase.rpc('create_course_payment_order', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function submitCoursePaymentProof(orderId, utr, payerNote = '', screenshotPath = null) {
+  const { data, error } = await supabase.rpc('submit_course_payment_proof', {
+    p_order_id: orderId,
+    p_utr: utr,
+    p_payer_note: payerNote || null,
+    p_screenshot_path: screenshotPath || null,
+  });
+  return parseRpc(data, error);
+}
+
+const COURSE_PAYMENT_PROOFS_BUCKET = 'payment-proofs';
+
+/** Upload course UPI proof into payment-proofs: {aspirantId}/course/{orderId}/proof.ext */
+export async function uploadCoursePaymentScreenshot(aspirantId, orderId, file) {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'].includes(ext) ? ext : 'jpg';
+  const path = `${aspirantId}/course/${orderId}/proof.${safeExt}`;
+  const { error } = await supabase.storage.from(COURSE_PAYMENT_PROOFS_BUCKET).upload(path, file, {
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, path };
+}
+
+export async function getCoursePaymentScreenshotUrl(screenshotPath) {
+  if (!screenshotPath) return { ok: false, error: 'No screenshot' };
+  const { data, error } = await supabase.storage
+    .from(COURSE_PAYMENT_PROOFS_BUCKET)
+    .createSignedUrl(screenshotPath, 3600);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, url: data?.signedUrl || null };
+}
+
+export async function getMyCoursePaymentOrder(courseId) {
+  const { data, error } = await supabase.rpc('get_my_course_payment_order', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminListCoursePaymentOrders(courseId, status = null) {
+  const { data, error } = await supabase.rpc('admin_list_course_payment_orders', {
+    p_course_id: courseId,
+    p_status: status,
+  });
+  return parseRpc(data, error);
+}
+
+export async function adminReviewCoursePayment(orderId, approve, adminNotes = '') {
+  const { data, error } = await supabase.rpc('admin_review_course_payment', {
+    p_order_id: orderId,
+    p_approve: approve,
+    p_admin_notes: adminNotes || null,
+  });
+  return parseRpc(data, error);
+}
+
+export function formatInr(amount) {
+  const n = Number(amount);
+  if (!Number.isFinite(n)) return '—';
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(n);
+}
+
 export async function adminGetCourse(courseId) {
   const { data, error } = await supabase.rpc('admin_get_course', { p_course_id: courseId });
   return parseRpc(data, error);
@@ -90,6 +256,35 @@ export async function adminReviewCourseJoin(memberId, approve) {
     p_approve: approve,
   });
   return parseRpc(data, error);
+}
+
+export async function requestCourseGolden(courseId, reason = '', acceptedTerms = false) {
+  const { data, error } = await supabase.rpc('request_course_golden', {
+    p_course_id: courseId,
+    p_reason: reason || null,
+    p_accepted_terms: Boolean(acceptedTerms),
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffListCourseGoldenRequests(courseId) {
+  const { data, error } = await supabase.rpc('staff_list_course_golden_requests', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffReviewCourseGolden(memberId, approve) {
+  const { data, error } = await supabase.rpc('staff_review_course_golden', {
+    p_member_id: memberId,
+    p_approve: approve,
+  });
+  return parseRpc(data, error);
+}
+
+/** Free-tier enrolled (includes mid Golden request / rejected / golden). */
+export function isCourseEnrolledStatus(status) {
+  return ['free', 'golden_requested', 'golden_rejected', 'golden'].includes(String(status || ''));
 }
 
 /** Split pasted emails by newline, comma, semicolon, tab, or spaces; also extract via regex. */
@@ -277,6 +472,7 @@ export async function staffCreateCourseClass(payload) {
     p_starts_at: payload.startsAt,
     p_meet_url_1: payload.meetUrl1,
     p_meet_url_2: payload.meetUrl2 || null,
+    p_access_tier: payload.accessTier === 'golden' ? 'golden' : 'free',
   });
   return parseRpc(data, error);
 }
@@ -289,6 +485,7 @@ export async function staffUpdateCourseClass(id, payload) {
     p_meet_url_1: payload.meetUrl1 ?? null,
     p_meet_url_2: payload.meetUrl2 ?? null,
     p_clear_meet_url_2: Boolean(payload.clearMeetUrl2),
+    p_access_tier: payload.accessTier ?? null,
   });
   return parseRpc(data, error);
 }

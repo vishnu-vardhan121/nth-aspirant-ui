@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HiAcademicCap } from 'react-icons/hi2';
 import CourseClassesManager from '../../components/courses/CourseClassesManager';
+import CourseGoldenRequestsPanel from '../../components/courses/CourseGoldenRequestsPanel';
 import { PageLoader } from '../../components/ui/Loader';
 import { staffListCoursesForClasses } from '../../lib/courses';
 
@@ -39,7 +40,8 @@ export default function InterviewerCoursesPage() {
         </p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Live classes</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Pick a course, then manage schedule, topics, attendance, and doubt sessions.
+          Pick a course, then manage schedule, Golden requests, topics, attendance, and doubt
+          sessions.
         </p>
       </div>
 
@@ -69,6 +71,12 @@ export default function InterviewerCoursesPage() {
               ))}
             </select>
           </div>
+
+          {courseId ? (
+            <div className="rounded-2xl border border-amber-200/80 bg-white p-4 shadow-sm sm:p-5">
+              <CourseGoldenRequestsPanel courseId={courseId} key={courseId} />
+            </div>
+          ) : null}
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6">
             <CourseClassesManager courseId={courseId} courseTitle={selected?.title || ''} />
