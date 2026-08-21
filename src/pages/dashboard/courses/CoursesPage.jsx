@@ -212,32 +212,53 @@ function BenefitsGrid({ onFocusForm }) {
 function EnrolledHero({ course }) {
   const startLabel = formatCourseDate(course.free_starts_at);
   const hasStart = Boolean(course.free_starts_at);
+  const isGolden = course.membership_status === 'golden';
 
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35 }}
-      className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:rounded-3xl"
+      className={`relative overflow-hidden rounded-2xl border bg-white shadow-sm sm:rounded-3xl ${
+        isGolden ? 'border-amber-200' : 'border-slate-200'
+      }`}
     >
-      <div className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white px-4 py-4 sm:px-6 sm:py-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
-            <HiCheckCircle className="h-3.5 w-3.5" aria-hidden />
-            Your batch
-          </span>
+      <div
+        className={`border-b px-4 py-4 sm:px-6 sm:py-5 ${
+          isGolden
+            ? 'border-amber-100 bg-gradient-to-r from-amber-50 via-orange-50/50 to-white'
+            : 'border-emerald-100 bg-gradient-to-r from-emerald-50 to-white'
+        }`}
+      >
+        <div className="-mx-1 flex flex-wrap items-center gap-2 px-1">
+          {isGolden ? (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm shadow-amber-900/15">
+              <HiTrophy className="h-3.5 w-3.5" aria-hidden />
+              Golden Batch
+            </span>
+          ) : (
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-600 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+              <HiCheckCircle className="h-3.5 w-3.5" aria-hidden />
+              Your batch
+            </span>
+          )}
           {hasStart ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700">
-              <HiCalendarDays className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-700">
+              <HiCalendarDays
+                className={`h-3.5 w-3.5 ${isGolden ? 'text-amber-600' : 'text-emerald-600'}`}
+                aria-hidden
+              />
               Started {startLabel}
             </span>
           ) : null}
         </div>
-        <h1 className="mt-2.5 text-[1.35rem] font-extrabold leading-snug tracking-tight text-slate-900 sm:text-2xl">
+        <h1 className="mt-2.5 break-words text-[1.35rem] font-extrabold leading-snug tracking-tight text-slate-900 sm:text-2xl">
           {course.title}
         </h1>
         <p className="mt-1.5 max-w-2xl text-[13px] leading-relaxed text-slate-600 sm:text-sm">
-          Upcoming join links, completed classes, doubt requests, and short feedback — all here.
+          {isGolden
+            ? 'Golden live classes, recordings, doubt requests, and feedback — all here.'
+            : 'Upcoming join links, completed classes, doubt requests, and short feedback — all here.'}
         </p>
       </div>
     </motion.section>
@@ -682,14 +703,18 @@ export default function CoursesPage() {
           {joinedCourses.length > 0 ? (
             <div className="space-y-4 sm:space-y-5">
               {joinedCourses.map((c) => (
-                <div key={c.id} className="space-y-4">
+                <div key={c.id} className="space-y-4 sm:space-y-5">
                   <EnrolledHero course={c} />
-                  <CourseGoldenAccessCard
-                    course={c}
-                    onUpdated={() => load({ soft: true })}
-                  />
                   <section className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3.5 sm:rounded-3xl sm:p-5">
-                    <EnrolledCourseBoard courseId={c.id} />
+                    <EnrolledCourseBoard
+                      courseId={c.id}
+                      sidebar={
+                        <CourseGoldenAccessCard
+                          course={c}
+                          onUpdated={() => load({ soft: true })}
+                        />
+                      }
+                    />
                   </section>
                 </div>
               ))}
