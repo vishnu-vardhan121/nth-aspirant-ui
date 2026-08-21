@@ -42,6 +42,7 @@ const emptyForm = () => ({
   startsLocal: '',
   meetUrl1: '',
   meetUrl2: '',
+  accessTier: 'free',
 });
 
 const fieldClass =
@@ -213,6 +214,9 @@ export default function CourseClassesManager({ courseId, courseTitle }) {
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
+                        <Pill tone={row.access_tier === 'golden' ? 'amber' : 'slate'}>
+                          {row.access_tier === 'golden' ? 'Golden' : 'Free'}
+                        </Pill>
                         <Pill>{row.meet_url_2 ? '2 join links' : '1 join link'}</Pill>
                         <Pill tone={hasTopics ? 'emerald' : 'slate'}>
                           {hasTopics ? 'Topics ready' : 'Topics pending'}
@@ -487,7 +491,7 @@ function ActionBtn({ children, onClick, primary, danger, icon: Icon }) {
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition ${cls}`}
+      className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border px-3.5 text-sm font-semibold transition sm:w-auto ${cls}`}
     >
       {Icon ? <Icon className="h-4 w-4 shrink-0 opacity-80" aria-hidden /> : null}
       {children}
@@ -518,6 +522,7 @@ function ClassFormModal({ open, courseId, mode, row, canDelete, onClose, onSaved
         startsLocal: toDatetimeLocalIst(row.starts_at),
         meetUrl1: row.meet_url_1 || '',
         meetUrl2: row.meet_url_2 || '',
+        accessTier: row.access_tier === 'golden' ? 'golden' : 'free',
       });
     } else {
       setForm(emptyForm());
@@ -559,6 +564,7 @@ function ClassFormModal({ open, courseId, mode, row, canDelete, onClose, onSaved
         meetUrl1,
         meetUrl2,
         clearMeetUrl2: !meetUrl2,
+        accessTier: form.accessTier === 'golden' ? 'golden' : 'free',
       });
     } else {
       res = await staffCreateCourseClass({
@@ -567,6 +573,7 @@ function ClassFormModal({ open, courseId, mode, row, canDelete, onClose, onSaved
         startsAt,
         meetUrl1,
         meetUrl2: meetUrl2 || null,
+        accessTier: form.accessTier === 'golden' ? 'golden' : 'free',
       });
     }
     setBusy(false);
@@ -631,6 +638,20 @@ function ClassFormModal({ open, courseId, mode, row, canDelete, onClose, onSaved
             placeholder="e.g. Day 1 — Intro to Python"
             required
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-sm text-slate-700">Access</label>
+          <select
+            value={form.accessTier || 'free'}
+            onChange={(e) => setForm((f) => ({ ...f, accessTier: e.target.value }))}
+            className={fieldClass}
+          >
+            <option value="free">Free — visible to free + Golden members</option>
+            <option value="golden">Golden — Golden members only</option>
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Use Golden for premium-phase classes after free classes end.
+          </p>
         </div>
         <div>
           <label className="mb-1 block text-sm text-slate-700">Start date &amp; time (IST)</label>

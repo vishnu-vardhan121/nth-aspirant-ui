@@ -9,6 +9,10 @@ import {
   HiUsers,
   HiXMark,
 } from 'react-icons/hi2';
+import CourseClassFeedbackPanel from '../../../components/courses/CourseClassFeedbackPanel';
+import CourseGoldenRequestsPanel from '../../../components/courses/CourseGoldenRequestsPanel';
+import CoursePaymentOrdersPanel from '../../../components/courses/CoursePaymentOrdersPanel';
+import CoursePricingPanel from '../../../components/courses/CoursePricingPanel';
 import { PageLoader } from '../../../components/ui/Loader';
 import {
   adminAddCourseInvites,
@@ -16,15 +20,17 @@ import {
   adminListCourseJoinRequests,
   adminListCourseMembers,
   adminReviewCourseJoin,
+  adminSetCourseRecordingsLocked,
   adminUpdateCourse,
+  adminUpsertCourseGoldenTerms,
   extractEmailsFromSpreadsheet,
   formatCourseDate,
   istLocalInputToIso,
   parseEmailList,
+  staffListCourseGoldenRequests,
   toDatetimeLocalIst,
 } from '../../../lib/courses';
 import UserProfileModal from '../users/UserProfileModal';
-import CourseClassFeedbackPanel from '../../../components/courses/CourseClassFeedbackPanel';
 
 function StatPill({ label, value, tone = 'slate' }) {
   const tones = {
@@ -46,6 +52,7 @@ export default function AdminCourseDetailPage() {
   const [course, setCourse] = useState(null);
   const [invites, setInvites] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [goldenRequests, setGoldenRequests] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -62,12 +69,17 @@ export default function AdminCourseDetailPage() {
 
   const [reviewBusyId, setReviewBusyId] = useState(null);
   const [toggleBusy, setToggleBusy] = useState(false);
-  const [tab, setTab] = useState('invites'); // invites | requests | members
+  const [lockBusy, setLockBusy] = useState(false);
+  const [tab, setTab] = useState('invites'); // invites | requests | golden | members | feedback
   const [profileAspirantId, setProfileAspirantId] = useState(null);
   const [editingDetails, setEditingDetails] = useState(false);
   const [detailsForm, setDetailsForm] = useState({ title: '', freeStartsAt: '', freeEndsAt: '' });
   const [detailsMsg, setDetailsMsg] = useState({ type: '', text: '' });
   const [detailsBusy, setDetailsBusy] = useState(false);
+  const [termsEnabled, setTermsEnabled] = useState(false);
+  const [termsBullets, setTermsBullets] = useState(['']);
+  const [termsMsg, setTermsMsg] = useState({ type: '', text: '' });
+  const [termsBusy, setTermsBusy] = useState(false);
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
@@ -77,10 +89,11 @@ export default function AdminCourseDetailPage() {
     if (!id) return;
     setLoading(true);
     setError('');
-    const [courseRes, reqRes, memRes] = await Promise.all([
+    const [courseRes, reqRes, memRes, goldenRes] = await Promise.all([
       adminGetCourse(id),
       adminListCourseJoinRequests(id),
-      adminListCourseMembers(id, 'free'),
+      adminListCourseMembers(id, 'enrolled'),
+      staffListCourseGoldenRequests(id),
     ]);
     setLoading(false);
     if (!courseRes.ok) {
@@ -91,6 +104,13 @@ export default function AdminCourseDetailPage() {
     setInvites(courseRes.invites || []);
     setRequests(reqRes.ok ? reqRes.requests || [] : []);
     setMembers(memRes.ok ? memRes.members || [] : []);
+    setGoldenRequests(goldenRes.ok ? goldenRes.requests || [] : []);
+    setTermsEnabled(Boolean(courseRes.course?.golden_terms_enabled));
+    {
+      const raw = courseRes.course?.golden_terms_bullets;
+      const list = Array.isArray(raw) ? raw.map((x) => String(x || '')) : [];
+      setTermsBullets(list.length ? list : ['']);
+    }
   }, [id]);
 
   useEffect(() => {
@@ -226,6 +246,25 @@ export default function AdminCourseDetailPage() {
     load();
   };
 
+  const handleTogglePremiumLock = async () => {
+    if (!course) return;
+    const next = !course.recordings_locked_for_free;
+    const ok = window.confirm(
+      next
+        ? 'Turn on “Premium started”? Free members will lose Play on recordings. Golden-tier classes stay hidden from them.'
+        : 'Turn off the free Play lock? Free members can watch recordings again (where available).'
+    );
+    if (!ok) return;
+    setLockBusy(true);
+    const res = await adminSetCourseRecordingsLocked(course.id, next);
+    setLockBusy(false);
+    if (!res.ok) {
+      window.alert(res.error || 'Update failed');
+      return;
+    }
+    load();
+  };
+
   const startEditingDetails = () => {
     if (!course) return;
     setDetailsForm({
@@ -280,6 +319,38 @@ export default function AdminCourseDetailPage() {
     load();
   };
 
+  const handleSaveTerms = async () => {
+    if (!course) return;
+    setTermsBusy(true);
+    setTermsMsg({ type: '', text: '' });
+    const res = await adminUpsertCourseGoldenTerms(course.id, {
+      enabled: termsEnabled,
+      bullets: termsBullets,
+    });
+    setTermsBusy(false);
+    if (!res.ok) {
+      setTermsMsg({ type: 'error', text: res.error || 'Could not save terms' });
+      return;
+    }
+    setTermsMsg({ type: 'success', text: 'Terms saved.' });
+    load();
+  };
+
+  const updateTermsBullet = (index, value) => {
+    setTermsBullets((rows) => rows.map((r, i) => (i === index ? value : r)));
+  };
+
+  const addTermsBullet = () => {
+    setTermsBullets((rows) => (rows.length >= 40 ? rows : [...rows, '']));
+  };
+
+  const removeTermsBullet = (index) => {
+    setTermsBullets((rows) => {
+      const next = rows.filter((_, i) => i !== index);
+      return next.length ? next : [''];
+    });
+  };
+
   if (loading) {
     return <PageLoader size="md" label="Loading…" className="py-10" />;
   }
@@ -297,7 +368,10 @@ export default function AdminCourseDetailPage() {
 
   const tabs = [
     { id: 'invites', label: 'Invites', count: invites.length },
-    { id: 'requests', label: 'Requests', count: requests.length },
+    { id: 'requests', label: 'Join requests', count: requests.length },
+    { id: 'golden', label: 'Golden', count: goldenRequests.length },
+    { id: 'pricing', label: 'Pricing' },
+    { id: 'payments', label: 'Payments' },
     { id: 'members', label: 'Joined', count: members.length },
     { id: 'feedback', label: 'Class feedback' },
   ];
@@ -435,6 +509,46 @@ export default function AdminCourseDetailPage() {
           </div>
         </form>
       ) : null}
+
+      <section className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
+              Premium / Golden phase
+            </p>
+            <p className="mt-1.5 text-sm text-slate-700">
+              {course.recordings_locked_for_free ? (
+                <>
+                  <span className="font-semibold text-amber-950">Premium started</span> — free
+                  members cannot Play recordings. Create new classes as{' '}
+                  <span className="font-medium">Golden</span> so free never see join links.
+                </>
+              ) : (
+                <>
+                  Free Play is still open. Turn this on when free classes end and Golden access
+                  begins for this course.
+                </>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            disabled={lockBusy}
+            onClick={handleTogglePremiumLock}
+            className={`shrink-0 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60 ${
+              course.recordings_locked_for_free
+                ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                : 'border border-amber-400 bg-amber-100 text-amber-950 hover:bg-amber-200'
+            }`}
+          >
+            {lockBusy
+              ? 'Updating…'
+              : course.recordings_locked_for_free
+                ? 'Unlock free Play'
+                : 'Premium started — lock free Play'}
+          </button>
+        </div>
+      </section>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatPill label="Invites" value={invites.length} tone="indigo" />
@@ -749,6 +863,95 @@ export default function AdminCourseDetailPage() {
         </section>
       ) : null}
 
+      {tab === 'golden' ? (
+        <section className="space-y-5">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Golden request Terms &amp; Conditions</h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                When shown, aspirants must open the request modal, read these terms, and tick I agree.
+              </p>
+            </div>
+            {termsMsg.text ? (
+              <p
+                className={`text-sm ${termsMsg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}
+              >
+                {termsMsg.text}
+              </p>
+            ) : null}
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-800">
+              <input
+                type="checkbox"
+                checked={termsEnabled}
+                onChange={(e) => setTermsEnabled(e.target.checked)}
+                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              Show Terms &amp; Conditions on Golden request
+            </label>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-slate-700">Bullet points</p>
+              {termsBullets.map((bullet, index) => (
+                <div key={`terms-bullet-${index}`} className="flex gap-2">
+                  <span className="mt-2.5 text-slate-400" aria-hidden>
+                    •
+                  </span>
+                  <input
+                    type="text"
+                    value={bullet}
+                    onChange={(e) => updateTermsBullet(index, e.target.value.slice(0, 500))}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                    placeholder={`Point ${index + 1}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeTermsBullet(index)}
+                    className="shrink-0 rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={addTermsBullet}
+                disabled={termsBullets.length >= 40}
+                className="text-sm font-semibold text-indigo-600 hover:underline disabled:opacity-50"
+              >
+                + Add bullet
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={termsBusy}
+              onClick={handleSaveTerms}
+              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+            >
+              {termsBusy ? 'Saving…' : 'Save terms'}
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <CourseGoldenRequestsPanel
+              courseId={course.id}
+              onOpenProfile={(aspirantId) => setProfileAspirantId(aspirantId)}
+              onChanged={load}
+            />
+          </div>
+        </section>
+      ) : null}
+
+      {tab === 'pricing' ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+          <CoursePricingPanel courseId={course.id} />
+        </section>
+      ) : null}
+
+      {tab === 'payments' ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+          <CoursePaymentOrdersPanel courseId={course.id} onChanged={load} />
+        </section>
+      ) : null}
+
       {tab === 'members' ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-4">
           <div className="flex items-center gap-2">
@@ -764,6 +967,9 @@ export default function AdminCourseDetailPage() {
                   <tr>
                     <th className="px-4 py-3 font-medium">Name</th>
                     <th className="px-4 py-3 font-medium">Email</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
+                    <th className="px-4 py-3 font-medium">Access</th>
+                    <th className="px-4 py-3 font-medium">Pack / due</th>
                     <th className="px-4 py-3 font-medium">Joined</th>
                   </tr>
                 </thead>
@@ -772,6 +978,18 @@ export default function AdminCourseDetailPage() {
                     <tr key={m.id} className="border-t border-slate-100">
                       <td className="px-4 py-3 font-medium text-slate-900">{m.aspirant_name || '—'}</td>
                       <td className="px-4 py-3 text-slate-600">{m.aspirant_email}</td>
+                      <td className="px-4 py-3 text-slate-600">{m.status}</td>
+                      <td className="px-4 py-3 text-slate-600">{m.access_state || '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {m.chosen_pack
+                          ? `${m.chosen_pack} · ${m.installments_paid || 0}/${m.installments_total || '—'}`
+                          : '—'}
+                        {m.next_due_at ? (
+                          <span className="block text-xs text-slate-500">
+                            Due {formatCourseDate(m.next_due_at)}
+                          </span>
+                        ) : null}
+                      </td>
                       <td className="px-4 py-3 text-slate-500">{formatCourseDate(m.joined_at)}</td>
                     </tr>
                   ))}
