@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
+  HiAcademicCap,
   HiArrowLeft,
+  HiCalendarDays,
   HiCheckCircle,
+  HiClipboardDocumentList,
   HiDocumentArrowUp,
+  HiEnvelope,
+  HiLockClosed,
+  HiLockOpen,
   HiMagnifyingGlass,
+  HiPencilSquare,
+  HiSparkles,
   HiUserGroup,
   HiUsers,
+  HiVideoCamera,
+  HiXCircle,
   HiXMark,
 } from 'react-icons/hi2';
 import CourseClassFeedbackPanel from '../../../components/courses/CourseClassFeedbackPanel';
 import CourseGoldenRequestsPanel from '../../../components/courses/CourseGoldenRequestsPanel';
 import CoursePaymentOrdersPanel from '../../../components/courses/CoursePaymentOrdersPanel';
 import CoursePricingPanel from '../../../components/courses/CoursePricingPanel';
+import StaffFormModal from '../../../components/courses/StaffFormModal';
 import { PageLoader } from '../../../components/ui/Loader';
 import {
   adminAddCourseInvites,
@@ -32,7 +43,7 @@ import {
 } from '../../../lib/courses';
 import UserProfileModal from '../users/UserProfileModal';
 
-function StatPill({ label, value, tone = 'slate' }) {
+function StatPill({ label, value, tone = 'slate', icon: Icon = null }) {
   const tones = {
     slate: 'bg-slate-100 text-slate-800',
     indigo: 'bg-indigo-50 text-indigo-800',
@@ -41,7 +52,10 @@ function StatPill({ label, value, tone = 'slate' }) {
   };
   return (
     <div className={`rounded-xl px-4 py-3 ${tones[tone] || tones.slate}`}>
-      <p className="text-xs font-medium uppercase tracking-wide opacity-70">{label}</p>
+      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide opacity-70">
+        {Icon ? <Icon className="h-3.5 w-3.5" aria-hidden /> : null}
+        {label}
+      </p>
       <p className="mt-0.5 text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
@@ -80,6 +94,7 @@ export default function AdminCourseDetailPage() {
   const [termsBullets, setTermsBullets] = useState(['']);
   const [termsMsg, setTermsMsg] = useState({ type: '', text: '' });
   const [termsBusy, setTermsBusy] = useState(false);
+  const [termsModalOpen, setTermsModalOpen] = useState(false);
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
@@ -379,40 +394,59 @@ export default function AdminCourseDetailPage() {
   return (
     <div className="space-y-6 max-w-6xl">
       <div>
-        <Link to="/admin/courses" className="inline-flex items-center gap-1 text-sm text-indigo-600 hover:underline">
+        <Link
+          to="/admin/courses"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:underline"
+        >
           <HiArrowLeft className="h-4 w-4" /> Back to courses
         </Link>
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900">{course.title}</h1>
-              <span
-                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                  course.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
-                }`}
-              >
-                {course.is_active ? 'Active' : 'Inactive'}
-              </span>
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 ring-1 ring-indigo-100">
+              <HiAcademicCap className="h-6 w-6" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-slate-900">{course.title}</h1>
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    course.is_active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${course.is_active ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                    aria-hidden
+                  />
+                  {course.is_active ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <p className="mt-1 flex flex-wrap items-center gap-x-1.5 text-sm text-slate-600">
+                <span className="font-mono font-medium text-slate-700">{course.code}</span>
+                <span aria-hidden>·</span>
+                <HiCalendarDays className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+                Starts {formatCourseDate(course.free_starts_at)}
+                {course.free_ends_at ? ` · Ends ${formatCourseDate(course.free_ends_at)}` : ''}
+              </p>
             </div>
-            <p className="text-sm text-slate-600 mt-1">
-              Code <span className="font-mono font-medium">{course.code}</span>
-              {' · '}
-              Starts {formatCourseDate(course.free_starts_at)}
-              {course.free_ends_at ? ` · Ends ${formatCourseDate(course.free_ends_at)}` : ''}
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={editingDetails ? cancelEditingDetails : startEditingDetails}
-              className="px-3 py-2 rounded-md border border-slate-300 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
             >
+              {editingDetails ? (
+                <HiXMark className="h-4 w-4" aria-hidden />
+              ) : (
+                <HiPencilSquare className="h-4 w-4" aria-hidden />
+              )}
               {editingDetails ? 'Cancel edit' : 'Edit title & timings'}
             </button>
             <Link
               to={`/admin/courses/${course.id}/classes`}
-              className="px-3 py-2 rounded-md bg-indigo-600 text-sm font-medium text-white hover:bg-indigo-700"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm shadow-indigo-600/20 transition-colors hover:bg-indigo-700"
             >
+              <HiVideoCamera className="h-4 w-4" aria-hidden />
               Live classes
             </Link>
           </div>
@@ -510,37 +544,47 @@ export default function AdminCourseDetailPage() {
         </form>
       ) : null}
 
-      <section className="rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 sm:p-5">
+      <section className="rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50 to-white p-4 shadow-sm sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-amber-900">
-              Premium / Golden phase
-            </p>
-            <p className="mt-1.5 text-sm text-slate-700">
-              {course.recordings_locked_for_free ? (
-                <>
-                  <span className="font-semibold text-amber-950">Premium started</span> — free
-                  members cannot Play recordings. Create new classes as{' '}
-                  <span className="font-medium">Golden</span> so free never see join links.
-                </>
-              ) : (
-                <>
-                  Free Play is still open. Turn this on when free classes end and Golden access
-                  begins for this course.
-                </>
-              )}
-            </p>
+          <div className="flex min-w-0 max-w-2xl items-start gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-800">
+              <HiSparkles className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-amber-800">
+                Premium / Golden phase
+              </p>
+              <p className="mt-1.5 text-sm text-slate-700">
+                {course.recordings_locked_for_free ? (
+                  <>
+                    <span className="font-semibold text-amber-950">Premium started</span> — free
+                    members cannot Play recordings. Create new classes as{' '}
+                    <span className="font-medium">Golden</span> so free never see join links.
+                  </>
+                ) : (
+                  <>
+                    Free Play is still open. Turn this on when free classes end and Golden access
+                    begins for this course.
+                  </>
+                )}
+              </p>
+            </div>
           </div>
           <button
             type="button"
             disabled={lockBusy}
             onClick={handleTogglePremiumLock}
-            className={`shrink-0 rounded-md px-4 py-2 text-sm font-medium disabled:opacity-60 ${
+            className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold shadow-sm transition-colors disabled:opacity-60 ${
               course.recordings_locked_for_free
                 ? 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
                 : 'border border-amber-400 bg-amber-100 text-amber-950 hover:bg-amber-200'
             }`}
           >
+            {course.recordings_locked_for_free ? (
+              <HiLockOpen className="h-4 w-4" aria-hidden />
+            ) : (
+              <HiLockClosed className="h-4 w-4" aria-hidden />
+            )}
             {lockBusy
               ? 'Updating…'
               : course.recordings_locked_for_free
@@ -550,20 +594,25 @@ export default function AdminCourseDetailPage() {
         </div>
       </section>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatPill label="Invites" value={invites.length} tone="indigo" />
-        <StatPill label="Pending requests" value={requests.length} tone="amber" />
-        <StatPill label="Joined" value={members.length} tone="emerald" />
-        <StatPill label="Status" value={course.is_active ? 'Open' : 'Closed'} tone="slate" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatPill icon={HiEnvelope} label="Invites" value={invites.length} tone="indigo" />
+        <StatPill icon={HiClipboardDocumentList} label="Pending requests" value={requests.length} tone="amber" />
+        <StatPill icon={HiUserGroup} label="Joined" value={members.length} tone="emerald" />
+        <StatPill
+          icon={course.is_active ? HiCheckCircle : HiXCircle}
+          label="Status"
+          value={course.is_active ? 'Open' : 'Closed'}
+          tone="slate"
+        />
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 -mx-1 px-1">
+      <div className="-mx-1 flex gap-1 overflow-x-auto border-b border-slate-200 px-1">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`shrink-0 px-3 sm:px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`-mb-px shrink-0 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors sm:px-4 ${
               tab === t.id
                 ? 'border-indigo-600 text-indigo-700'
                 : 'border-transparent text-slate-500 hover:text-slate-800'
@@ -571,7 +620,13 @@ export default function AdminCourseDetailPage() {
           >
             {t.label}
             {t.count != null ? (
-              <span className="ml-1.5 tabular-nums text-xs opacity-70">({t.count})</span>
+              <span
+                className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[11px] tabular-nums ${
+                  tab === t.id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {t.count}
+              </span>
             ) : null}
           </button>
         ))}
@@ -865,68 +920,39 @@ export default function AdminCourseDetailPage() {
 
       {tab === 'golden' ? (
         <section className="space-y-5">
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-4">
-            <div>
-              <h2 className="text-sm font-semibold text-slate-900">Golden request Terms &amp; Conditions</h2>
-              <p className="mt-0.5 text-xs text-slate-500">
-                When shown, aspirants must open the request modal, read these terms, and tick I agree.
-              </p>
-            </div>
-            {termsMsg.text ? (
-              <p
-                className={`text-sm ${termsMsg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}
-              >
-                {termsMsg.text}
-              </p>
-            ) : null}
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-800">
-              <input
-                type="checkbox"
-                checked={termsEnabled}
-                onChange={(e) => setTermsEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-              />
-              Show Terms &amp; Conditions on Golden request
-            </label>
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-700">Bullet points</p>
-              {termsBullets.map((bullet, index) => (
-                <div key={`terms-bullet-${index}`} className="flex gap-2">
-                  <span className="mt-2.5 text-slate-400" aria-hidden>
-                    •
-                  </span>
-                  <input
-                    type="text"
-                    value={bullet}
-                    onChange={(e) => updateTermsBullet(index, e.target.value.slice(0, 500))}
-                    className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm"
-                    placeholder={`Point ${index + 1}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeTermsBullet(index)}
-                    className="shrink-0 rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <div className="flex min-w-0 items-start gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                <HiClipboardDocumentList className="h-5 w-5" aria-hidden />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-sm font-bold text-slate-900">Golden request Terms &amp; Conditions</h2>
+                <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                  <span
+                    className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 font-semibold ${
+                      termsEnabled ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                    }`}
                   >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={addTermsBullet}
-                disabled={termsBullets.length >= 40}
-                className="text-sm font-semibold text-indigo-600 hover:underline disabled:opacity-50"
-              >
-                + Add bullet
-              </button>
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${termsEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                      aria-hidden
+                    />
+                    {termsEnabled ? 'Shown to aspirants' : 'Hidden'}
+                  </span>
+                  <span>{termsBullets.filter((b) => b.trim()).length} bullet point(s)</span>
+                </p>
+              </div>
             </div>
             <button
               type="button"
-              disabled={termsBusy}
-              onClick={handleSaveTerms}
-              className="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+              onClick={() => {
+                setTermsMsg({ type: '', text: '' });
+                setTermsModalOpen(true);
+              }}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
             >
-              {termsBusy ? 'Saving…' : 'Save terms'}
+              <HiPencilSquare className="h-4 w-4" aria-hidden />
+              Edit terms
             </button>
           </div>
 
@@ -939,6 +965,74 @@ export default function AdminCourseDetailPage() {
           </div>
         </section>
       ) : null}
+
+      <StaffFormModal
+        open={termsModalOpen}
+        onClose={() => !termsBusy && setTermsModalOpen(false)}
+        title="Golden request Terms & Conditions"
+        subtitle={course.title}
+        wide
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-slate-600">
+            When shown, aspirants must open the request modal, read these terms, and tick I agree.
+          </p>
+          {termsMsg.text ? (
+            <p className={`text-sm ${termsMsg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}>
+              {termsMsg.text}
+            </p>
+          ) : null}
+          <label className="flex cursor-pointer items-center gap-2.5 text-sm font-medium text-slate-800">
+            <input
+              type="checkbox"
+              checked={termsEnabled}
+              onChange={(e) => setTermsEnabled(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            Show Terms &amp; Conditions on Golden request
+          </label>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-slate-700">Bullet points</p>
+            {termsBullets.map((bullet, index) => (
+              <div key={`terms-bullet-${index}`} className="flex gap-2">
+                <span className="mt-2.5 text-slate-400" aria-hidden>
+                  •
+                </span>
+                <input
+                  type="text"
+                  value={bullet}
+                  onChange={(e) => updateTermsBullet(index, e.target.value.slice(0, 500))}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm shadow-sm"
+                  placeholder={`Point ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeTermsBullet(index)}
+                  className="shrink-0 rounded-lg border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addTermsBullet}
+              disabled={termsBullets.length >= 40}
+              className="text-sm font-semibold text-indigo-600 hover:underline disabled:opacity-50"
+            >
+              + Add bullet
+            </button>
+          </div>
+          <button
+            type="button"
+            disabled={termsBusy}
+            onClick={handleSaveTerms}
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
+          >
+            {termsBusy ? 'Saving…' : 'Save terms'}
+          </button>
+        </div>
+      </StaffFormModal>
 
       {tab === 'pricing' ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
