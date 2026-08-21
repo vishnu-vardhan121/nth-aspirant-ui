@@ -44,8 +44,10 @@ function classDateParts(iso) {
 
 /**
  * Joined-student board: elevated class cards; feedback & doubt open in modals.
+ * `sidebar` (e.g. the Golden Access card) sits beside Upcoming on wide screens;
+ * Completed always stays full-width below, regardless of screen size.
  */
-export default function EnrolledCourseBoard({ courseId }) {
+export default function EnrolledCourseBoard({ courseId, sidebar = null }) {
   const user = useAppSelector((state) => state.auth.user);
   const aspirantProfile = useAppSelector((state) => state.aspirant.profile);
   const registeredEmail =
@@ -78,46 +80,50 @@ export default function EnrolledCourseBoard({ courseId }) {
     load();
   }, [load]);
 
-  if (loading) {
-    return <p className="text-sm text-slate-500">Loading your classes…</p>;
-  }
-
   return (
-    <div className="space-y-8">
-      <section className="space-y-3">
-        <SectionHead
-          icon={HiVideoCamera}
-          iconClass="text-indigo-600"
-          title="Upcoming"
-          count={upcoming.length}
-        />
-        {upcoming.length === 0 ? (
-          <EmptyCard
-            title="No upcoming class yet"
-            text="When the next live session is posted, join links show up here."
+    <div className="space-y-6 sm:space-y-8">
+      <div className="grid gap-4 sm:gap-5 lg:grid-cols-[minmax(280px,340px)_1fr] lg:items-start">
+        {sidebar}
+
+        <section className="space-y-3">
+          <SectionHead
+            icon={HiVideoCamera}
+            iconClass="text-indigo-600"
+            title="Upcoming"
+            count={loading ? '…' : upcoming.length}
           />
-        ) : (
-          <ul className="grid gap-4 sm:grid-cols-2">
-            {upcoming.map((row, i) => (
-              <UpcomingClassCard
-                key={row.id}
-                row={row}
-                index={i}
-                onJoin={(meetUrl) => setJoinPrompt({ meetUrl })}
-              />
-            ))}
-          </ul>
-        )}
-      </section>
+          {loading ? (
+            <p className="text-sm text-slate-500">Loading your classes…</p>
+          ) : upcoming.length === 0 ? (
+            <EmptyCard
+              title="No upcoming class yet"
+              text="When the next live session is posted, join links show up here."
+            />
+          ) : (
+            <ul className="grid grid-cols-1 gap-4 min-[480px]:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {upcoming.map((row, i) => (
+                <UpcomingClassCard
+                  key={row.id}
+                  row={row}
+                  index={i}
+                  onJoin={(meetUrl) => setJoinPrompt({ meetUrl })}
+                />
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
 
       <section className="space-y-3">
         <SectionHead
           icon={HiCheckCircle}
           iconClass="text-emerald-600"
           title="Completed"
-          count={`${completed.length} · recent first`}
+          count={loading ? '…' : `${completed.length} · recent first`}
         />
-        {completed.length === 0 ? (
+        {loading ? (
+          <p className="text-sm text-slate-500">Loading your classes…</p>
+        ) : completed.length === 0 ? (
           <EmptyCard
             title="No completed classes yet"
             text="After a class day passes, it moves here. Use the buttons for feedback and doubt."

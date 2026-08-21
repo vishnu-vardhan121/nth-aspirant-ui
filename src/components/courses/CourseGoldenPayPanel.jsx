@@ -67,6 +67,104 @@ function packNowAmount(pricing, packId) {
   return three[0];
 }
 
+function packAmounts(pricing, packId) {
+  if (!pricing) return [];
+  if (packId === 'full') return [pricing.full_amount_inr];
+  if (packId === 'two') {
+    return Array.isArray(pricing.two_amounts_inr) ? pricing.two_amounts_inr : [];
+  }
+  return Array.isArray(pricing.three_amounts_inr) ? pricing.three_amounts_inr : [];
+}
+
+/** Per-installment status list with a progress bar — replaces the old "X now · Y next" line. */
+function InstallmentTracker({ pricing, packId, paidCount, totalCount, due, accessState }) {
+  const amounts = packAmounts(pricing, packId);
+  if (!amounts.length) return null;
+
+  const total = totalCount || amounts.length;
+  const progressPct = total ? Math.min(100, Math.round((paidCount / total) * 100)) : 0;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
+        <span>Payment progress</span>
+        <span className="tabular-nums">
+          {paidCount}/{total} paid
+        </span>
+      </div>
+      <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-amber-500 to-orange-500 transition-[width]"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+
+      <ul className="space-y-2">
+        {amounts.map((amt, i) => {
+          const idx = i + 1;
+          const isPaid = idx <= paidCount;
+          const isNext = idx === paidCount + 1;
+          const isOverdue = isNext && (due?.is_overdue || accessState === 'paused');
+
+          let statusLabel = 'Upcoming';
+          let statusClass = 'text-slate-400';
+          if (isPaid) {
+            statusLabel = 'Paid';
+            statusClass = 'text-emerald-700';
+          } else if (isOverdue) {
+            statusLabel = 'Overdue';
+            statusClass = 'text-red-600';
+          } else if (isNext && due?.due_date_ist) {
+            statusLabel = `Due ${due.due_date_ist}`;
+            statusClass = 'text-amber-700';
+          } else if (isNext) {
+            statusLabel = 'Opens closer to due date';
+            statusClass = 'text-amber-700';
+          }
+
+          return (
+            <li
+              key={idx}
+              className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2.5 ${
+                isPaid
+                  ? 'border-emerald-200 bg-emerald-50/60'
+                  : isOverdue
+                    ? 'border-red-200 bg-red-50/60'
+                    : isNext
+                      ? 'border-amber-200 bg-amber-50/70'
+                      : 'border-slate-200 bg-slate-50/60'
+              }`}
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    isPaid
+                      ? 'bg-emerald-600 text-white'
+                      : isOverdue
+                        ? 'bg-red-500 text-white'
+                        : isNext
+                          ? 'bg-amber-500 text-white'
+                          : 'bg-slate-200 text-slate-500'
+                  }`}
+                >
+                  {isPaid ? <HiCheck className="h-4 w-4" aria-hidden /> : idx}
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">Installment {idx}</p>
+                  <p className={`text-xs ${statusClass}`}>{statusLabel}</p>
+                </div>
+              </div>
+              <span className="shrink-0 text-sm font-bold tabular-nums text-slate-900">
+                {formatInr(amt)}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 function CopyRow({ label, value, copied, onCopy }) {
   return (
     <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/90 px-3 py-2.5">
@@ -487,22 +585,28 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
           </div>
         </div>
       ) : chosen ? (
-        <div className="space-y-2 rounded-xl border border-slate-200 bg-white px-3.5 py-3.5 shadow-sm">
-          <div className="min-w-0">
-            <p className="text-sm text-slate-700">
-              {isFirstPayment ? 'Your pack: ' : 'Pack: '}
-              <span className="font-semibold text-slate-900">
-                {PACKS.find((p) => p.id === chosen)?.title || chosen}
-              </span>
-              {member?.installments_total ? (
-                <span className="text-slate-500">
-                  {' '}
-                  · paid {paidCount}/{member.installments_total}
-                </span>
-              ) : null}
+        <div className="space-y-4 rounded-xl border border-slate-200 bg-white px-3.5 py-3.5 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">
+              {PACKS.find((p) => p.id === chosen)?.title || chosen}
             </p>
-            <p className="mt-0.5 text-sm text-slate-600">{packDetail(pricing, chosen)}</p>
+            {accessState === 'completed' || (due?.remaining_installments || 0) === 0 ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-bold text-emerald-800">
+                <HiCheck className="h-3.5 w-3.5" aria-hidden />
+                All paid
+              </span>
+            ) : null}
           </div>
+
+          <InstallmentTracker
+            pricing={pricing}
+            packId={chosen}
+            paidCount={paidCount}
+            totalCount={member?.installments_total}
+            due={due}
+            accessState={accessState}
+          />
+
           {canPayNext ? (
             <button
               type="button"
@@ -512,13 +616,6 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
             >
               {payCta}
             </button>
-          ) : accessState === 'active' && (due?.remaining_installments || 0) > 0 ? (
-            <p className="text-sm text-slate-600">
-              Installment {nextInstallment} opens 7 days before the due date
-              {due?.due_date_ist ? ` (${due.due_date_ist})` : ''}.
-            </p>
-          ) : accessState === 'completed' || (due?.remaining_installments || 0) === 0 ? (
-            <p className="text-sm font-medium text-emerald-800">All installments paid.</p>
           ) : null}
         </div>
       ) : null}

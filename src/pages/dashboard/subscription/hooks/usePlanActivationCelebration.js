@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../../../../store/hooks';
 import { fetchAspirantProfile } from '../../../../store/slices/aspirantSlice';
 import { isSubscriptionActive } from '../../../../lib/planLimits';
 import { subscribeToAspirantProfile } from '../../../../lib/aspirantProfileRealtime';
+import { getMyRecentGoldenCourseGrant } from '../../../../lib/courses';
 import {
   celebrationTokenForOrder,
   celebrationTokenForProfile,
@@ -25,12 +26,12 @@ export function usePlanActivationCelebration(userId) {
   const profileReadyRef = useRef(false);
 
   const openCelebration = useCallback(
-    ({ token, plan }) => {
+    ({ token, plan, kind = 'plan', courseId = null, courseTitle = '' }) => {
       if (!userId || !token || showingRef.current) return;
       if (hasShownCelebration(userId, token)) return;
 
       showingRef.current = true;
-      const next = { plan: plan ?? 'base', token };
+      const next = { plan: plan ?? 'base', token, kind, courseId, courseTitle };
       celebrationRef.current = next;
       dispatch(fetchAspirantProfile(userId));
       setCelebration(next);
@@ -59,7 +60,7 @@ export function usePlanActivationCelebration(userId) {
   }, [userId, openCelebration]);
 
   const tryCelebrateProfile = useCallback(
-    (nextPlan, nextStartedAt) => {
+    async (nextPlan, nextStartedAt) => {
       if (!nextPlan || !nextStartedAt || !isSubscriptionActive(nextPlan, nextStartedAt)) return;
 
       const prev = profileSnapshotRef.current;
@@ -67,14 +68,29 @@ export function usePlanActivationCelebration(userId) {
         prev &&
         (prev.plan !== nextPlan || prev.plan_started_at !== nextStartedAt);
 
-      if (changed) {
-        openCelebration({
-          token: celebrationTokenForProfile(nextPlan, nextStartedAt),
-          plan: nextPlan,
-        });
+      if (!changed) return;
+
+      const token = celebrationTokenForProfile(nextPlan, nextStartedAt);
+
+      // Gold can be granted by a placement purchase OR by a Golden Batch course's
+      // first payment approval — check which one actually happened before choosing copy.
+      if (nextPlan === 'gold' && userId) {
+        const goldenCourse = await getMyRecentGoldenCourseGrant(userId, nextStartedAt);
+        if (goldenCourse) {
+          openCelebration({
+            token,
+            plan: nextPlan,
+            kind: 'course_golden',
+            courseId: goldenCourse.courseId,
+            courseTitle: goldenCourse.courseTitle,
+          });
+          return;
+        }
       }
+
+      openCelebration({ token, plan: nextPlan, kind: 'plan' });
     },
-    [openCelebration],
+    [openCelebration, userId],
   );
 
   useEffect(() => {

@@ -31,6 +31,7 @@ import { usePlanModal } from '../pages/dashboard/subscription';
 import { usePlanActivationCelebration } from '../pages/dashboard/subscription/hooks/usePlanActivationCelebration';
 import { usePaymentRejectionNotice } from '../pages/dashboard/subscription/hooks/usePaymentRejectionNotice';
 import PlanActivatedCelebration from '../pages/dashboard/subscription/components/PlanActivatedCelebration';
+import CourseGoldenActivatedCelebration from '../components/courses/CourseGoldenActivatedCelebration';
 import PaymentRejectedModal from '../pages/dashboard/subscription/components/PaymentRejectedModal';
 import { isPlanActivationMessage } from '../lib/paymentActivationRealtime';
 import { isAspirantProfileComplete, needsAspirantContactDetails } from '../lib/aspirantProfile';
@@ -227,9 +228,14 @@ function DashboardOverlays({
         onTryAgain={openPlanModal}
       />
       <PlanActivatedCelebration
-        open={Boolean(celebration) && !rejection}
+        open={Boolean(celebration) && celebration?.kind !== 'course_golden' && !rejection}
         plan={celebration?.plan}
         needsOnboarding={needsOnboarding}
+        onClose={onCloseCelebration}
+      />
+      <CourseGoldenActivatedCelebration
+        open={Boolean(celebration) && celebration?.kind === 'course_golden' && !rejection}
+        courseTitle={celebration?.courseTitle}
         onClose={onCloseCelebration}
       />
     </>

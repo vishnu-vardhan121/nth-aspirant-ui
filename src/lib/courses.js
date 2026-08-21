@@ -12,6 +12,34 @@ export async function listActiveCourses() {
   return parseRpc(data, error);
 }
 
+/**
+ * Find the golden `course_members` row whose grant landed at the same moment the
+ * aspirant's plan flipped to Gold (same DB transaction ⇒ same `now()`), so we can
+ * tell "Gold from Golden Batch payment" apart from "Gold from a placement purchase".
+ */
+export async function getMyRecentGoldenCourseGrant(aspirantId, planStartedAt) {
+  if (!aspirantId || !planStartedAt) return null;
+  const { data, error } = await supabase
+    .from('course_members')
+    .select('course_id, updated_at, courses(title)')
+    .eq('aspirant_id', aspirantId)
+    .eq('status', 'golden')
+    .order('updated_at', { ascending: false })
+    .limit(5);
+  if (error || !Array.isArray(data)) return null;
+
+  const target = new Date(planStartedAt).getTime();
+  if (!Number.isFinite(target)) return null;
+
+  const match = data.find((row) => {
+    const t = new Date(row.updated_at).getTime();
+    return Number.isFinite(t) && Math.abs(t - target) < 10000;
+  });
+  if (!match) return null;
+
+  return { courseId: match.course_id, courseTitle: match.courses?.title || '' };
+}
+
 export async function joinCourseFree(courseId) {
   const { data, error } = await supabase.rpc('join_course_free', { p_course_id: courseId });
   return parseRpc(data, error);
