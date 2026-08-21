@@ -13,6 +13,7 @@ import {
 import { PageLoader } from '../../../components/ui/Loader';
 import {
   formatCourseDate,
+  isCourseEnrolledStatus,
   joinCourseFree,
   listActiveCourses,
   requestCourseJoin,
@@ -23,7 +24,9 @@ import CourseInviteCelebration, {
   hasShownCourseCelebration,
   markCourseCelebrationShown,
 } from './CourseInviteCelebration';
+import CourseGoldenAccessCard from '../../../components/courses/CourseGoldenAccessCard';
 import EnrolledCourseBoard from '../../../components/courses/EnrolledCourseBoard';
+import RequestSubmittedModal from '../../../components/courses/RequestSubmittedModal';
 
 const OFFER_POINTS = [
   {
@@ -391,7 +394,7 @@ function JoinPanel({
               <p className="text-sm font-bold text-slate-900">You&apos;re not shortlisted</p>
               <p className="mt-1.5 text-sm leading-relaxed text-slate-700">
                 Please request join access below. After you submit, wait up to{' '}
-                <span className="font-semibold">24 hours</span> for admin approval.
+                <span className="font-semibold">48 hours</span> for admin approval.
               </p>
             </div>
             <label className="block text-sm">
@@ -436,12 +439,13 @@ export default function CoursesPage() {
   const [busyId, setBusyId] = useState(null);
   const [actionMsg, setActionMsg] = useState({ id: '', type: '', text: '' });
   const [celebration, setCelebration] = useState(null);
+  const [requestDone, setRequestDone] = useState(null);
 
-  const load = async () => {
-    setLoading(true);
+  const load = async ({ soft = false } = {}) => {
+    if (!soft) setLoading(true);
     setError('');
     const res = await listActiveCourses();
-    setLoading(false);
+    if (!soft) setLoading(false);
     if (!res.ok) {
       setError(res.error || 'Failed to load courses');
       setCourses([]);
@@ -509,16 +513,16 @@ export default function CoursesPage() {
       setActionMsg({ id: courseId, type: 'error', text: res.error || 'Could not submit request' });
       return;
     }
-    setActionMsg({
-      id: courseId,
-      type: 'success',
-      text: 'Request submitted. Please wait up to 24 hours for admin approval.',
+    setActionMsg({ id: '', type: '', text: '' });
+    setRequestDone({
+      title: 'Join request submitted',
+      body: 'Your request to join this course has been received. Our team will review it shortly.',
     });
-    load();
+    load({ soft: true });
   };
 
-  const joinedCourses = courses.filter((c) => c.membership_status === 'free');
-  const otherCourses = courses.filter((c) => c.membership_status !== 'free');
+  const joinedCourses = courses.filter((c) => isCourseEnrolledStatus(c.membership_status));
+  const otherCourses = courses.filter((c) => !isCourseEnrolledStatus(c.membership_status));
   const featured = otherCourses[0] || joinedCourses[0] || null;
   const featuredSeatWaiting =
     featured &&
@@ -680,6 +684,10 @@ export default function CoursesPage() {
               {joinedCourses.map((c) => (
                 <div key={c.id} className="space-y-4">
                   <EnrolledHero course={c} />
+                  <CourseGoldenAccessCard
+                    course={c}
+                    onUpdated={() => load({ soft: true })}
+                  />
                   <section className="rounded-2xl border border-slate-200 bg-slate-50/40 p-3.5 sm:rounded-3xl sm:p-5">
                     <EnrolledCourseBoard courseId={c.id} />
                   </section>
@@ -700,6 +708,14 @@ export default function CoursesPage() {
           if (!celebration?.course?.id) return;
           handleJoin(celebration.course.id, { fromInviteModal: true });
         }}
+      />
+
+      <RequestSubmittedModal
+        open={Boolean(requestDone)}
+        onClose={() => setRequestDone(null)}
+        title={requestDone?.title}
+        body={requestDone?.body}
+        hours={48}
       />
     </div>
   );
