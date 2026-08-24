@@ -274,10 +274,19 @@ export async function staffListCourseGoldenRequests(courseId) {
   return parseRpc(data, error);
 }
 
-export async function staffReviewCourseGolden(memberId, approve) {
+export async function staffReviewCourseGolden(memberId, approve, reason) {
   const { data, error } = await supabase.rpc('staff_review_course_golden', {
     p_member_id: memberId,
     p_approve: approve,
+    p_reason: reason,
+  });
+  return parseRpc(data, error);
+}
+
+export async function staffPartialApproveCourseGolden(memberId, reason) {
+  const { data, error } = await supabase.rpc('staff_partial_approve_course_golden', {
+    p_member_id: memberId,
+    p_reason: reason,
   });
   return parseRpc(data, error);
 }

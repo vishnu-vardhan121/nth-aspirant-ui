@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { HiAcademicCap } from 'react-icons/hi2';
+import { HiAcademicCap, HiSparkles, HiVideoCamera } from 'react-icons/hi2';
 import CourseClassesManager from '../../components/courses/CourseClassesManager';
 import CourseGoldenRequestsPanel from '../../components/courses/CourseGoldenRequestsPanel';
 import { PageLoader } from '../../components/ui/Loader';
@@ -10,6 +10,8 @@ export default function InterviewerCoursesPage() {
   const [courseId, setCourseId] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState('classes'); // classes | golden
+  const [goldenCount, setGoldenCount] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -31,6 +33,11 @@ export default function InterviewerCoursesPage() {
   const selected = courses.find((c) => c.id === courseId) || null;
 
   if (loading) return <PageLoader size="md" label="Loading…" className="py-10" />;
+
+  const tabs = [
+    { id: 'classes', label: 'Live classes', icon: HiVideoCamera },
+    { id: 'golden', label: 'Golden requests', icon: HiSparkles, count: goldenCount },
+  ];
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 pb-8">
@@ -72,13 +79,54 @@ export default function InterviewerCoursesPage() {
             </select>
           </div>
 
-          {courseId ? (
-            <div className="rounded-2xl border border-amber-200/80 bg-white p-4 shadow-sm sm:p-5">
-              <CourseGoldenRequestsPanel courseId={courseId} key={courseId} />
-            </div>
-          ) : null}
+          <div className="-mx-1 flex gap-1 overflow-x-auto border-b border-slate-200 px-1">
+            {tabs.map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setTab(t.id)}
+                  className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm font-semibold transition-colors sm:px-4 ${
+                    tab === t.id
+                      ? 'border-indigo-600 text-indigo-700'
+                      : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <Icon className="h-4 w-4" aria-hidden />
+                  {t.label}
+                  {t.count != null && t.count > 0 ? (
+                    <span
+                      className={`rounded-full px-1.5 py-0.5 text-[11px] tabular-nums ${
+                        tab === t.id ? 'bg-indigo-50 text-indigo-700' : 'bg-slate-100 text-slate-500'
+                      }`}
+                    >
+                      {t.count}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6">
+          {/* Both stay mounted (hidden via CSS, not unmounted) so the Golden request count
+              loads proactively for the tab badge, and switching tabs never re-fetches. */}
+          <div
+            className={`rounded-2xl border border-amber-200/80 bg-white p-4 shadow-sm sm:p-5 ${
+              tab === 'golden' ? '' : 'hidden'
+            }`}
+          >
+            <CourseGoldenRequestsPanel
+              courseId={courseId}
+              key={courseId}
+              onCountChange={setGoldenCount}
+            />
+          </div>
+          <div
+            className={`rounded-2xl border border-slate-200 bg-slate-50/50 px-3 py-4 sm:px-5 sm:py-6 ${
+              tab === 'classes' ? '' : 'hidden'
+            }`}
+          >
             <CourseClassesManager courseId={courseId} courseTitle={selected?.title || ''} />
           </div>
         </>
