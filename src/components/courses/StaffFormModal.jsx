@@ -106,10 +106,10 @@ export default function StaffFormModal({
           </div>
         </div>
         <div
-          className={`min-h-0 flex-1 px-4 py-4 sm:px-6 sm:py-5 ${
+          className={`min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-5 ${
             isCheckout
-              ? 'overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:overflow-visible'
-              : 'overflow-y-auto'
+              ? 'overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+              : ''
           }`}
         >
           {children}
