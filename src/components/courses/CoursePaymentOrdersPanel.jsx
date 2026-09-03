@@ -126,6 +126,12 @@ export default function CoursePaymentOrdersPanel({ courseId, onChanged }) {
                       </>
                     ) : null}
                   </p>
+                  {o.sender_name ? (
+                    <p className="text-xs text-slate-500">
+                      Sender: <span className="font-medium text-slate-700">{o.sender_name}</span>
+                      {o.sender_upi_id ? ` · ${o.sender_upi_id}` : ''}
+                    </p>
+                  ) : null}
                   {o.screenshot_path ? (
                     <p className="mt-0.5 text-xs font-medium text-emerald-700">Screenshot attached</p>
                   ) : o.status === 'submitted' ? (
@@ -175,6 +181,20 @@ export default function CoursePaymentOrdersPanel({ courseId, onChanged }) {
                 <dt className="text-slate-500">UTR</dt>
                 <dd className="font-mono text-slate-900">{detail.utr || '—'}</dd>
               </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-slate-500">Sender name</dt>
+                <dd className="text-right text-slate-900">{detail.sender_name || '—'}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-slate-500">Sender UPI ID</dt>
+                <dd className="font-mono text-slate-900">{detail.sender_upi_id || '—'}</dd>
+              </div>
+              {detail.payment_app ? (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-slate-500">App</dt>
+                  <dd className="text-slate-900">{detail.payment_app}</dd>
+                </div>
+              ) : null}
               {detail.payer_note ? (
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-500">Note</dt>

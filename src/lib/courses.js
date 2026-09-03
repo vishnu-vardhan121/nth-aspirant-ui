@@ -154,12 +154,23 @@ export async function createCoursePaymentOrder(courseId) {
   return parseRpc(data, error);
 }
 
-export async function submitCoursePaymentProof(orderId, utr, payerNote = '', screenshotPath = null) {
+export async function submitCoursePaymentProof(
+  orderId,
+  utr,
+  payerNote = '',
+  screenshotPath = null,
+  senderName = '',
+  senderUpiId = '',
+  paymentApp = ''
+) {
   const { data, error } = await supabase.rpc('submit_course_payment_proof', {
     p_order_id: orderId,
     p_utr: utr,
     p_payer_note: payerNote || null,
     p_screenshot_path: screenshotPath || null,
+    p_sender_name: senderName || null,
+    p_sender_upi_id: senderUpiId || null,
+    p_payment_app: paymentApp || null,
   });
   return parseRpc(data, error);
 }

@@ -216,6 +216,9 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
   const [payOpen, setPayOpen] = useState(false);
   const [utr, setUtr] = useState('');
   const [note, setNote] = useState('');
+  const [senderName, setSenderName] = useState('');
+  const [senderUpiId, setSenderUpiId] = useState('');
+  const [paymentApp, setPaymentApp] = useState('');
   const [screenshotFile, setScreenshotFile] = useState(null);
   const [fileError, setFileError] = useState('');
   const [confirmed, setConfirmed] = useState(false);
@@ -288,6 +291,9 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
   const resetPayForm = () => {
     setUtr('');
     setNote('');
+    setSenderName('');
+    setSenderUpiId('');
+    setPaymentApp('');
     setScreenshotFile(null);
     setFileError('');
     setConfirmed(false);
@@ -394,8 +400,14 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
   const submitProof = async () => {
     if (!order?.id) return;
     const trimmed = utr.trim();
+    const trimmedSenderName = senderName.trim();
+    const trimmedSenderUpi = senderUpiId.trim();
     if (trimmed.length < 6) {
       setMsg({ type: 'error', text: 'Enter a valid UTR / transaction ID.' });
+      return;
+    }
+    if (!trimmedSenderName) {
+      setMsg({ type: 'error', text: 'Enter the sender name as per the bank account.' });
       return;
     }
     if (!screenshotFile) {
@@ -426,7 +438,15 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
       return;
     }
 
-    const res = await submitCoursePaymentProof(order.id, trimmed, note, up.path);
+    const res = await submitCoursePaymentProof(
+      order.id,
+      trimmed,
+      note,
+      up.path,
+      trimmedSenderName,
+      trimmedSenderUpi,
+      paymentApp
+    );
     setBusy('');
     if (!res.ok) {
       setMsg({ type: 'error', text: res.error || 'Submit failed' });
@@ -579,6 +599,20 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
                 <span className="font-mono text-xs font-semibold text-slate-800">{order.utr}</span>
               </div>
             ) : null}
+            {order?.sender_name ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-slate-500">Sender name</span>
+                <span className="font-semibold text-slate-800">{order.sender_name}</span>
+              </div>
+            ) : null}
+            {order?.sender_upi_id ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="text-slate-500">Sender UPI ID</span>
+                <span className="font-mono text-xs font-semibold text-slate-800">
+                  {order.sender_upi_id}
+                </span>
+              </div>
+            ) : null}
             <p className="rounded-lg bg-slate-50 px-2.5 py-2 text-xs text-slate-500">
               Status: submitted · waiting for admin approval
             </p>
@@ -716,6 +750,7 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
             disabled={
               busy === 'submit' ||
               utr.trim().length < 6 ||
+              !senderName.trim() ||
               !screenshotFile ||
               !confirmed ||
               Boolean(fileError)
@@ -807,6 +842,15 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
                 </p>
               </div>
               <div className="space-y-3.5 px-4 py-4">
+                {msg.text && payOpen ? (
+                  <p
+                    className={`rounded-lg px-3 py-2 text-sm ${
+                      msg.type === 'error' ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-800'
+                    }`}
+                  >
+                    {msg.text}
+                  </p>
+                ) : null}
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-800">
                     UTR / Transaction ID <span className="text-red-500">*</span>
@@ -822,7 +866,59 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
                 </div>
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-slate-800">
-                    Note <span className="font-normal text-slate-400">(optional)</span>
+                    Sender name (as per bank account) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={senderName}
+                    onChange={(e) => setSenderName(e.target.value.slice(0, 120))}
+                    className={fieldClass}
+                    placeholder="Name shown on your bank account / UPI app"
+                    autoComplete="off"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="h-px flex-1 bg-slate-100" aria-hidden />
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    Optional details
+                  </p>
+                  <span className="h-px flex-1 bg-slate-100" aria-hidden />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-600">
+                    Sender UPI ID
+                  </label>
+                  <input
+                    type="text"
+                    value={senderUpiId}
+                    onChange={(e) => setSenderUpiId(e.target.value.slice(0, 120))}
+                    className={fieldClass}
+                    placeholder="e.g. name@okhdfcbank"
+                    autoComplete="off"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-600">
+                    Payment app
+                  </label>
+                  <select
+                    value={paymentApp}
+                    onChange={(e) => setPaymentApp(e.target.value)}
+                    className={`${fieldClass} appearance-none bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22%2394a3b8%22%3E%3Cpath%20fill-rule%3D%22evenodd%22%20d%3D%22M5.23%207.21a.75.75%200%20011.06.02L10%2011.168l3.71-3.938a.75.75%200%20111.08%201.04l-4.25%204.5a.75.75%200%2001-1.08%200l-4.25-4.5a.75.75%200%2001.02-1.06z%22%20clip-rule%3D%22evenodd%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9`}
+                  >
+                    <option value="">Not specified</option>
+                    <option value="gpay">Google Pay</option>
+                    <option value="phonepe">PhonePe</option>
+                    <option value="paytm">Paytm</option>
+                    <option value="bhim">BHIM</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-600">
+                    Note
                   </label>
                   <input
                     type="text"
@@ -868,12 +964,6 @@ export default function CourseGoldenPayPanel({ courseId, onUpdated }) {
                 </label>
               </div>
             </div>
-
-            {msg.text && payOpen ? (
-              <p className={`text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-emerald-700'}`}>
-                {msg.text}
-              </p>
-            ) : null}
 
             <p className="hidden items-center justify-center gap-1.5 text-center text-[11px] text-slate-400 lg:flex">
               <HiLockClosed className="h-3.5 w-3.5" aria-hidden />
