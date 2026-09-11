@@ -285,6 +285,13 @@ export async function staffListCourseGoldenRequests(courseId) {
   return parseRpc(data, error);
 }
 
+export async function adminListCourseGoldenHistory(courseId) {
+  const { data, error } = await supabase.rpc('admin_list_course_golden_history', {
+    p_course_id: courseId,
+  });
+  return parseRpc(data, error);
+}
+
 export async function staffReviewCourseGolden(memberId, approve, reason) {
   const { data, error } = await supabase.rpc('staff_review_course_golden', {
     p_member_id: memberId,

@@ -1,11 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import { HiCheckCircle, HiClipboardDocumentCheck, HiSparkles, HiXCircle } from 'react-icons/hi2';
+import {
+  HiArrowDownTray,
+  HiCheckCircle,
+  HiClipboardDocumentCheck,
+  HiSparkles,
+  HiXCircle,
+} from 'react-icons/hi2';
 import {
   formatCourseDate,
   staffListCourseGoldenRequests,
   staffPartialApproveCourseGolden,
   staffReviewCourseGolden,
 } from '../../lib/courses';
+import { downloadCourseGoldenRequestsExcel } from '../../lib/courseRequestsExport';
 import StaffFormModal from './StaffFormModal';
 
 const ACTION_COPY = {
@@ -40,11 +47,14 @@ export default function CourseGoldenRequestsPanel({
   onChanged,
   onCountChange,
   compact = false,
+  showDownload = false,
 }) {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [downloadBusy, setDownloadBusy] = useState(false);
+  const [downloadError, setDownloadError] = useState('');
 
   /** @type {[{ member: object, kind: 'approve'|'reject'|'partial' } | null, Function]} */
   const [actionModal, setActionModal] = useState(null);
@@ -71,6 +81,17 @@ export default function CourseGoldenRequestsPanel({
   useEffect(() => {
     load();
   }, [load]);
+
+  const downloadHistory = async () => {
+    if (!courseId) return;
+    setDownloadBusy(true);
+    setDownloadError('');
+    const res = await downloadCourseGoldenRequestsExcel(courseId);
+    setDownloadBusy(false);
+    if (!res.ok) {
+      setDownloadError(res.error || 'Failed to download');
+    }
+  };
 
   const openAction = (member, kind) => {
     setActionMsg('');
@@ -115,16 +136,31 @@ export default function CourseGoldenRequestsPanel({
   return (
     <div className={compact ? 'space-y-3' : 'space-y-4'}>
       {!compact ? (
-        <div className="flex items-center gap-2">
-          <HiSparkles className="h-5 w-5 text-amber-600" aria-hidden />
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Golden access requests</h2>
-            <p className="text-xs text-slate-500">
-              Approve so the aspirant can choose a pack and pay (payment UI next phase).
-            </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <HiSparkles className="h-5 w-5 text-amber-600" aria-hidden />
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Golden access requests</h2>
+              <p className="text-xs text-slate-500">
+                Approve so the aspirant can choose a pack and pay (payment UI next phase).
+              </p>
+            </div>
           </div>
+          {showDownload ? (
+            <button
+              type="button"
+              disabled={downloadBusy}
+              onClick={downloadHistory}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+            >
+              <HiArrowDownTray className="h-4 w-4" aria-hidden />
+              {downloadBusy ? 'Preparing…' : 'Download Excel'}
+            </button>
+          ) : null}
         </div>
       ) : null}
+
+      {downloadError ? <p className="text-sm text-red-600">{downloadError}</p> : null}
 
       {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
