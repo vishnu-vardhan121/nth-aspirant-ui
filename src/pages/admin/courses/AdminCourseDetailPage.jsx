@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
   HiAcademicCap,
+  HiArrowDownTray,
   HiArrowLeft,
   HiCalendarDays,
   HiCheckCircle,
@@ -24,6 +25,7 @@ import CourseGoldenRequestsPanel from '../../../components/courses/CourseGoldenR
 import CoursePaymentOrdersPanel from '../../../components/courses/CoursePaymentOrdersPanel';
 import CoursePricingPanel from '../../../components/courses/CoursePricingPanel';
 import StaffFormModal from '../../../components/courses/StaffFormModal';
+import { downloadCourseJoinRequestsExcel } from '../../../lib/courseRequestsExport';
 import { PageLoader } from '../../../components/ui/Loader';
 import {
   adminAddCourseInvites,
@@ -95,6 +97,8 @@ export default function AdminCourseDetailPage() {
   const [termsMsg, setTermsMsg] = useState({ type: '', text: '' });
   const [termsBusy, setTermsBusy] = useState(false);
   const [termsModalOpen, setTermsModalOpen] = useState(false);
+  const [joinDownloadBusy, setJoinDownloadBusy] = useState(false);
+  const [joinDownloadError, setJoinDownloadError] = useState('');
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
@@ -247,6 +251,17 @@ export default function AdminCourseDetailPage() {
       return;
     }
     load();
+  };
+
+  const handleDownloadJoinRequests = async () => {
+    if (!course?.id) return;
+    setJoinDownloadBusy(true);
+    setJoinDownloadError('');
+    const res = await downloadCourseJoinRequestsExcel(course.id);
+    setJoinDownloadBusy(false);
+    if (!res.ok) {
+      setJoinDownloadError(res.error || 'Failed to download');
+    }
   };
 
   const handleToggleActive = async () => {
@@ -853,10 +868,22 @@ export default function AdminCourseDetailPage() {
 
       {tab === 'requests' ? (
         <section className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <HiUsers className="h-5 w-5 text-amber-600" />
-            <h2 className="text-lg font-semibold text-slate-900">Join requests</h2>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <HiUsers className="h-5 w-5 text-amber-600" />
+              <h2 className="text-lg font-semibold text-slate-900">Join requests</h2>
+            </div>
+            <button
+              type="button"
+              disabled={joinDownloadBusy}
+              onClick={handleDownloadJoinRequests}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+            >
+              <HiArrowDownTray className="h-4 w-4" aria-hidden />
+              {joinDownloadBusy ? 'Preparing…' : 'Download Excel'}
+            </button>
           </div>
+          {joinDownloadError ? <p className="text-sm text-red-600">{joinDownloadError}</p> : null}
           {requests.length === 0 ? (
             <p className="text-sm text-slate-600">No pending requests.</p>
           ) : (
@@ -961,6 +988,7 @@ export default function AdminCourseDetailPage() {
               courseId={course.id}
               onOpenProfile={(aspirantId) => setProfileAspirantId(aspirantId)}
               onChanged={load}
+              showDownload
             />
           </div>
         </section>
