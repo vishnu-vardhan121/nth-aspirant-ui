@@ -99,10 +99,21 @@ export default function AdminCourseDetailPage() {
   const [termsModalOpen, setTermsModalOpen] = useState(false);
   const [joinDownloadBusy, setJoinDownloadBusy] = useState(false);
   const [joinDownloadError, setJoinDownloadError] = useState('');
+  const [joinSearch, setJoinSearch] = useState('');
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
   );
+
+  const filteredJoinRequests = useMemo(() => {
+    const q = joinSearch.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((r) =>
+      [r.aspirant_name, r.aspirant_email, r.reason]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(q))
+    );
+  }, [requests, joinSearch]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -884,8 +895,21 @@ export default function AdminCourseDetailPage() {
             </button>
           </div>
           {joinDownloadError ? <p className="text-sm text-red-600">{joinDownloadError}</p> : null}
+          {requests.length > 0 ? (
+            <div className="relative">
+              <HiMagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={joinSearch}
+                onChange={(e) => setJoinSearch(e.target.value)}
+                placeholder="Search by name, email, or reason…"
+                className="w-full max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+              />
+            </div>
+          ) : null}
           {requests.length === 0 ? (
             <p className="text-sm text-slate-600">No pending requests.</p>
+          ) : filteredJoinRequests.length === 0 ? (
+            <p className="text-sm text-slate-500">No requests match your search.</p>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-100">
               <table className="min-w-full text-sm">
@@ -898,7 +922,7 @@ export default function AdminCourseDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {requests.map((r) => (
+                  {filteredJoinRequests.map((r) => (
                     <tr key={r.id} className="border-t border-slate-100 align-top">
                       <td className="px-4 py-3">
                         <div className="font-medium text-slate-900">{r.aspirant_name || '—'}</div>
