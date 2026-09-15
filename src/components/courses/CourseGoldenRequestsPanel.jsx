@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   HiArrowDownTray,
   HiCheckCircle,
   HiClipboardDocumentCheck,
+  HiMagnifyingGlass,
   HiSparkles,
   HiXCircle,
 } from 'react-icons/hi2';
@@ -55,6 +56,7 @@ export default function CourseGoldenRequestsPanel({
   const [busyId, setBusyId] = useState(null);
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadError, setDownloadError] = useState('');
+  const [search, setSearch] = useState('');
 
   /** @type {[{ member: object, kind: 'approve'|'reject'|'partial' } | null, Function]} */
   const [actionModal, setActionModal] = useState(null);
@@ -81,6 +83,16 @@ export default function CourseGoldenRequestsPanel({
   useEffect(() => {
     load();
   }, [load]);
+
+  const filteredRequests = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return requests;
+    return requests.filter((r) =>
+      [r.aspirant_name, r.aspirant_email, r.golden_request_reason]
+        .filter(Boolean)
+        .some((field) => String(field).toLowerCase().includes(q))
+    );
+  }, [requests, search]);
 
   const downloadHistory = async () => {
     if (!courseId) return;
@@ -172,8 +184,26 @@ export default function CourseGoldenRequestsPanel({
       ) : null}
 
       {requests.length > 0 ? (
+        <div className="relative">
+          <HiMagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, email, or reason…"
+            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+          />
+        </div>
+      ) : null}
+
+      {requests.length > 0 && filteredRequests.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+          No requests match your search.
+        </p>
+      ) : null}
+
+      {filteredRequests.length > 0 ? (
         <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {requests.map((r) => {
+          {filteredRequests.map((r) => {
             const hasPartial = Boolean(r.golden_partial_approved_at);
             return (
               <li key={r.id} className="flex flex-col gap-3 px-4 py-3">
