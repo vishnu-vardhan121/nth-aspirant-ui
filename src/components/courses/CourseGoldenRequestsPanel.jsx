@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   HiArrowDownTray,
+  HiChevronLeft,
+  HiChevronRight,
   HiCheckCircle,
   HiClipboardDocumentCheck,
   HiMagnifyingGlass,
@@ -15,6 +17,8 @@ import {
 } from '../../lib/courses';
 import { downloadCourseGoldenRequestsExcel } from '../../lib/courseRequestsExport';
 import StaffFormModal from './StaffFormModal';
+
+const PAGE_SIZE = 25;
 
 const ACTION_COPY = {
   approve: {
@@ -57,6 +61,7 @@ export default function CourseGoldenRequestsPanel({
   const [downloadBusy, setDownloadBusy] = useState(false);
   const [downloadError, setDownloadError] = useState('');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('golden_requested');
 
   /** @type {[{ member: object, kind: 'approve'|'reject'|'partial' } | null, Function]} */
   const [actionModal, setActionModal] = useState(null);
@@ -67,32 +72,54 @@ export default function CourseGoldenRequestsPanel({
     if (!courseId) return;
     setLoading(true);
     setError('');
-    const res = await staffListCourseGoldenRequests(courseId);
+    const res = await staffListCourseGoldenRequests(courseId, statusFilter);
     setLoading(false);
     if (!res.ok) {
       setError(res.error || 'Failed to load Golden requests');
       setRequests([]);
-      onCountChange?.(0);
       return;
     }
-    const list = res.requests || [];
-    setRequests(list);
-    onCountChange?.(list.length);
-  }, [courseId, onCountChange]);
+    setRequests(res.requests || []);
+  }, [courseId, statusFilter]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  // Pending count for the tab badge — independent of whatever filter is on screen.
+  useEffect(() => {
+    if (!courseId) return;
+    let cancelled = false;
+    staffListCourseGoldenRequests(courseId, 'golden_requested').then((res) => {
+      if (!cancelled) onCountChange?.(res.ok ? (res.requests || []).length : 0);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, onCountChange, requests]);
+
+  const [partialOnly, setPartialOnly] = useState(false);
+
   const filteredRequests = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return requests;
-    return requests.filter((r) =>
+    let list = requests;
+    if (partialOnly) {
+      list = list.filter((r) => Boolean(r.golden_partial_approved_at));
+    }
+    if (!q) return list;
+    return list.filter((r) =>
       [r.aspirant_name, r.aspirant_email, r.golden_request_reason]
         .filter(Boolean)
         .some((field) => String(field).toLowerCase().includes(q))
     );
-  }, [requests, search]);
+  }, [requests, search, partialOnly]);
+
+  const [page, setPage] = useState(1);
+  useEffect(() => {
+    setPage(1);
+  }, [search, requests, partialOnly, statusFilter]);
+  const totalPages = Math.max(1, Math.ceil(filteredRequests.length / PAGE_SIZE));
+  const pagedRequests = filteredRequests.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const downloadHistory = async () => {
     if (!courseId) return;
@@ -174,37 +201,65 @@ export default function CourseGoldenRequestsPanel({
 
       {downloadError ? <p className="text-sm text-red-600">{downloadError}</p> : null}
 
-      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      {!loading && !error && requests.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-          No pending Golden requests.
-        </p>
-      ) : null}
-
-      {requests.length > 0 ? (
-        <div className="relative">
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative min-w-0 flex-1">
           <HiMagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, email, or reason…"
-            className="w-full max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            className="w-full min-w-48 max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
           />
         </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        >
+          <option value="golden_requested">Pending</option>
+          <option value="golden">Approved</option>
+          <option value="golden_rejected">Rejected</option>
+          <option value="all">All</option>
+        </select>
+        {statusFilter === 'golden_requested' ? (
+          <label className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-700 shadow-sm">
+            <input
+              type="checkbox"
+              checked={partialOnly}
+              onChange={(e) => setPartialOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            Partially approved only
+          </label>
+        ) : null}
+      </div>
+
+      {loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
+      {!loading && !error && requests.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+          {statusFilter === 'golden_requested'
+            ? 'No pending Golden requests.'
+            : statusFilter === 'golden'
+              ? 'No approved Golden requests yet.'
+              : statusFilter === 'golden_rejected'
+                ? 'No rejected Golden requests.'
+                : 'No Golden requests yet.'}
+        </p>
       ) : null}
 
       {requests.length > 0 && filteredRequests.length === 0 ? (
         <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-          No requests match your search.
+          No requests match your search / filter.
         </p>
       ) : null}
 
       {filteredRequests.length > 0 ? (
         <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 bg-white">
-          {filteredRequests.map((r) => {
+          {pagedRequests.map((r) => {
             const hasPartial = Boolean(r.golden_partial_approved_at);
+            const isPending = r.status === 'golden_requested';
             return (
               <li key={r.id} className="flex flex-col gap-3 px-4 py-3">
                 <div className="flex flex-col gap-3">
@@ -223,35 +278,61 @@ export default function CourseGoldenRequestsPanel({
                       <p className="mt-1 text-xs italic text-slate-400">No reason given</p>
                     )}
                   </div>
-                  <div className="flex w-full flex-col gap-2">
-                    <button
-                      type="button"
-                      disabled={busyId === r.id}
-                      onClick={() => openAction(r, 'partial')}
-                      className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
-                    >
-                      <HiClipboardDocumentCheck className="h-4 w-4" aria-hidden />
-                      Partial approve
-                    </button>
-                    <div className="grid grid-cols-2 gap-2">
+                  {isPending ? (
+                    <div className="flex w-full flex-col gap-2">
                       <button
                         type="button"
                         disabled={busyId === r.id}
-                        onClick={() => openAction(r, 'approve')}
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        onClick={() => openAction(r, 'partial')}
+                        className="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-3 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 disabled:opacity-60"
                       >
-                        Approve
+                        <HiClipboardDocumentCheck className="h-4 w-4" aria-hidden />
+                        Partial approve
                       </button>
-                      <button
-                        type="button"
-                        disabled={busyId === r.id}
-                        onClick={() => openAction(r, 'reject')}
-                        className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
-                      >
-                        Reject
-                      </button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          disabled={busyId === r.id}
+                          onClick={() => openAction(r, 'approve')}
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-emerald-600 px-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyId === r.id}
+                          onClick={() => openAction(r, 'reject')}
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div
+                      className={`flex items-start gap-2 rounded-lg px-3 py-2.5 text-xs ${
+                        r.status === 'golden'
+                          ? 'border border-emerald-100 bg-emerald-50/70 text-emerald-900'
+                          : 'border border-red-100 bg-red-50/70 text-red-900'
+                      }`}
+                    >
+                      {r.status === 'golden' ? (
+                        <HiCheckCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                      ) : (
+                        <HiXCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                      )}
+                      <div className="min-w-0">
+                        <p className="font-semibold">
+                          {r.status === 'golden' ? 'Approved' : 'Rejected'} by{' '}
+                          {r.golden_reviewed_by_name || 'staff'}
+                          {r.golden_reviewed_at ? ` · ${formatCourseDate(r.golden_reviewed_at)}` : ''}
+                        </p>
+                        {r.golden_review_reason ? (
+                          <p className="mt-0.5 opacity-90">{r.golden_review_reason}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {hasPartial ? (
@@ -277,6 +358,34 @@ export default function CourseGoldenRequestsPanel({
             );
           })}
         </ul>
+      ) : null}
+
+      {filteredRequests.length > PAGE_SIZE ? (
+        <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
+          <span>
+            Page {page} of {totalPages} · {filteredRequests.length} request(s)
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              <HiChevronLeft className="h-4 w-4" aria-hidden />
+              Prev
+            </button>
+            <button
+              type="button"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            >
+              Next
+              <HiChevronRight className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        </div>
       ) : null}
 
       <StaffFormModal open={Boolean(actionModal)} onClose={closeAction} title={copy?.title} wide>
