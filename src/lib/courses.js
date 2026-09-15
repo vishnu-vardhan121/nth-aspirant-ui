@@ -246,9 +246,10 @@ export async function adminAddCourseInvites(courseId, emails) {
   return parseRpc(data, error);
 }
 
-export async function adminListCourseJoinRequests(courseId = null) {
+export async function adminListCourseJoinRequests(courseId = null, status = 'requested') {
   const { data, error } = await supabase.rpc('admin_list_course_join_requests', {
     p_course_id: courseId,
+    p_status: status,
   });
   return parseRpc(data, error);
 }
@@ -278,9 +279,10 @@ export async function requestCourseGolden(courseId, reason = '', acceptedTerms =
   return parseRpc(data, error);
 }
 
-export async function staffListCourseGoldenRequests(courseId) {
+export async function staffListCourseGoldenRequests(courseId, status = 'golden_requested') {
   const { data, error } = await supabase.rpc('staff_list_course_golden_requests', {
     p_course_id: courseId,
+    p_status: status,
   });
   return parseRpc(data, error);
 }

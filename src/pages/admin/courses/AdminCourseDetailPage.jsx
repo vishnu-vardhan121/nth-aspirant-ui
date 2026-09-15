@@ -6,6 +6,8 @@ import {
   HiArrowLeft,
   HiCalendarDays,
   HiCheckCircle,
+  HiChevronLeft,
+  HiChevronRight,
   HiClipboardDocumentList,
   HiDocumentArrowUp,
   HiEnvelope,
@@ -44,6 +46,8 @@ import {
   toDatetimeLocalIst,
 } from '../../../lib/courses';
 import UserProfileModal from '../users/UserProfileModal';
+
+const REQUESTS_PAGE_SIZE = 25;
 
 function StatPill({ label, value, tone = 'slate', icon: Icon = null }) {
   const tones = {
@@ -100,6 +104,8 @@ export default function AdminCourseDetailPage() {
   const [joinDownloadBusy, setJoinDownloadBusy] = useState(false);
   const [joinDownloadError, setJoinDownloadError] = useState('');
   const [joinSearch, setJoinSearch] = useState('');
+  const [joinStatusFilter, setJoinStatusFilter] = useState('requested');
+  const [pendingJoinCount, setPendingJoinCount] = useState(0);
   const existingInviteSet = useMemo(
     () => new Set(invites.map((i) => String(i.email || '').toLowerCase())),
     [invites]
@@ -115,13 +121,25 @@ export default function AdminCourseDetailPage() {
     );
   }, [requests, joinSearch]);
 
+  const [joinPage, setJoinPage] = useState(1);
+  useEffect(() => {
+    setJoinPage(1);
+  }, [joinSearch, requests]);
+  const joinTotalPages = Math.max(1, Math.ceil(filteredJoinRequests.length / REQUESTS_PAGE_SIZE));
+  const pagedJoinRequests = filteredJoinRequests.slice(
+    (joinPage - 1) * REQUESTS_PAGE_SIZE,
+    joinPage * REQUESTS_PAGE_SIZE
+  );
+
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
     setError('');
-    const [courseRes, reqRes, memRes, goldenRes] = await Promise.all([
+    const needsPendingCountSeparately = joinStatusFilter !== 'requested';
+    const [courseRes, reqRes, pendingReqRes, memRes, goldenRes] = await Promise.all([
       adminGetCourse(id),
-      adminListCourseJoinRequests(id),
+      adminListCourseJoinRequests(id, joinStatusFilter),
+      needsPendingCountSeparately ? adminListCourseJoinRequests(id, 'requested') : Promise.resolve(null),
       adminListCourseMembers(id, 'enrolled'),
       staffListCourseGoldenRequests(id),
     ]);
@@ -133,6 +151,13 @@ export default function AdminCourseDetailPage() {
     setCourse(courseRes.course);
     setInvites(courseRes.invites || []);
     setRequests(reqRes.ok ? reqRes.requests || [] : []);
+    setPendingJoinCount(
+      needsPendingCountSeparately
+        ? pendingReqRes?.ok
+          ? (pendingReqRes.requests || []).length
+          : 0
+        : (reqRes.requests || []).length
+    );
     setMembers(memRes.ok ? memRes.members || [] : []);
     setGoldenRequests(goldenRes.ok ? goldenRes.requests || [] : []);
     setTermsEnabled(Boolean(courseRes.course?.golden_terms_enabled));
@@ -141,7 +166,7 @@ export default function AdminCourseDetailPage() {
       const list = Array.isArray(raw) ? raw.map((x) => String(x || '')) : [];
       setTermsBullets(list.length ? list : ['']);
     }
-  }, [id]);
+  }, [id, joinStatusFilter]);
 
   useEffect(() => {
     load();
@@ -409,7 +434,7 @@ export default function AdminCourseDetailPage() {
 
   const tabs = [
     { id: 'invites', label: 'Invites', count: invites.length },
-    { id: 'requests', label: 'Join requests', count: requests.length },
+    { id: 'requests', label: 'Join requests', count: pendingJoinCount },
     { id: 'golden', label: 'Golden', count: goldenRequests.length },
     { id: 'pricing', label: 'Pricing' },
     { id: 'payments', label: 'Payments' },
@@ -622,7 +647,7 @@ export default function AdminCourseDetailPage() {
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatPill icon={HiEnvelope} label="Invites" value={invites.length} tone="indigo" />
-        <StatPill icon={HiClipboardDocumentList} label="Pending requests" value={requests.length} tone="amber" />
+        <StatPill icon={HiClipboardDocumentList} label="Pending requests" value={pendingJoinCount} tone="amber" />
         <StatPill icon={HiUserGroup} label="Joined" value={members.length} tone="emerald" />
         <StatPill
           icon={course.is_active ? HiCheckCircle : HiXCircle}
@@ -895,19 +920,37 @@ export default function AdminCourseDetailPage() {
             </button>
           </div>
           {joinDownloadError ? <p className="text-sm text-red-600">{joinDownloadError}</p> : null}
-          {requests.length > 0 ? (
-            <div className="relative">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative min-w-0 flex-1">
               <HiMagnifyingGlass className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={joinSearch}
                 onChange={(e) => setJoinSearch(e.target.value)}
                 placeholder="Search by name, email, or reason…"
-                className="w-full max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full min-w-48 max-w-sm rounded-lg border border-slate-300 bg-white py-2.5 pl-9 pr-3 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
               />
             </div>
-          ) : null}
+            <select
+              value={joinStatusFilter}
+              onChange={(e) => setJoinStatusFilter(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm shadow-sm outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+            >
+              <option value="requested">Pending</option>
+              <option value="free">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="all">All</option>
+            </select>
+          </div>
           {requests.length === 0 ? (
-            <p className="text-sm text-slate-600">No pending requests.</p>
+            <p className="text-sm text-slate-600">
+              {joinStatusFilter === 'requested'
+                ? 'No pending requests.'
+                : joinStatusFilter === 'free'
+                  ? 'No approved join requests yet.'
+                  : joinStatusFilter === 'rejected'
+                    ? 'No rejected join requests.'
+                    : 'No join requests yet.'}
+            </p>
           ) : filteredJoinRequests.length === 0 ? (
             <p className="text-sm text-slate-500">No requests match your search.</p>
           ) : (
@@ -922,7 +965,7 @@ export default function AdminCourseDetailPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredJoinRequests.map((r) => (
+                  {pagedJoinRequests.map((r) => (
                     <tr key={r.id} className="border-t border-slate-100 align-top">
                       <td className="px-4 py-3">
                         <div className="font-medium text-slate-900">{r.aspirant_name || '—'}</div>
@@ -942,6 +985,19 @@ export default function AdminCourseDetailPage() {
                           >
                             Profile
                           </button>
+                          {r.status !== 'requested' ? (
+                            <span
+                              className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold ${
+                                r.status === 'free'
+                                  ? 'bg-emerald-50 text-emerald-800'
+                                  : 'bg-red-50 text-red-700'
+                              }`}
+                            >
+                              {r.status === 'free' ? 'Approved' : 'Rejected'}
+                              {r.reviewed_at ? ` · ${formatCourseDate(r.reviewed_at)}` : ''}
+                            </span>
+                          ) : null}
+                          {r.status === 'requested' ? (
                           <button
                             type="button"
                             disabled={reviewBusyId === r.id}
@@ -950,6 +1006,8 @@ export default function AdminCourseDetailPage() {
                           >
                             Approve
                           </button>
+                          ) : null}
+                          {r.status === 'requested' ? (
                           <button
                             type="button"
                             disabled={reviewBusyId === r.id}
@@ -958,6 +1016,7 @@ export default function AdminCourseDetailPage() {
                           >
                             Reject
                           </button>
+                          ) : null}
                         </div>
                       </td>
                     </tr>
@@ -966,6 +1025,33 @@ export default function AdminCourseDetailPage() {
               </table>
             </div>
           )}
+          {filteredJoinRequests.length > REQUESTS_PAGE_SIZE ? (
+            <div className="flex items-center justify-between gap-3 text-sm text-slate-600">
+              <span>
+                Page {joinPage} of {joinTotalPages} · {filteredJoinRequests.length} request(s)
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={joinPage <= 1}
+                  onClick={() => setJoinPage((p) => Math.max(1, p - 1))}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  <HiChevronLeft className="h-4 w-4" aria-hidden />
+                  Prev
+                </button>
+                <button
+                  type="button"
+                  disabled={joinPage >= joinTotalPages}
+                  onClick={() => setJoinPage((p) => Math.min(joinTotalPages, p + 1))}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  Next
+                  <HiChevronRight className="h-4 w-4" aria-hidden />
+                </button>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
